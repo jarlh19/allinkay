@@ -7,6 +7,7 @@ from app.domain.baseline import (
     Baseline,
     BaselineError,
     Deviation,
+    Spread,
     baselines_from_readings,
     deviation,
 )
@@ -19,6 +20,7 @@ from app.domain.rules import (
     OutsideNormalRule,
     evaluate_rules,
 )
+from app.domain.variation import LAB_VARIATION
 
 NOW = datetime(2026, 11, 14, 12, 0, tzinfo=UTC)
 
@@ -60,14 +62,50 @@ def test_z_score_against_the_personal_normal() -> None:
 
 
 def test_white_blood_cells_inside_the_general_range_can_be_below_your_normal() -> None:
-    # Pre-flight values of an Inspiration4 crew member (NASA OSDR, OSD-569).
-    baseline = Baseline.from_values(Signal.WHITE_BLOOD_CELLS, [5.4, 5.5, 7.0], "OSD-569")
+    # Pre-flight values of an Inspiration4 crew member (NASA OSDR, OSD-569); the spread is the
+    # published within-subject and analytical variation for leukocytes.
+    baseline = Baseline.from_lab_values(Signal.WHITE_BLOOD_CELLS, [5.4, 5.5, 7.0], "OSD-569")
 
     dev = deviation(reading("white_blood_cells", 4.4), baseline)
 
     assert 3.8 <= 4.4 <= 10.8
-    assert dev.z_score == pytest.approx(-1.75, abs=0.01)
+    assert baseline.spread is Spread.PUBLISHED
+    cv = LAB_VARIATION[Signal.WHITE_BLOOD_CELLS].total_cv
+    assert baseline.sd == pytest.approx(baseline.mean * cv)
+    assert dev.z_score == pytest.approx(-2.12, abs=0.01)
     assert dev.outside_normal
+
+
+def test_an_alert_needs_a_reading_beyond_the_prediction_interval() -> None:
+    sleep = Baseline.from_values(Signal.SLEEP_HOURS, [7.1, 7.9] * 30, "t")
+    wbc = Baseline.from_lab_values(Signal.WHITE_BLOOD_CELLS, [5.4, 5.5, 7.0], "t")
+
+    assert sleep.alert_z(2.0) == pytest.approx(2.0435 * (1 + 1 / 60) ** 0.5, abs=0.002)
+    assert wbc.alert_z(2.58) == pytest.approx(2.58 * (4 / 3) ** 0.5)
+    assert deviation(reading("sleep_hours", 6.6), sleep).beyond(2.0) == "below"
+    assert deviation(reading("sleep_hours", 9.0), sleep).beyond(2.0) is None
+
+
+def test_a_personal_normal_from_too_few_readings_cannot_alert() -> None:
+    tiny = Baseline.from_values(Signal.SLEEP_HOURS, [7.0, 7.5, 8.0], "t")
+
+    assert deviation(reading("sleep_hours", 2.0), tiny).outside_normal
+    assert deviation(reading("sleep_hours", 2.0), tiny).beyond(2.0) is None
+
+
+def test_a_scale_uses_its_usual_answer_and_one_step() -> None:
+    mood = Baseline.from_scale_values(Signal.MOOD, [4, 4, 3, 5, 4], "t")
+
+    assert (mood.mean, mood.sd, mood.spread) == (4.0, 1.0, Spread.SCALE)
+    assert deviation(reading("mood", 2), mood).beyond(2.0) == "below"
+    assert deviation(reading("mood", 3), mood).beyond(2.0) is None
+
+
+def test_a_scale_counts_two_whole_steps_whatever_the_continuous_threshold() -> None:
+    mood = Baseline.from_scale_values(Signal.MOOD, [4, 4, 3, 5, 4], "t")
+
+    assert deviation(reading("mood", 2), mood).beyond(2.2) == "below"
+    assert deviation(reading("mood", 3), mood).beyond(1.5) is None
 
 
 def test_deviation_rejects_a_baseline_of_another_signal() -> None:
@@ -77,13 +115,18 @@ def test_deviation_rejects_a_baseline_of_another_signal() -> None:
         deviation(reading("heart_rate", 70), baseline)
 
 
-def test_baselines_from_readings_groups_by_signal_and_skips_single_values() -> None:
-    readings = [reading("heart_rate", v) for v in (66, 70)] + [reading("glucose", 92)]
+def test_baselines_group_by_signal_and_one_draw_sets_a_lab_set_point() -> None:
+    readings = (
+        [reading("heart_rate", v) for v in (66, 70)]
+        + [reading("glucose", 92)]
+        + [reading("spo2", 97)]
+    )
 
     baselines = baselines_from_readings(readings, "pre-flight")
 
-    assert set(baselines) == {Signal.HEART_RATE}
+    assert set(baselines) == {Signal.HEART_RATE, Signal.GLUCOSE}
     assert baselines[Signal.HEART_RATE].mean == 68
+    assert baselines[Signal.GLUCOSE].spread is Spread.PUBLISHED
 
 
 def deviations_for(values: dict[str, float]) -> list[Deviation]:

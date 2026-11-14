@@ -85,3 +85,38 @@ Cada entrada dice el problema, lo elegido, las alternativas descartadas y por qu
   - Un solo canal con eventos etiquetados por persona: cada navegador recibiría las lecturas de todos, el triple de datos por una conexión lenta.
   - Varios procesos, uno por persona: complica Render (D-009) sin ganar nada en la demo.
 - **Por qué:** cada persona se evalúa contra su propio normal, que es la idea central del proyecto. Cambiar el modo de una no toca a las demás. El navegador solo recibe a quien está mirando.
+
+## D-011 · Alertas confirmadas: cuántas falsas alarmas y cuántos cambios sin detectar
+
+- **Problema:** la medición del 14 de noviembre mostró que, en la nave, 40 de 40 personas sanas simuladas tenían al menos una falsa alarma en 30 días. Venían de los exámenes y de las señales diarias. Las causas fueron tres:
+  - Un solo examen fuera de rango bastaba para alertar, y el simulador usaba menos variación que la real.
+  - El normal salía de 14 días y 3 análisis, pero se usaba como si fuera exacto.
+  - El ánimo, una escala del 1 al 5, se trataba como una medida continua.
+- **Lo que no se puede:** con datos finitos no existen a la vez cero falsas alarmas y cero cambios sin detectar. Al bajar uno sube el otro, y lo único que baja los dos es más información. Se midió con 200 000 personas simuladas.
+- **Elegido por Jorge: «más seguro»,** es decir, que casi no se escapen cambios reales. Las metas quedan así:
+  - Como máximo 1 falsa alarma cada 10 años-astronauta.
+  - Como máximo el 1 % de los cambios del guion sin detectar en los primeros 10 días. Un cambio que sigue se detecta en las lecturas siguientes.
+- **Cómo:**
+  - **Exámenes:**
+    - El punto de ajuste es la media de 6 tomas antes del vuelo.
+    - La dispersión es la variación biológica dentro de la persona más la variación analítica, ambas publicadas: EFLM Biological Variation Database, leucocitos CVI 11.1 % y glucosa CVI 4.9 %, con CVA = CVI / 2 (Fraser).
+    - Un resultado más allá del valor de cambio de referencia al 99 % (2.58) pide repetir el examen al día siguiente. Solo alerta si la repetición lo confirma, y nunca alerta por un solo resultado.
+    - El comandante usa las 3 tomas reales de OSD-569.
+  - **Normal personal:**
+    - Se juzga con un intervalo de predicción, que combina la t de Student con el factor 1 + 1/n.
+    - La referencia es de 60 días antes del vuelo.
+    - Con menos de 5 lecturas no hay alerta.
+  - **Señales diarias:** alertan cuando 3 de los últimos 4 días pasan de 2.2. Un día común en medio de un cambio real ya no reinicia la cuenta.
+  - **Señales continuas:** se mantiene la regla de 10 lecturas seguidas pasando de 1.5. Ya daba cero falsas alarmas.
+  - **Ánimo:** el valor habitual es la mediana y cuentan pasos enteros. Alerta cuando el ánimo está 2 pasos por debajo en 3 de los últimos 4 días.
+  - **Simulador y guion:**
+    - Los exámenes varían como indica la EFLM.
+    - Los cambios del guion del comandante son clínicamente significativos: glóbulos blancos −3.5 y ánimo −2.2.
+    - En la demo hay exámenes cada 2 días.
+- **Descartado:**
+  - Solo subir los umbrales: bajaba las falsas alarmas, pero dejaba escapar cambios reales (12 de 60 en reacción).
+  - CUSUM: no corregía un normal mal estimado.
+  - Exigir días seguidos: un solo día normal cortaba un cambio real.
+  - Dos repeticiones o el promedio del examen y su repetición: el error que comparten todas las tomas es el del normal, y repetir no lo quita.
+- **Verificación:** `backend/validate_model.py` simula 200 personas sanas durante 90 días, en la nave y en campo, y 200 personas por cada guion de la tripulación. Mide la tasa de falsas alarmas por año-astronauta y la de cambios sin detectar, y falla si no se cumplen las metas. Una muestra menor corre en cada cambio, en `tests/validation`.
+- **Límite:** los números salen de personas simuladas con ruido normal. Los datos reales traen valores atípicos y tendencias que esta prueba no cubre, así que antes de usarlo con personas hay que validarlo con datos reales.

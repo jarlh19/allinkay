@@ -20,11 +20,13 @@ def reading(signal: str, value: float) -> Reading:
 
 def evaluator(bus: EventBus) -> EvaluateHealth:
     baselines = {
-        Signal.SLEEP_HOURS: Baseline.from_values(Signal.SLEEP_HOURS, [7.0, 7.5, 8.0], "t"),
-        Signal.WHITE_BLOOD_CELLS: Baseline.from_values(
+        Signal.SLEEP_HOURS: Baseline.from_values(
+            Signal.SLEEP_HOURS, [7.0, 7.25, 7.5, 7.75, 8.0], "t"
+        ),
+        Signal.WHITE_BLOOD_CELLS: Baseline.from_lab_values(
             Signal.WHITE_BLOOD_CELLS, [5.4, 5.5, 7.0], "OSD-569"
         ),
-        Signal.HEART_RATE: Baseline.from_values(Signal.HEART_RATE, [66, 68, 70], "t"),
+        Signal.HEART_RATE: Baseline.from_values(Signal.HEART_RATE, [66, 67, 68, 69, 70], "t"),
     }
     return EvaluateHealth(baselines, bus)
 
@@ -48,28 +50,30 @@ def test_drifting_signals_publish_explained_alerts_and_a_pattern() -> None:
     queue = bus.subscribe()
     health = evaluator(bus)
 
-    health.on_readings([reading("sleep_hours", 5.17)])
-    health.on_readings([reading("sleep_hours", 5.0)])
-    health.on_readings([reading("white_blood_cells", 4.4)])
+    for night in (5.17, 5.0, 5.1):
+        health.on_readings([reading("sleep_hours", night)])
+    for exam in (3.2, 3.3):  # the exam and its repeat
+        health.on_readings([reading("white_blood_cells", exam)])
 
-    for _ in range(2):
-        queue.get_nowait()
     view = queue.get_nowait()
+    while not queue.empty():
+        view = queue.get_nowait()
     kinds = [a["kind"] for a in view["alerts"]]
     assert kinds.count("outside_normal") == 2
     assert "combined_pattern" in kinds
     pattern = next(a for a in view["alerts"] if a["kind"] == "combined_pattern")
     assert pattern["reference"]["url"].startswith("https://www.nasa.gov/")
     wbc = next(d for d in view["deviations"] if d["signal"] == "white_blood_cells")
-    assert wbc["baseline_source"] == "OSD-569"
+    assert wbc["baseline_source"].startswith("OSD-569; spread: EFLM")
     assert wbc["outside_normal"] is True
+    assert wbc["confirmed"] is True
 
 
 def test_synthetic_preflight_covers_every_signal() -> None:
     baselines = synthetic_preflight_baselines(seed=99, end=NOW)
 
     assert set(baselines) == set(Signal)
-    assert all(b.source == PREFLIGHT_SOURCE for b in baselines.values())
+    assert all(b.source.startswith(PREFLIGHT_SOURCE) for b in baselines.values())
 
 
 def test_evaluation_endpoint_after_a_mission_step() -> None:
@@ -122,10 +126,33 @@ def test_mode_endpoint_switches_the_model() -> None:
     assert client.put("/api/crew/commander/mode", json={"mode": "moon"}).status_code == 422
 
 
-def test_a_single_short_night_waits_for_a_second_day() -> None:
+def test_a_short_night_alerts_after_three_of_the_last_four_nights() -> None:
     health = evaluator(EventBus())
 
     assert health.on_readings([reading("sleep_hours", 5.0)]) == []
-    assert [a.signals for a in health.on_readings([reading("sleep_hours", 5.1)])] == [
+    assert health.on_readings([reading("sleep_hours", 7.4)]) == []
+    assert health.on_readings([reading("sleep_hours", 5.1)]) == []
+    assert [a.signals for a in health.on_readings([reading("sleep_hours", 5.0)])] == [
         (Signal.SLEEP_HOURS,)
     ]
+
+
+def wbc_view(health: EvaluateHealth) -> dict[str, object]:
+    return next(d for d in health.view()["deviations"] if d["signal"] == "white_blood_cells")
+
+
+def test_an_unusual_exam_is_repeated_and_alerts_only_if_the_repeat_agrees() -> None:
+    health = evaluator(EventBus())
+
+    assert health.on_readings([reading("white_blood_cells", 3.2)]) == []
+    assert health.take_repeat_requests() == [Signal.WHITE_BLOOD_CELLS]
+    assert health.take_repeat_requests() == []
+    assert wbc_view(health)["repeat_requested"] is True
+
+    assert health.on_readings([reading("white_blood_cells", 5.9)]) == []
+    assert wbc_view(health)["repeat_requested"] is False
+
+    health.on_readings([reading("white_blood_cells", 3.2)])
+    alerts = health.on_readings([reading("white_blood_cells", 3.1)])
+    assert [a.signals for a in alerts] == [(Signal.WHITE_BLOOD_CELLS,)]
+    assert wbc_view(health)["repeat_requested"] is False

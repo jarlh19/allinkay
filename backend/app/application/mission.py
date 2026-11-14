@@ -13,8 +13,14 @@ from app.application.ingest import IngestReadings
 from app.application.radiation import TrackRadiation
 from app.domain.baseline import Baseline, baselines_from_readings
 from app.domain.readings import Reading, Signal
+from app.ports.sources import ExamScheduler
 
 PREFLIGHT_SOURCE = "pre-flight (synthetic)"
+PREFLIGHT_DAYS = 60
+PREFLIGHT_LAB_DRAWS = 6
+"""Sixty days of daily readings before flight, and six blood draws spread over them."""
+REPEAT_AFTER = timedelta(days=1)
+"""An unusual exam is repeated the next day before it can raise an alert."""
 
 
 class Mission:
@@ -26,6 +32,7 @@ class Mission:
         bus: EventBus,
         forecast: ForecastSleep,
         mission_day: Callable[[datetime], int] | None = None,
+        exams: ExamScheduler | None = None,
     ) -> None:
         self.forecast = forecast
         self.ingest = ingest
@@ -33,6 +40,7 @@ class Mission:
         self.radiation = radiation
         self._bus = bus
         self._mission_day = mission_day
+        self._exams = exams
         self._last_at: datetime | None = None
 
     def clock_view(self) -> dict[str, object]:
@@ -51,15 +59,21 @@ class Mission:
             self.radiation.on_readings(readings)
             self.forecast.on_readings(readings)
             self.evaluate.on_readings(readings, extra=self.radiation.alerts())
+            for signal in self.evaluate.take_repeat_requests():
+                if self._exams is not None:
+                    self._exams.request_exam(signal, at + REPEAT_AFTER)
         return readings
 
 
 def synthetic_preflight_baselines(
-    seed: int, end: datetime, days: int = 14, step: timedelta = timedelta(hours=1)
+    seed: int,
+    end: datetime,
+    days: int = PREFLIGHT_DAYS,
+    step: timedelta = timedelta(hours=1),
 ) -> dict[Signal, Baseline]:
-    """A pre-flight reference period generated with its own seed (no real person's data).
-    Lab exams are taken daily before flight so the reference is reliable."""
-    simulator = Simulator(seed=seed, exam_every=timedelta(days=1))
+    """A pre-flight reference period generated with its own seed (no real person's data):
+    daily and live readings every day, and a few blood draws spread over the period."""
+    simulator = Simulator(seed=seed, exam_every=timedelta(days=days) / PREFLIGHT_LAB_DRAWS)
     start = end - timedelta(days=days)
     readings: list[Reading] = []
     at = start

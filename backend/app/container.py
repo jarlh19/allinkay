@@ -30,7 +30,6 @@ from app.domain.crew import CREW, DEFAULT_CREW_ID, CrewMember
 from app.domain.modes import strategy_for
 from app.domain.radiation import DoseLedger
 from app.domain.readings import Signal
-from app.ports.sources import ReadingSource
 
 Clock = Callable[[], datetime]
 
@@ -109,7 +108,7 @@ def _build_member(
 ) -> tuple[CrewSlot, SqliteReadingRepository]:
     repository = SqliteReadingRepository(settings.db_path, crew=member.id)
     bus = EventBus()
-    source: ReadingSource
+    source: Simulator | RepeatingSource
     if scenario is None:
         source = Simulator(seed=seed)
     else:
@@ -135,5 +134,6 @@ def _build_member(
         bus,
         ForecastSleep(repository, baselines.get(Signal.SLEEP_HOURS), bus),
         mission_day=scenario.mission_day if scenario else None,
+        exams=source,
     )
     return CrewSlot(member=member, mission=mission, repository=repository, bus=bus), repository
