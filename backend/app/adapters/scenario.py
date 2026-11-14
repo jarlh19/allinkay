@@ -50,12 +50,18 @@ class Scenario:
     drifts: tuple[Drift, ...]
     spikes: tuple[Spike, ...]
     exam_every: timedelta
+    cycle_days: float | None = None
 
-    def day(self, at: datetime) -> float:
+    def elapsed_days(self, at: datetime) -> float:
         return (at - self.start) / timedelta(days=1)
 
+    def day(self, at: datetime) -> float:
+        """Day within the script; with a cycle, the script repeats so the demo never ends."""
+        elapsed = self.elapsed_days(at)
+        return elapsed % self.cycle_days if self.cycle_days else elapsed
+
     def mission_day(self, at: datetime) -> int:
-        return self.first_mission_day + int(self.day(at))
+        return self.first_mission_day + int(self.elapsed_days(at))
 
     def offset(self, signal: Signal, at: datetime) -> float:
         day = self.day(at)
@@ -76,6 +82,7 @@ DEMO = Scenario(
     ),
     spikes=(Spike(Signal.DOSE_TODAY, start_day=8, hours=6, offset=118),),
     exam_every=timedelta(days=3),
+    cycle_days=10,
 )
 
 

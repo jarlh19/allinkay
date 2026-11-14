@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: allinkay
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: ALLINKAY_SCENARIO
+        value: demo
+      - key: ALLINKAY_SPEED
+        value: "3600"

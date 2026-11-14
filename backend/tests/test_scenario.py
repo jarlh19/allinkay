@@ -47,3 +47,11 @@ def test_accelerated_clock_starts_at_the_scenario_start() -> None:
     clock = AcceleratedClock(DEMO.start, speed=3600)
 
     assert clock() - DEMO.start < timedelta(minutes=5)
+
+
+def test_demo_script_repeats_every_ten_days() -> None:
+    day_5 = DEMO.start + timedelta(days=5)
+    day_15 = DEMO.start + timedelta(days=15)
+
+    assert DEMO.offset(Signal.SLEEP_HOURS, day_15) == DEMO.offset(Signal.SLEEP_HOURS, day_5)
+    assert DEMO.mission_day(day_15) == 105
