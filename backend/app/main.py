@@ -21,7 +21,7 @@ async def run_live_loop(container: Container) -> None:
     """Pull due readings on a fixed interval. A failed tick is logged and the loop goes on."""
     while True:
         try:
-            container.mission.step(container.clock())
+            container.crew.step(container.clock())
         except Exception:
             logger.exception("Live tick failed")
         await asyncio.sleep(container.settings.tick_seconds)
@@ -41,7 +41,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
                 task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
                     await task
-            container.repository.close()
+            container.close()
 
     app = FastAPI(title="ALLINKAY", version="0.1.0", lifespan=lifespan)
     app.state.container = container

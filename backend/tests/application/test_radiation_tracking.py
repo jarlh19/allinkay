@@ -49,9 +49,9 @@ def test_a_solar_storm_is_an_emergency_with_its_guide() -> None:
 def test_radiation_endpoint() -> None:
     now = START
     app = create_app(Settings(db_path=":memory:", run_live_loop=False), clock=lambda: now)
-    app.state.container.mission.step(now)
+    app.state.container.crew.default.mission.step(now)
 
-    body = TestClient(app).get("/api/radiation").json()
+    body = TestClient(app).get("/api/crew/commander/radiation").json()
 
     assert body["type"] == "radiation"
     assert body["storm_active"] is False

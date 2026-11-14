@@ -53,8 +53,8 @@ def test_demo_forecast_points_below_the_normal_after_sleep_drops() -> None:
     )
     for hour in range(6 * 24):
         now = DEMO.start + timedelta(hours=hour)
-        container.mission.step(now)
+        container.crew.default.mission.step(now)
 
-    view = container.mission.forecast.view()
+    view = container.crew.default.mission.forecast.view()
     assert view["trend_per_night"] < 0
     assert view["points"][-1]["value"] < view["normal_low"]

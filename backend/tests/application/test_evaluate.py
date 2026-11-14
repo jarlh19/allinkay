@@ -74,10 +74,10 @@ def test_synthetic_preflight_covers_every_signal() -> None:
 
 def test_evaluation_endpoint_after_a_mission_step() -> None:
     app = create_app(Settings(db_path=":memory:", run_live_loop=False), clock=lambda: NOW)
-    app.state.container.mission.step(NOW)
+    app.state.container.crew.step(NOW)
     client = TestClient(app)
 
-    body = client.get("/api/evaluation").json()
+    body = client.get("/api/crew/commander/evaluation").json()
 
     assert body["type"] == "evaluation"
     assert len(body["deviations"]) == 16
@@ -115,9 +115,11 @@ def test_mode_endpoint_switches_the_model() -> None:
     app = create_app(Settings(db_path=":memory:", run_live_loop=False), clock=lambda: NOW)
     client = TestClient(app)
 
-    assert client.get("/api/mode").json() == {"mode": "ship"}
-    assert client.put("/api/mode", json={"mode": "field"}).json() == {"mode": "field"}
-    assert client.put("/api/mode", json={"mode": "moon"}).status_code == 422
+    assert client.get("/api/crew/commander/mode").json() == {"mode": "ship"}
+    assert client.put("/api/crew/commander/mode", json={"mode": "field"}).json() == {
+        "mode": "field"
+    }
+    assert client.put("/api/crew/commander/mode", json={"mode": "moon"}).status_code == 422
 
 
 def test_a_single_short_night_waits_for_a_second_day() -> None:

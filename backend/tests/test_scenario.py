@@ -16,8 +16,8 @@ def first_hour_of_each_alert(days: int = 9) -> dict[str, float]:
     seen: dict[str, float] = {}
     for hour in range(days * 24):
         now = DEMO.start + timedelta(hours=hour)
-        container.mission.step(now)
-        for alert in container.evaluate.view()["alerts"]:
+        container.crew.default.mission.step(now)
+        for alert in container.crew.default.mission.evaluate.view()["alerts"]:
             seen.setdefault(alert["kind"], hour / 24)
     return seen
 
@@ -62,9 +62,9 @@ def test_mission_publishes_the_mission_day() -> None:
     container = Container.build(
         Settings(db_path=":memory:", run_live_loop=False), clock=lambda: now, scenario=DEMO
     )
-    queue = container.bus.subscribe()
+    queue = container.crew.default.bus.subscribe()
 
-    container.mission.step(now)
+    container.crew.default.mission.step(now)
 
     clock = queue.get_nowait()
     assert clock == {"type": "clock", "at": now.isoformat(), "mission_day": 93}

@@ -71,3 +71,16 @@ Cada entrada dice el problema, lo elegido, las alternativas descartadas y por qu
   - Se duerme tras 15 minutos sin tráfico; la primera visita tarda unos 30 a 60 segundos.
   - El disco no es persistente: los datos guardados se pierden al reiniciar. Por eso los reportes de las testers no pueden depender solo de SQLite.
 - **Cambio sobre D-006:** las testers usan la URL publicada en vez de la laptop.
+
+## D-010 · Varios tripulantes: una misión por persona
+
+- **Problema:** con un solo tripulante, quien estaba en la nave y quien salía a campo compartían el mismo normal, las mismas alertas y el mismo modo. Además, todas las personas que abrían la web cambiaban el modo de todas.
+- **Elegido:**
+  - Un registro de la tripulación (`Crew`). Cada persona tiene su propia misión: sus lecturas, su normal, su modelo (nave o campo), su dosis acumulada y su canal en vivo.
+  - Las rutas llevan el id de la persona: `/api/crew/{id}/…` y `/ws/crew/{id}/live`. Además, `/api/crew` da el resumen de todas.
+  - La tabla de lecturas suma una columna `crew`, como cambio aditivo. Las filas anteriores pasan al comandante.
+  - En la demo, cada vuelta del guion repite exactamente la primera. Así, lo que ven las testers es lo mismo que se comprobó en las pruebas.
+- **Descartado:**
+  - Un solo canal con eventos etiquetados por persona: cada navegador recibiría las lecturas de todos, el triple de datos por una conexión lenta.
+  - Varios procesos, uno por persona: complica Render (D-009) sin ganar nada en la demo.
+- **Por qué:** cada persona se evalúa contra su propio normal, que es la idea central del proyecto. Cambiar el modo de una no toca a las demás. El navegador solo recibe a quien está mirando.

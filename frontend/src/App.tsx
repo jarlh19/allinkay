@@ -14,8 +14,10 @@ import { I18nProvider, useI18n } from "./i18n/i18n";
 
 const MARS_MAX_DELAY_MIN = 22;
 
-async function changeMode(mode: Mode): Promise<void> {
-  const response = await fetch("/api/mode", {
+const DEFAULT_CREW_ID = "commander";
+
+async function changeMode(crewId: string, mode: Mode): Promise<void> {
+  const response = await fetch(`/api/crew/${encodeURIComponent(crewId)}/mode`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ mode }),
@@ -76,7 +78,7 @@ export function Dashboard({ state }: { state: LiveState }) {
           focused={focused}
           onFocus={focus}
           onMode={(mode) => {
-            changeMode(mode).catch((error: unknown) => console.error(error));
+            changeMode(DEFAULT_CREW_ID, mode).catch((error: unknown) => console.error(error));
           }}
         />
         {(Object.keys(SYSTEM_SIGNALS) as (keyof typeof SYSTEM_SIGNALS)[]).map((system) => (
@@ -99,7 +101,7 @@ export function Dashboard({ state }: { state: LiveState }) {
 }
 
 function LiveDashboard() {
-  const state = useLive();
+  const state = useLive(DEFAULT_CREW_ID);
   return <Dashboard state={state} />;
 }
 
