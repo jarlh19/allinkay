@@ -80,6 +80,7 @@ Cada entrada dice el problema, lo elegido, las alternativas descartadas y por qu
   - Las rutas llevan el id de la persona: `/api/crew/{id}/…` y `/ws/crew/{id}/live`. Además, `/api/crew` da el resumen de todas.
   - La tabla de lecturas suma una columna `crew`, como cambio aditivo. Las filas anteriores pasan al comandante.
   - En la demo, cada vuelta del guion repite exactamente la primera. Así, lo que ven las testers es lo mismo que se comprobó en las pruebas.
+  - El reloj de la demo avanza un paso exacto por tick, sin depender del tiempo real del servidor. Sin eso, una demora de milisegundos corría la secuencia simulada y aparecían alertas por ruido que las pruebas no veían.
 - **Descartado:**
   - Un solo canal con eventos etiquetados por persona: cada navegador recibiría las lecturas de todos, el triple de datos por una conexión lenta.
   - Varios procesos, uno por persona: complica Render (D-009) sin ganar nada en la demo.

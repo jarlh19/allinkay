@@ -155,3 +155,12 @@ def test_live_channel_of_an_unknown_member_is_refused() -> None:
         client.websocket_connect("/ws/crew/pilot/live") as ws,
     ):
         ws.receive_json()
+
+
+def test_the_deployed_demo_advances_exactly_one_step_per_tick() -> None:
+    settings = Settings(db_path=":memory:", run_live_loop=False, scenario="demo", speed=3600)
+    container = Container.build(settings)
+
+    ticks = [container.clock() for _ in range(3)]
+
+    assert ticks == [DEMO.start + timedelta(hours=n) for n in range(3)]

@@ -6,7 +6,6 @@ warning, then a combined pattern across systems, then a solar storm emergency.
 
 from __future__ import annotations
 
-import time
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
@@ -129,14 +128,20 @@ class RepeatingSource:
         return self._source.read(at)
 
 
-class AcceleratedClock:
-    """Mission time that runs `speed` times faster than real time, from the scenario start."""
+class SteppingClock:
+    """Mission time for the live loop: every call is one tick and moves exactly one step.
 
-    def __init__(self, start: datetime, speed: float) -> None:
+    Real time never leaks into the readings, so the deployed demo takes the same readings at
+    the same moments as the tests, however busy the server is."""
+
+    def __init__(self, start: datetime, step: timedelta) -> None:
+        if step <= timedelta(0):
+            raise ValueError("The clock step must be positive")
         self._start = start
-        self._speed = speed
-        self._real_start = time.monotonic()
+        self._step = step
+        self._ticks = 0
 
     def __call__(self) -> datetime:
-        elapsed = time.monotonic() - self._real_start
-        return self._start + timedelta(seconds=elapsed * self._speed)
+        at = self._start + self._ticks * self._step
+        self._ticks += 1
+        return at

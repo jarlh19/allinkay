@@ -2,7 +2,7 @@ from datetime import timedelta
 
 import pytest
 
-from app.adapters.scenario import DEMO, AcceleratedClock
+from app.adapters.scenario import DEMO, SteppingClock
 from app.config import Settings
 from app.container import Container
 from app.domain.readings import Signal
@@ -43,10 +43,12 @@ def test_scenario_offsets_and_mission_day() -> None:
     assert DEMO.mission_day(at_day_5) == 95
 
 
-def test_accelerated_clock_starts_at_the_scenario_start() -> None:
-    clock = AcceleratedClock(DEMO.start, speed=3600)
+def test_stepping_clock_starts_at_the_scenario_start_and_needs_a_positive_step() -> None:
+    clock = SteppingClock(DEMO.start, timedelta(hours=4))
 
-    assert clock() - DEMO.start < timedelta(minutes=5)
+    assert [clock(), clock()] == [DEMO.start, DEMO.start + timedelta(hours=4)]
+    with pytest.raises(ValueError):
+        SteppingClock(DEMO.start, timedelta(0))
 
 
 def test_demo_script_repeats_every_ten_days() -> None:

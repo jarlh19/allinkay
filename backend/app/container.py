@@ -4,16 +4,16 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from app.adapters.osdr_csv import load_wbc_baseline
 from app.adapters.report_sinks import FallbackSink, GitHubIssueSink, SqliteReportSink
 from app.adapters.scenario import (
     CREW_SCENARIOS,
     DEMO,
-    AcceleratedClock,
     RepeatingSource,
     Scenario,
+    SteppingClock,
 )
 from app.adapters.simulator import DEFAULT_PROFILES, Simulator
 from app.adapters.sqlite_repo import SqliteReadingRepository
@@ -63,7 +63,8 @@ class Container:
         if scenario is None and settings.scenario == DEMO.name:
             scenario = DEMO
         if clock is None:
-            clock = AcceleratedClock(scenario.start, settings.speed) if scenario else utc_now
+            step = timedelta(seconds=settings.tick_seconds * settings.speed)
+            clock = SteppingClock(scenario.start, step) if scenario else utc_now
         start = scenario.start if scenario else clock()
         slots: list[CrewSlot] = []
         repositories: list[SqliteReadingRepository] = []
