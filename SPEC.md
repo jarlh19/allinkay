@@ -58,7 +58,7 @@ Orden de construcción: `domain` → `storage` → `ingestion` (simulador) → `
 Backend, preparar:  python -m venv backend/.venv
                     backend/.venv/Scripts/python -m pip install -r backend/requirements-dev.lock
                     (requirements.lock = solo producción; requirements-dev.lock = producción + pruebas y lint)
-Backend, correr:    backend/.venv/Scripts/python -m uvicorn app.main:app --app-dir backend --port 8000
+Backend, correr:    backend/.venv/Scripts/python -m uvicorn app.main:create_app --factory --app-dir backend --port 8000
 Backend, lint:      backend/.venv/Scripts/python -m ruff check backend
 Backend, pruebas:   backend/.venv/Scripts/python -m pytest backend/tests -q
 Frontend:           npm ci --prefix frontend
