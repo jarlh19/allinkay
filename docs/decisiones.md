@@ -57,3 +57,17 @@ Cada entrada dice el problema, lo elegido, las alternativas descartadas y por qu
 - **Elegido:** el código, los identificadores, los commits y el README van en inglés. La interfaz carga en inglés y se puede cambiar a español. Los documentos de trabajo en español (SPEC y decisiones) pasan al inglés antes de hacer público el repo.
 - **Descartado:** todo en español, y traducir la interfaz solo al final.
 - **Por qué:** cumple la regla sin dejar a las testers sin una interfaz en su idioma.
+
+## D-009 · Publicar la app en Render como un solo servicio
+
+- **Problema:** las testers prueban la app desde su propio navegador, no en la laptop de Jorge.
+- **Elegido:** un solo servicio web en Render (plan gratis) con una imagen Docker: el frontend compilado lo sirve el mismo FastAPI. Se despliega solo con cada cambio en `main`.
+- **Descartado:**
+  - Hugging Face Spaces: el código del Space queda público antes de tiempo.
+  - Frontend y backend en servicios separados: dos despliegues y CORS.
+  - Solo en la laptop: las testers no podrían usarla desde sus navegadores.
+- **Por qué:** cuesta USD 0 y admite WebSocket. Un solo servicio simplifica la demo y la seguridad (mismo origen, sin CORS).
+- **Límites del plan gratis:**
+  - Se duerme tras 15 minutos sin tráfico; la primera visita tarda unos 30 a 60 segundos.
+  - El disco no es persistente: los datos guardados se pierden al reiniciar. Por eso los reportes de las testers no pueden depender solo de SQLite.
+- **Cambio sobre D-006:** las testers usan la URL publicada en vez de la laptop.

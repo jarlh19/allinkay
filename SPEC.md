@@ -48,15 +48,16 @@ Orden de construcción: `domain` → `storage` → `ingestion` (simulador) → `
 
 ## Stack
 
-- **Backend:** Python 3.12 o 3.13, FastAPI, Pydantic 2, NumPy, scikit-learn (Isolation Forest para el modelo completo), SQLite (módulo estándar `sqlite3`), Uvicorn. Versiones fijas en `backend/requirements.lock`.
+- **Backend:** Python 3.12 o 3.13, FastAPI, Pydantic 2, NumPy, scikit-learn (Isolation Forest para el modelo completo), SQLite (módulo estándar `sqlite3`), Uvicorn. Versiones fijas en `backend/requirements.lock` (producción) y `backend/requirements-dev.lock` (desarrollo). Pruebas de API con httpx2, el cliente que recomienda Starlette.
 - **Frontend:** React 19, Vite, TypeScript estricto, ECharts 5.5.1 (copia local, ya verificada), fuentes IBM Plex locales. `package-lock.json` en el repo.
-- **Calidad:** Ruff (lint y formato), pytest, ESLint, Vitest y Testing Library, gitleaks.
+- **Calidad:** Ruff (lint y formato), pytest, ESLint, Vitest y Testing Library, gitleaks. CI en GitHub Actions (`.github/workflows/ci.yml`) que corre `scripts/verify.py` y `npm audit`, con las acciones fijadas por hash.
 
 ## Comandos
 
 ```
 Backend, preparar:  python -m venv backend/.venv
-                    backend/.venv/Scripts/python -m pip install -r backend/requirements.lock
+                    backend/.venv/Scripts/python -m pip install -r backend/requirements-dev.lock
+                    (requirements.lock = solo producción; requirements-dev.lock = producción + pruebas y lint)
 Backend, correr:    backend/.venv/Scripts/python -m uvicorn app.main:app --app-dir backend --port 8000
 Backend, lint:      backend/.venv/Scripts/python -m ruff check backend
 Backend, pruebas:   backend/.venv/Scripts/python -m pytest backend/tests -q
@@ -149,13 +150,14 @@ class Deviation:
 7. El escenario de demo (misión acelerada con semilla) es repetible: muestra primero la alerta temprana y luego la emergencia.
 8. La interfaz carga en inglés y cambia a español.
 9. La línea base de glóbulos blancos sale del CSV de OSD-569, con la cita visible en la pantalla.
-10. Geraldine y Aranza, usando la app como astronautas, pueden enviar un reporte con «Reportar un problema». El reporte queda guardado con su contexto y se puede exportar para crear el issue.
+10. La app está publicada en una URL de Render y se actualiza sola con cada cambio en `main` (D-009).
+11. Geraldine y Aranza, usando la app como astronautas desde su navegador, pueden enviar un reporte con «Reportar un problema». El reporte queda guardado con su contexto y se puede exportar para crear el issue.
 
 ## Fuera de alcance
 
 - **Diagnóstico médico real:** es apoyo a la decisión.
 - **Login, cuentas y varios tripulantes a la vez.**
-- **Despliegue en la nube y app móvil.**
+- **App móvil.** La web publicada funciona en el navegador del celular.
 - **Datos de personas reales.** Los datos de Aranza solo sirven para calibrar rangos, sin guardarse en el repo.
 - **Sensores reales.** Se trabaja con datos sintéticos (D-005). La interfaz del adaptador queda lista para cuando Aranza confirme.
 - **Acceso de las testers al repositorio.** Prueban como usuarias externas (D-006).
@@ -174,8 +176,9 @@ En `docs/decisiones.md`:
 - D-006: testers como usuarias externas con reporte dentro de la app.
 - D-007: licencia Apache 2.0.
 - D-008: idioma.
+- D-009: publicación en Render como un solo servicio.
 
 ## Preguntas abiertas
 
 1. **Los sensores de Aranza:** cuáles son y cómo se conectan. Cuando ella confirme, se agrega su adaptador sin tocar el dominio.
-2. **Cómo usan la app las testers:** en la laptop de Jorge en la sede, o abriéndola desde sus celulares por el punto de acceso de Jorge. Lo segundo exige permitir el puerto en el firewall solo para la red del celular. Responde Jorge.
+2. **Cuenta de Render:** Jorge la crea entrando con GitHub y le da acceso solo al repositorio `allinkay` (D-009).
