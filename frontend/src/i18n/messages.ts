@@ -1,6 +1,10 @@
 const en = {
-  "app.subtitle": "Crew member 1 · Mission day {day}",
-  "app.subtitleNoDay": "Crew member 1",
+  "app.subtitle": "{role} · Mission day {day}",
+  "app.subtitleNoDay": "{role}",
+  "crew.title": "Crew",
+  "crew.commander": "Commander",
+  "crew.engineer": "Flight engineer",
+  "crew.scientist": "Mission scientist",
   "app.lastReading": "Last reading {time}",
   "pill.earth": "Earth link: up to {delay} min delay",
   "pill.simulated": "Simulated data",
@@ -149,8 +153,12 @@ const en = {
 export type MessageKey = keyof typeof en;
 
 const es: Record<MessageKey, string> = {
-  "app.subtitle": "Tripulante 1 · Misión, día {day}",
-  "app.subtitleNoDay": "Tripulante 1",
+  "app.subtitle": "{role} · Misión, día {day}",
+  "app.subtitleNoDay": "{role}",
+  "crew.title": "Tripulación",
+  "crew.commander": "Comandante",
+  "crew.engineer": "Especialista de vuelo",
+  "crew.scientist": "Especialista en ciencia",
   "app.lastReading": "Última lectura {time}",
   "pill.earth": "Enlace con la Tierra: hasta {delay} min de demora",
   "pill.simulated": "Datos simulados",

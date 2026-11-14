@@ -2,7 +2,7 @@ from datetime import timedelta
 
 import pytest
 
-from app.adapters.scenario import DEMO, AcceleratedClock
+from app.adapters.scenario import DEMO, SteppingClock
 from app.config import Settings
 from app.container import Container
 from app.domain.readings import Signal
@@ -16,8 +16,8 @@ def first_hour_of_each_alert(days: int = 9) -> dict[str, float]:
     seen: dict[str, float] = {}
     for hour in range(days * 24):
         now = DEMO.start + timedelta(hours=hour)
-        container.mission.step(now)
-        for alert in container.evaluate.view()["alerts"]:
+        container.crew.default.mission.step(now)
+        for alert in container.crew.default.mission.evaluate.view()["alerts"]:
             seen.setdefault(alert["kind"], hour / 24)
     return seen
 
@@ -43,10 +43,12 @@ def test_scenario_offsets_and_mission_day() -> None:
     assert DEMO.mission_day(at_day_5) == 95
 
 
-def test_accelerated_clock_starts_at_the_scenario_start() -> None:
-    clock = AcceleratedClock(DEMO.start, speed=3600)
+def test_stepping_clock_starts_at_the_scenario_start_and_needs_a_positive_step() -> None:
+    clock = SteppingClock(DEMO.start, timedelta(hours=4))
 
-    assert clock() - DEMO.start < timedelta(minutes=5)
+    assert [clock(), clock()] == [DEMO.start, DEMO.start + timedelta(hours=4)]
+    with pytest.raises(ValueError):
+        SteppingClock(DEMO.start, timedelta(0))
 
 
 def test_demo_script_repeats_every_ten_days() -> None:
@@ -62,9 +64,9 @@ def test_mission_publishes_the_mission_day() -> None:
     container = Container.build(
         Settings(db_path=":memory:", run_live_loop=False), clock=lambda: now, scenario=DEMO
     )
-    queue = container.bus.subscribe()
+    queue = container.crew.default.bus.subscribe()
 
-    container.mission.step(now)
+    container.crew.default.mission.step(now)
 
     clock = queue.get_nowait()
     assert clock == {"type": "clock", "at": now.isoformat(), "mission_day": 93}

@@ -16,15 +16,15 @@ def quiet_app() -> FastAPI:
 def test_snapshot_is_empty_before_any_tick() -> None:
     client = TestClient(quiet_app())
 
-    assert client.get("/api/snapshot").json() == {"readings": []}
+    assert client.get("/api/crew/commander/snapshot").json() == {"readings": []}
 
 
 def test_snapshot_returns_every_signal_after_the_first_tick() -> None:
     app = quiet_app()
-    app.state.container.mission.step(NOW)
+    app.state.container.crew.step(NOW)
     client = TestClient(app)
 
-    readings = client.get("/api/snapshot").json()["readings"]
+    readings = client.get("/api/crew/commander/snapshot").json()["readings"]
 
     assert len(readings) == 16
     heart = next(r for r in readings if r["signal"] == "heart_rate")
@@ -36,19 +36,22 @@ def test_snapshot_returns_every_signal_after_the_first_tick() -> None:
 def test_history_of_an_unknown_signal_is_404() -> None:
     client = TestClient(quiet_app())
 
-    assert client.get("/api/history/blood_sugar").status_code == 404
+    assert client.get("/api/crew/commander/history/blood_sugar").status_code == 404
 
 
 def test_history_rejects_an_out_of_range_limit() -> None:
     client = TestClient(quiet_app())
 
-    assert client.get("/api/history/heart_rate?limit=0").status_code == 422
+    assert client.get("/api/crew/commander/history/heart_rate?limit=0").status_code == 422
 
 
 def test_websocket_sends_a_snapshot_then_live_readings() -> None:
     app = create_app(Settings(db_path=":memory:", tick_seconds=0.01, run_live_loop=True))
 
-    with TestClient(app) as client, client.websocket_connect("/ws/live") as websocket:
+    with (
+        TestClient(app) as client,
+        client.websocket_connect("/ws/crew/commander/live") as websocket,
+    ):
         first = websocket.receive_json()
         assert first["type"] == "snapshot"
         event = websocket.receive_json()

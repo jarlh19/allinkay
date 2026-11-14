@@ -6,7 +6,7 @@
 
 Una aplicación que el astronauta usa a bordo, sin depender de la Tierra, para entender a tiempo cómo los cambios en su salud afectan su rendimiento y qué hacer al respecto. Responde a la problemática del equipo (`problematica.md`) y al reto «Create Health Monitoring Software for Astronauts on Space Missions».
 
-**Quién la usa:** un tripulante en una misión larga, en la nave o en campo (caminata o superficie). En la demo, «Tripulante 1».
+**Quién la usa:** un tripulante en una misión larga, en la nave o en campo (caminata o superficie). En la demo, una tripulación simulada de tres personas: comandante y especialista en ciencia en la nave, y especialista de vuelo en campo (D-010).
 
 **Qué la hace distinta:**
 - Compara cada señal con **el normal de la persona**, no con un rango general.
@@ -178,6 +178,7 @@ En `docs/decisiones.md`:
 - D-007: licencia Apache 2.0.
 - D-008: idioma.
 - D-009: publicación en Render como un solo servicio.
+- D-010: varios tripulantes, una misión por persona.
 
 ## Preguntas abiertas
 

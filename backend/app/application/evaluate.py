@@ -41,6 +41,10 @@ class EvaluateHealth:
         self._baselines[baseline.signal] = baseline
 
     @property
+    def alerts(self) -> list[Alert]:
+        return list(self._alerts)
+
+    @property
     def mode(self) -> Mode:
         return self._strategy.mode
 

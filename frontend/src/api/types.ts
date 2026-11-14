@@ -85,10 +85,26 @@ export interface Forecast {
   method: string;
 }
 
+export type CrewStatus = "normal" | "attention" | "emergency";
+
+export interface CrewMemberSummary {
+  id: string;
+  role: string;
+  mode: Mode;
+  status: CrewStatus;
+  alerts: number;
+}
+
+export interface CrewSummary {
+  type: "crew";
+  members: CrewMemberSummary[];
+}
+
 export type LiveEvent =
   | { type: "snapshot"; readings: Reading[] }
   | { type: "readings"; at: string; readings: Reading[] }
   | Evaluation
   | Radiation
   | Clock
-  | Forecast;
+  | Forecast
+  | CrewSummary;
