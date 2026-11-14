@@ -115,6 +115,7 @@ button { font: inherit; color: inherit; }
 .dev .z.warn { color: var(--warn); }
 .scale { display: grid; grid-template-columns: 150px 1fr 48px; gap: 10px; font-size: 11px; color: var(--text-3); }
 .scale span:nth-child(2) { display: flex; justify-content: space-between; }
+.model-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 22px; }
 .source { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px; color: var(--text-3); }
 
 .cols3 { display: grid; grid-template-columns: 1.2fr 0.85fr 1.3fr; }
@@ -133,7 +134,7 @@ button { font: inherit; color: inherit; }
 @media (max-width: 1000px) {
   .grid { grid-template-columns: 1fr; }
   .body-panel, .span2, .wide { grid-row: auto; grid-column: auto; }
-  .cols3 { grid-template-columns: 1fr; gap: 16px; }
+  .cols3, .model-grid { grid-template-columns: 1fr; gap: 16px; }
   .cols3 > div { padding: 0; border-left: 0; }
 }
 

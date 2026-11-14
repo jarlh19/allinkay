@@ -77,7 +77,7 @@ export function Dashboard({ state }: { state: LiveState }) {
             focused={focused === system}
           />
         ))}
-        <ModelPanel evaluation={evaluation} focused={focused === "model"} />
+        <ModelPanel evaluation={evaluation} forecast={state.forecast} focused={focused === "model"} />
         <RadiationPanel radiation={radiation} focused={focused === "radiation"} />
         <ActionsPanel evaluation={evaluation} />
       </div>

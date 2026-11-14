@@ -1,4 +1,4 @@
-import type { Clock, Evaluation, LiveEvent, Radiation, Reading, System } from "./types";
+import type { Clock, Evaluation, Forecast, LiveEvent, Radiation, Reading, System } from "./types";
 
 export const HISTORY_LENGTH = 24;
 
@@ -8,6 +8,7 @@ export interface LiveState {
   evaluation: Evaluation | null;
   radiation: Radiation | null;
   clock: Clock | null;
+  forecast: Forecast | null;
   connected: boolean;
 }
 
@@ -17,6 +18,7 @@ export const initialState: LiveState = {
   evaluation: null,
   radiation: null,
   clock: null,
+  forecast: null,
   connected: false,
 };
 
@@ -49,6 +51,8 @@ export function reduce(state: LiveState, action: Action): LiveState {
       return { ...state, radiation: event };
     case "clock":
       return { ...state, clock: event };
+    case "forecast":
+      return { ...state, forecast: event };
   }
 }
 
