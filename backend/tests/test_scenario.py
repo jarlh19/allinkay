@@ -55,3 +55,16 @@ def test_demo_script_repeats_every_ten_days() -> None:
 
     assert DEMO.offset(Signal.SLEEP_HOURS, day_15) == DEMO.offset(Signal.SLEEP_HOURS, day_5)
     assert DEMO.mission_day(day_15) == 105
+
+
+def test_mission_publishes_the_mission_day() -> None:
+    now = DEMO.start + timedelta(days=3, hours=2)
+    container = Container.build(
+        Settings(db_path=":memory:", run_live_loop=False), clock=lambda: now, scenario=DEMO
+    )
+    queue = container.bus.subscribe()
+
+    container.mission.step(now)
+
+    clock = queue.get_nowait()
+    assert clock == {"type": "clock", "at": now.isoformat(), "mission_day": 93}

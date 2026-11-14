@@ -76,6 +76,7 @@ async def live(websocket: WebSocket) -> None:
         )
         await websocket.send_json(container.evaluate.view())
         await websocket.send_json(container.radiation.view())
+        await websocket.send_json(container.mission.clock_view())
         while True:
             event = await queue.get()
             await websocket.send_json(event)
