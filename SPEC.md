@@ -24,6 +24,7 @@ Una aplicación que el astronauta usa a bordo, sin depender de la Tierra, para e
 6. Puedo pasar del modo «en la nave» al modo «en campo». En campo, el modelo es más liviano.
 7. El feedback de la Tierra aparece cuando llega, con la demora visible, y el modelo lo integra.
 8. Si algo falla o no se entiende, lo reporto desde la misma app con «Reportar un problema».
+9. Con varios tripulantes, cada uno tiene su propio normal, sus alertas y su ubicación: uno puede estar en la nave y otro en campo a la vez, y veo de un vistazo quién está dónde y cómo está (cambio de alcance aprobado por Jorge el 14 de noviembre de 2026).
 
 ## Mapa de módulos (monolito modular, arquitectura hexagonal)
 
@@ -156,7 +157,7 @@ class Deviation:
 ## Fuera de alcance
 
 - **Diagnóstico médico real:** es apoyo a la decisión.
-- **Login, cuentas y varios tripulantes a la vez.**
+- **Login y cuentas.**
 - **App móvil.** La web publicada funciona en el navegador del celular.
 - **Datos de personas reales.** Los datos de Aranza solo sirven para calibrar rangos, sin guardarse en el repo.
 - **Sensores reales.** Se trabaja con datos sintéticos (D-005). La interfaz del adaptador queda lista para cuando Aranza confirme.
