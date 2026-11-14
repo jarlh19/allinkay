@@ -6,15 +6,20 @@ import { signalKey } from "./signals";
 const MAX_ROWS = 7;
 const SCALE = 3;
 
+type Translate = ReturnType<typeof useI18n>["t"];
+
+export function alertTitle(alert: Alert, t: Translate): string {
+  if (alert.kind === "combined_pattern") {
+    const names = alert.signals.map((s) => t(signalKey(s)).toLowerCase());
+    return t("alert.combined_pattern", { signals: names.join(", ") });
+  }
+  if (alert.kind === "solar_storm") return t("alert.solar_storm");
+  return t("alert.outside_normal", { signal: t(signalKey(alert.signals[0] ?? "")) });
+}
+
 export function AlertCard({ alert }: { alert: Alert }) {
   const { t } = useI18n();
-  const names = alert.signals.map((s) => t(signalKey(s)).toLowerCase());
-  const title =
-    alert.kind === "combined_pattern"
-      ? t("alert.combined_pattern", { signals: names.join(", ") })
-      : alert.kind === "solar_storm"
-        ? t("alert.solar_storm")
-        : t("alert.outside_normal", { signal: t(signalKey(alert.signals[0] ?? "")) });
+  const title = alertTitle(alert, t);
   const action = t(alert.action as Parameters<typeof t>[0]);
   return (
     <div className={`alert${alert.level === "emergency" ? " crit" : ""}`} role="status">

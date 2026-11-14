@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { overallStatus, systemStatus, type LiveState, type SystemStatus } from "./api/liveState";
+import type { LiveState, SystemStatus } from "./api/liveState";
 import type { Mode } from "./api/types";
 import { useLive } from "./api/useLive";
 import { ActionsPanel } from "./features/ActionsPanel";
@@ -11,7 +11,9 @@ import { AlertCard, ModelPanel } from "./features/ModelPanel";
 import { RadiationPanel } from "./features/RadiationPanel";
 import { ReportDialog, type Screen } from "./features/ReportDialog";
 import { SYSTEM_SIGNALS, systemKey } from "./features/signals";
-import { StatusColumn, type Target } from "./features/StatusColumn";
+import { ModelAnalysis } from "./features/ModelAnalysis";
+import { StatusColumn } from "./features/StatusColumn";
+import { targetStatus, type Target } from "./features/statusSummary";
 import { StatusChip } from "./features/StatusChip";
 import { SystemPanel } from "./features/SystemPanel";
 import { I18nProvider, useI18n } from "./i18n/i18n";
@@ -43,7 +45,9 @@ interface DashboardProps {
 export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
   const { t, language, setLanguage } = useI18n();
   const roleLabel = useRoleLabel();
-  const role = roleLabel(state.crew.find((member) => member.id === crewId)?.role ?? crewId);
+  const member = state.crew.find((m) => m.id === crewId);
+  const memberNumber = Math.max(state.crew.findIndex((m) => m.id === crewId), 0) + 1;
+  const role = roleLabel(member?.role ?? crewId);
   const [focused, setFocused] = useState<Target | null>(null);
   const [opened, setOpened] = useState<Partial<Record<Detail, boolean>>>({});
   const [reporting, setReporting] = useState(false);
@@ -52,12 +56,8 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
   const time = clock?.at ? new Date(clock.at).toISOString().slice(11, 16) : null;
 
   const storm = radiation?.storm_active ?? false;
-  const statusOf = (detail: Detail): SystemStatus | null => {
-    if (detail === "actions") return null;
-    if (detail === "model") return overallStatus(evaluation);
-    if (detail === "radiation" && storm) return "crit";
-    return systemStatus(evaluation, detail);
-  };
+  const statusOf = (detail: Detail): SystemStatus | null =>
+    detail === "actions" ? null : targetStatus(detail, evaluation, radiation);
   // A section with an alert opens by itself until the person opens or closes it by hand.
   const isOpen = (detail: Detail) => opened[detail] ?? (detail === "model" || (statusOf(detail) ?? "ok") !== "ok");
   const toggle = (detail: Detail) => setOpened((current) => ({ ...current, [detail]: !isOpen(detail) }));
@@ -136,10 +136,16 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
         <AlertCard key={`emergency-${i}`} alert={alert} />
       ))}
       <div className="layout">
-        <StatusColumn evaluation={evaluation} radiation={radiation} focused={focused} onFocus={focus} />
+        <StatusColumn
+          evaluation={evaluation}
+          radiation={radiation}
+          member={member}
+          memberNumber={memberNumber}
+          connected={state.connected}
+        />
         <BodyPanel
           evaluation={evaluation}
-          stormActive={storm}
+          radiation={radiation}
           focused={focused}
           onFocus={focus}
           onMode={(mode) => {
@@ -147,6 +153,7 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
           }}
         />
         <div className="details" role="group" aria-label={t("details.title")}>
+          <ModelAnalysis evaluation={evaluation} radiation={radiation} onOpen={() => focus("model")} />
           {DETAILS.map((detail) => (
             <DetailSection
               key={detail}

@@ -1,27 +1,67 @@
-import { systemStatus, type SystemStatus } from "../api/liveState";
-import type { Evaluation, Mode, System } from "../api/types";
+import type { SystemStatus } from "../api/liveState";
+import type { Evaluation, Mode, Radiation, System } from "../api/types";
 import { useI18n } from "../i18n/i18n";
+import { Ring } from "./Ring";
+import { systemKey } from "./signals";
+import { StatusChip } from "./StatusChip";
+import { inNormal, targetShare, targetStatus, type Target } from "./statusSummary";
+
+/** Rings on each side of the figure, top to bottom in the order of the zone they point to. */
+const LEFT: Target[] = ["neurological", "model", "immune"];
+const RIGHT: Target[] = ["cardiovascular", "radiation", "environment"];
 
 const COLOR: Record<SystemStatus, string> = { ok: "#6fa3d8", warn: "#e3a33b", crit: "#ef5b5b" };
 
 interface Props {
   evaluation: Evaluation | null;
-  stormActive: boolean;
-  focused: System | "model" | null;
-  onFocus: (target: System | "model") => void;
+  radiation: Radiation | null;
+  focused: Target | null;
+  onFocus: (target: Target) => void;
   onMode: (mode: Mode) => void;
 }
 
-export function BodyPanel({ evaluation, stormActive, focused, onFocus, onMode }: Props) {
+export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: Props) {
   const { t } = useI18n();
-  const status = (system: System): SystemStatus =>
-    system === "radiation" && stormActive ? "crit" : systemStatus(evaluation, system);
+  const status = (system: System): SystemStatus => targetStatus(system, evaluation, radiation);
+
+  const gauge = (target: Target, side: "left" | "right") => {
+    const share = targetShare(target, evaluation, radiation);
+    const { n, total } = inNormal(evaluation, target);
+    const summary =
+      target === "radiation" && radiation
+        ? t("summary.dose", { percent: Math.round(radiation.career_fraction * 100) })
+        : total === 0
+          ? t("summary.waiting")
+          : t("summary.inNormal", { n, total });
+    return (
+      <li key={target}>
+        <button
+          type="button"
+          className={`gauge ${side}`}
+          aria-current={focused === target ? "true" : undefined}
+          aria-controls={`panel-${target}`}
+          onClick={() => onFocus(target)}
+        >
+          <Ring share={share} status={targetStatus(target, evaluation, radiation)} size={52}>
+            {Math.round(share * 100)}%
+          </Ring>
+          <span className="gauge-text">
+            <span className="gauge-name">{t(target === "model" ? "gauge.model" : systemKey(target))}</span>
+            <span className="gauge-summary">{summary}</span>
+            <StatusChip status={targetStatus(target, evaluation, radiation)} />
+          </span>
+        </button>
+      </li>
+    );
+  };
   const mode = evaluation?.mode ?? "ship";
   const radFocus = focused === "radiation";
 
   return (
     <section className="panel body-panel" aria-labelledby="body-title">
       <h2 id="body-title">{t("body.figureTitle")}</h2>
+      <div className="body-stage">
+      <ul className="gauges left">{LEFT.map((target) => gauge(target, "left"))}</ul>
       <div className="figure">
         <svg viewBox="0 0 300 330" role="img" aria-label={t("body.legend")}>
           <circle cx="150" cy="165" r="146" fill="none" stroke="#233041" strokeWidth="2" strokeDasharray="2 9" />
@@ -60,6 +100,8 @@ export function BodyPanel({ evaluation, stormActive, focused, onFocus, onMode }:
             <circle cx="166" cy="252" r={radFocus ? 7 : 5} />
           </g>
         </svg>
+      </div>
+      <ul className="gauges right">{RIGHT.map((target) => gauge(target, "right"))}</ul>
       </div>
       <p className="legend">
         <i />

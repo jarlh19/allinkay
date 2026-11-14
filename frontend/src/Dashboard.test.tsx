@@ -115,15 +115,33 @@ describe("Dashboard", () => {
     expect(screen.getByRole("button", { name: /^Cardiovascular/, expanded: false })).toBeInTheDocument();
   });
 
-  it("opens a system's details from the status column and folds them again", () => {
+  it("opens a system's details from its ring around the body and folds them again", () => {
     renderDashboard();
-    const status = screen.getByRole("region", { name: /^Overall status/ });
+    const body = screen.getByRole("region", { name: "Your body" });
 
-    fireEvent.click(within(status).getByRole("button", { name: /Cardiovascular/ }));
+    fireEvent.click(within(body).getByRole("button", { name: /^Cardiovascular/ }));
 
     const header = screen.getByRole("button", { name: /^Cardiovascular/, expanded: true });
     expect(screen.getByRole("region", { name: /^Cardiovascular/ })).toBeInTheDocument();
     fireEvent.click(header);
     expect(screen.queryByRole("region", { name: /^Cardiovascular/ })).not.toBeInTheDocument();
+  });
+
+  it("shows who is watched and how many signals are in their normal", () => {
+    renderDashboard();
+
+    const card = screen.getByRole("region", { name: "Commander" });
+    expect(within(card).getByText(/Crew member 1/)).toBeInTheDocument();
+    expect(within(card).getByText("Monitoring active")).toBeInTheDocument();
+    const overall = screen.getByRole("region", { name: /^Overall status/ });
+    expect(within(overall).getByText("0%")).toBeInTheDocument();
+    expect(within(overall).getByText("0 of 1 signals in your normal right now")).toBeInTheDocument();
+  });
+
+  it("sums up the model's confirmed changes", () => {
+    renderDashboard();
+
+    const analysis = screen.getByRole("region", { name: /^Model analysis/ });
+    expect(within(analysis).getByText(/Sleep last night: outside your normal/i)).toBeInTheDocument();
   });
 });
