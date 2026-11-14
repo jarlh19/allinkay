@@ -32,12 +32,10 @@ function renderImmune(deviation: Deviation) {
   return render(
     <I18nProvider initial="en">
       <SystemPanel
-        system="immune"
         signals={["white_blood_cells"]}
         readings={{}}
         evaluation={evaluation}
         heartRateHistory={[]}
-        focused={false}
       />
     </I18nProvider>,
   );

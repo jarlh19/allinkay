@@ -1,10 +1,7 @@
-import { overallStatus, systemStatus, type SystemStatus } from "../api/liveState";
+import { systemStatus, type SystemStatus } from "../api/liveState";
 import type { Evaluation, Mode, System } from "../api/types";
 import { useI18n } from "../i18n/i18n";
-import { systemKey } from "./signals";
-import { StatusChip } from "./StatusChip";
 
-const SYSTEMS: System[] = ["cardiovascular", "neurological", "immune", "environment", "radiation"];
 const COLOR: Record<SystemStatus, string> = { ok: "#6fa3d8", warn: "#e3a33b", crit: "#ef5b5b" };
 
 interface Props {
@@ -23,10 +20,8 @@ export function BodyPanel({ evaluation, stormActive, focused, onFocus, onMode }:
   const radFocus = focused === "radiation";
 
   return (
-    <section className="panel body-panel">
-      <h2>
-        {t("body.title")} <StatusChip status={stormActive ? "crit" : overallStatus(evaluation)} />
-      </h2>
+    <section className="panel body-panel" aria-labelledby="body-title">
+      <h2 id="body-title">{t("body.figureTitle")}</h2>
       <div className="figure">
         <svg viewBox="0 0 300 330" role="img" aria-label={t("body.legend")}>
           <circle cx="150" cy="165" r="146" fill="none" stroke="#233041" strokeWidth="2" strokeDasharray="2 9" />
@@ -70,22 +65,6 @@ export function BodyPanel({ evaluation, stormActive, focused, onFocus, onMode }:
         <i />
         {t("body.legend")}
       </p>
-      <ul className="systems">
-        <li>
-          <button type="button" onClick={() => onFocus("model")}>
-            <span>{t("body.model")}</span>
-            <StatusChip status={overallStatus(evaluation)} />
-          </button>
-        </li>
-        {SYSTEMS.map((system) => (
-          <li key={system}>
-            <button type="button" onClick={() => onFocus(system)}>
-              <span>{t(systemKey(system))}</span>
-              <StatusChip status={status(system)} />
-            </button>
-          </li>
-        ))}
-      </ul>
       <div className="modes" role="group">
         {(["ship", "field"] as Mode[]).map((m) => (
           <button key={m} type="button" aria-pressed={mode === m} onClick={() => onMode(m)}>

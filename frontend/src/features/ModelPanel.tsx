@@ -1,9 +1,7 @@
-import { overallStatus } from "../api/liveState";
 import type { Alert, Evaluation, Forecast } from "../api/types";
 import { useI18n } from "../i18n/i18n";
 import { ForecastChart } from "./ForecastChart";
 import { signalKey } from "./signals";
-import { StatusChip } from "./StatusChip";
 
 const MAX_ROWS = 7;
 const SCALE = 3;
@@ -39,11 +37,9 @@ export function AlertCard({ alert }: { alert: Alert }) {
 export function ModelPanel({
   evaluation,
   forecast,
-  focused,
 }: {
   evaluation: Evaluation | null;
   forecast: Forecast | null;
-  focused: boolean;
 }) {
   const { t } = useI18n();
   const deviations = [...(evaluation?.deviations ?? [])]
@@ -55,10 +51,7 @@ export function ModelPanel({
   const shown = pattern ? [pattern] : early;
 
   return (
-    <section className={`panel span2${focused ? " focus" : ""}`} id="panel-model">
-      <h2>
-        {t("model.title")} <StatusChip status={overallStatus(evaluation)} />
-      </h2>
+    <div>
       <div className="model-grid">
         <div>
       <p className="note" style={{ marginBottom: 10 }}>
@@ -104,6 +97,6 @@ export function ModelPanel({
         </div>
       </div>
       <p className="source">{t("model.footer")}</p>
-    </section>
+    </div>
   );
 }

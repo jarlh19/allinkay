@@ -67,6 +67,11 @@ const en = {
   "mitigation.field_indicators": "Indicators to mitigate",
 
   "body.title": "Overall status",
+  "body.figureTitle": "Your body",
+  "details.title": "Details by system",
+  "summary.inNormal": "{n} of {total} in your normal",
+  "summary.waiting": "Waiting for readings",
+  "summary.dose": "{percent}% of the career limit",
   "body.legend": "Radiation: skin (outline), nervous system, eyes, heart and bone marrow",
   "body.model": "Model: your normal",
   "mode.ship": "In the ship",
@@ -222,6 +227,11 @@ const es: Record<MessageKey, string> = {
   "mitigation.field_indicators": "Indicadores para mitigar",
 
   "body.title": "Estado general",
+  "body.figureTitle": "Tu cuerpo",
+  "details.title": "Detalle por sistema",
+  "summary.inNormal": "{n} de {total} en tu normal",
+  "summary.waiting": "Esperando lecturas",
+  "summary.dose": "{percent} % del límite de carrera",
   "body.legend": "Radiación: piel (contorno), sistema nervioso, ojos, corazón y médula ósea",
   "body.model": "Modelo: tu normal",
   "mode.ship": "En la nave",

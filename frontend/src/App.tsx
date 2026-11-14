@@ -1,21 +1,29 @@
 import { useState } from "react";
 
-import type { LiveState } from "./api/liveState";
-import type { Mode, System } from "./api/types";
+import { overallStatus, systemStatus, type LiveState, type SystemStatus } from "./api/liveState";
+import type { Mode } from "./api/types";
 import { useLive } from "./api/useLive";
 import { ActionsPanel } from "./features/ActionsPanel";
 import { BodyPanel } from "./features/BodyPanel";
 import { CrewStrip, useRoleLabel } from "./features/CrewStrip";
+import { DetailSection } from "./features/DetailSection";
 import { AlertCard, ModelPanel } from "./features/ModelPanel";
 import { RadiationPanel } from "./features/RadiationPanel";
 import { ReportDialog, type Screen } from "./features/ReportDialog";
-import { SYSTEM_SIGNALS } from "./features/signals";
+import { SYSTEM_SIGNALS, systemKey } from "./features/signals";
+import { StatusColumn, type Target } from "./features/StatusColumn";
+import { StatusChip } from "./features/StatusChip";
 import { SystemPanel } from "./features/SystemPanel";
 import { I18nProvider, useI18n } from "./i18n/i18n";
 
 const MARS_MAX_DELAY_MIN = 22;
 
 export const DEFAULT_CREW_ID = "commander";
+
+type Detail = Target | "actions";
+
+/** Order of the detail column: the model first, then each system, then what to do. */
+const DETAILS: Detail[] = ["model", "cardiovascular", "neurological", "immune", "environment", "radiation", "actions"];
 
 async function changeMode(crewId: string, mode: Mode): Promise<void> {
   const response = await fetch(`/api/crew/${encodeURIComponent(crewId)}/mode`, {
@@ -36,15 +44,60 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
   const { t, language, setLanguage } = useI18n();
   const roleLabel = useRoleLabel();
   const role = roleLabel(state.crew.find((member) => member.id === crewId)?.role ?? crewId);
-  const [focused, setFocused] = useState<System | "model" | null>(null);
+  const [focused, setFocused] = useState<Target | null>(null);
+  const [opened, setOpened] = useState<Partial<Record<Detail, boolean>>>({});
   const [reporting, setReporting] = useState(false);
   const { evaluation, radiation, readings, clock } = state;
   const emergencies = (evaluation?.alerts ?? []).filter((a) => a.level === "emergency");
   const time = clock?.at ? new Date(clock.at).toISOString().slice(11, 16) : null;
 
-  const focus = (target: System | "model") => {
+  const storm = radiation?.storm_active ?? false;
+  const statusOf = (detail: Detail): SystemStatus | null => {
+    if (detail === "actions") return null;
+    if (detail === "model") return overallStatus(evaluation);
+    if (detail === "radiation" && storm) return "crit";
+    return systemStatus(evaluation, detail);
+  };
+  // A section with an alert opens by itself until the person opens or closes it by hand.
+  const isOpen = (detail: Detail) => opened[detail] ?? (detail === "model" || (statusOf(detail) ?? "ok") !== "ok");
+  const toggle = (detail: Detail) => setOpened((current) => ({ ...current, [detail]: !isOpen(detail) }));
+
+  const focus = (target: Target) => {
     setFocused(target);
-    document.getElementById(`panel-${target}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    setOpened((current) => ({ ...current, [target]: true }));
+    window.requestAnimationFrame(() =>
+      document.getElementById(`panel-${target}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+    );
+  };
+
+  const titleOf = (detail: Detail): string => {
+    if (detail === "model") return t("model.title");
+    if (detail === "actions") return t("actions.title");
+    if (detail === "radiation") return t("radiation.title");
+    return t(systemKey(detail));
+  };
+
+  const chipOf = (detail: Detail) => {
+    const status = statusOf(detail);
+    if (!status) return null;
+    if (detail === "radiation" && radiation && !storm) {
+      return <StatusChip status="ok" label={t("radiation.withinLimit")} />;
+    }
+    return <StatusChip status={status} />;
+  };
+
+  const contentOf = (detail: Detail) => {
+    if (detail === "model") return <ModelPanel evaluation={evaluation} forecast={state.forecast} />;
+    if (detail === "radiation") return <RadiationPanel radiation={radiation} />;
+    if (detail === "actions") return <ActionsPanel evaluation={evaluation} />;
+    return (
+      <SystemPanel
+        signals={SYSTEM_SIGNALS[detail]}
+        readings={readings}
+        evaluation={evaluation}
+        heartRateHistory={state.heartRateHistory}
+      />
+    );
   };
 
   return (
@@ -82,30 +135,31 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
       {emergencies.map((alert, i) => (
         <AlertCard key={`emergency-${i}`} alert={alert} />
       ))}
-      <div className="grid">
+      <div className="layout">
+        <StatusColumn evaluation={evaluation} radiation={radiation} focused={focused} onFocus={focus} />
         <BodyPanel
           evaluation={evaluation}
-          stormActive={radiation?.storm_active ?? false}
+          stormActive={storm}
           focused={focused}
           onFocus={focus}
           onMode={(mode) => {
             changeMode(crewId, mode).catch((error: unknown) => console.error(error));
           }}
         />
-        {(Object.keys(SYSTEM_SIGNALS) as (keyof typeof SYSTEM_SIGNALS)[]).map((system) => (
-          <SystemPanel
-            key={system}
-            system={system}
-            signals={SYSTEM_SIGNALS[system]}
-            readings={readings}
-            evaluation={evaluation}
-            heartRateHistory={state.heartRateHistory}
-            focused={focused === system}
-          />
-        ))}
-        <ModelPanel evaluation={evaluation} forecast={state.forecast} focused={focused === "model"} />
-        <RadiationPanel radiation={radiation} focused={focused === "radiation"} />
-        <ActionsPanel evaluation={evaluation} />
+        <div className="details" role="group" aria-label={t("details.title")}>
+          {DETAILS.map((detail) => (
+            <DetailSection
+              key={detail}
+              id={detail}
+              title={titleOf(detail)}
+              status={chipOf(detail)}
+              open={isOpen(detail)}
+              onToggle={() => toggle(detail)}
+            >
+              {contentOf(detail)}
+            </DetailSection>
+          ))}
+        </div>
       </div>
     </div>
   );

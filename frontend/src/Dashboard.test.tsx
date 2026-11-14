@@ -107,4 +107,23 @@ describe("Dashboard", () => {
 
     expect(onCrew).toHaveBeenCalledWith("engineer");
   });
+
+  it("opens by itself the details of a system with an alert and keeps the rest folded", () => {
+    renderDashboard();
+
+    expect(screen.getByRole("button", { name: /^Neurological/, expanded: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Cardiovascular/, expanded: false })).toBeInTheDocument();
+  });
+
+  it("opens a system's details from the status column and folds them again", () => {
+    renderDashboard();
+    const status = screen.getByRole("region", { name: /^Overall status/ });
+
+    fireEvent.click(within(status).getByRole("button", { name: /Cardiovascular/ }));
+
+    const header = screen.getByRole("button", { name: /^Cardiovascular/, expanded: true });
+    expect(screen.getByRole("region", { name: /^Cardiovascular/ })).toBeInTheDocument();
+    fireEvent.click(header);
+    expect(screen.queryByRole("region", { name: /^Cardiovascular/ })).not.toBeInTheDocument();
+  });
 });
