@@ -1,22 +1,25 @@
-import { overallStatus } from "../api/liveState";
 import type { Alert, Evaluation, Forecast } from "../api/types";
 import { useI18n } from "../i18n/i18n";
 import { ForecastChart } from "./ForecastChart";
 import { signalKey } from "./signals";
-import { StatusChip } from "./StatusChip";
 
 const MAX_ROWS = 7;
 const SCALE = 3;
 
+type Translate = ReturnType<typeof useI18n>["t"];
+
+export function alertTitle(alert: Alert, t: Translate): string {
+  if (alert.kind === "combined_pattern") {
+    const names = alert.signals.map((s) => t(signalKey(s)).toLowerCase());
+    return t("alert.combined_pattern", { signals: names.join(", ") });
+  }
+  if (alert.kind === "solar_storm") return t("alert.solar_storm");
+  return t("alert.outside_normal", { signal: t(signalKey(alert.signals[0] ?? "")) });
+}
+
 export function AlertCard({ alert }: { alert: Alert }) {
   const { t } = useI18n();
-  const names = alert.signals.map((s) => t(signalKey(s)).toLowerCase());
-  const title =
-    alert.kind === "combined_pattern"
-      ? t("alert.combined_pattern", { signals: names.join(", ") })
-      : alert.kind === "solar_storm"
-        ? t("alert.solar_storm")
-        : t("alert.outside_normal", { signal: t(signalKey(alert.signals[0] ?? "")) });
+  const title = alertTitle(alert, t);
   const action = t(alert.action as Parameters<typeof t>[0]);
   return (
     <div className={`alert${alert.level === "emergency" ? " crit" : ""}`} role="status">
@@ -39,11 +42,9 @@ export function AlertCard({ alert }: { alert: Alert }) {
 export function ModelPanel({
   evaluation,
   forecast,
-  focused,
 }: {
   evaluation: Evaluation | null;
   forecast: Forecast | null;
-  focused: boolean;
 }) {
   const { t } = useI18n();
   const deviations = [...(evaluation?.deviations ?? [])]
@@ -55,10 +56,7 @@ export function ModelPanel({
   const shown = pattern ? [pattern] : early;
 
   return (
-    <section className={`panel span2${focused ? " focus" : ""}`} id="panel-model">
-      <h2>
-        {t("model.title")} <StatusChip status={overallStatus(evaluation)} />
-      </h2>
+    <div>
       <div className="model-grid">
         <div>
       <p className="note" style={{ marginBottom: 10 }}>
@@ -104,6 +102,6 @@ export function ModelPanel({
         </div>
       </div>
       <p className="source">{t("model.footer")}</p>
-    </section>
+    </div>
   );
 }

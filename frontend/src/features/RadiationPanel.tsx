@@ -3,25 +3,16 @@ import { useI18n } from "../i18n/i18n";
 import type { MessageKey } from "../i18n/messages";
 import { StatusChip } from "./StatusChip";
 
-export function RadiationPanel({ radiation, focused }: { radiation: Radiation | null; focused: boolean }) {
+export function RadiationPanel({ radiation }: { radiation: Radiation | null }) {
   const { t } = useI18n();
   if (!radiation) {
-    return (
-      <section className="panel wide" id="panel-radiation">
-        <h2>{t("radiation.title")}</h2>
-        <p className="note">{t("loading")}</p>
-      </section>
-    );
+    return <p className="note">{t("loading")}</p>;
   }
   const storm = radiation.storm_active;
   const percent = Math.min(radiation.career_fraction * 100, 100);
 
   return (
-    <section className={`panel wide${focused ? " focus" : ""}`} id="panel-radiation">
-      <h2>
-        {t("radiation.title")}
-        <StatusChip status={storm ? "crit" : "ok"} label={storm ? t("status.crit") : t("radiation.withinLimit")} />
-      </h2>
+    <div>
       <div className="cols3">
         <div>
           <div className="row">
@@ -81,6 +72,6 @@ export function RadiationPanel({ radiation, focused }: { radiation: Radiation | 
       <p className="source">
         {t("radiation.footer", { career: radiation.career_limit_msv, event: radiation.event_limit_msv })}
       </p>
-    </section>
+    </div>
   );
 }

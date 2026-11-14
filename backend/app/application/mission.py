@@ -33,6 +33,7 @@ class Mission:
         forecast: ForecastSleep,
         mission_day: Callable[[datetime], int] | None = None,
         exams: ExamScheduler | None = None,
+        lap: Callable[[datetime], int] | None = None,
     ) -> None:
         self.forecast = forecast
         self.ingest = ingest
@@ -41,6 +42,8 @@ class Mission:
         self._bus = bus
         self._mission_day = mission_day
         self._exams = exams
+        self._lap = lap
+        self._current_lap: int | None = None
         self._last_at: datetime | None = None
 
     def clock_view(self) -> dict[str, object]:
@@ -53,6 +56,7 @@ class Mission:
 
     def step(self, at: datetime) -> list[Reading]:
         self._last_at = at
+        self._start_lap_if_new(at)
         self._bus.publish(self.clock_view())
         readings = self.ingest.tick(at)
         if readings:
@@ -63,6 +67,16 @@ class Mission:
                 if self._exams is not None:
                     self._exams.request_exam(signal, at + REPEAT_AFTER)
         return readings
+
+    def _start_lap_if_new(self, at: datetime) -> None:
+        """A demo script that repeats replays its readings, so the dose replays too: without
+        this the career dose kept growing lap after lap past the career limit."""
+        if self._lap is None:
+            return
+        lap = self._lap(at)
+        if self._current_lap is not None and lap != self._current_lap:
+            self.radiation.restart()
+        self._current_lap = lap
 
 
 def synthetic_preflight_baselines(

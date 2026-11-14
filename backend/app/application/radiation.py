@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from app.application.bus import EventBus
@@ -18,8 +19,14 @@ from app.domain.rules import Alert, AlertKind, Evidence, Level
 
 class TrackRadiation:
     def __init__(self, ledger: DoseLedger, bus: EventBus) -> None:
+        self._start = replace(ledger)
         self._ledger = ledger
         self._bus = bus
+
+    def restart(self) -> None:
+        """Back to the dose the mission started with, for a demo script that starts again."""
+        self._ledger = replace(self._start)
+        self._bus.publish(self.view())
 
     def on_readings(self, readings: list[Reading]) -> None:
         doses = [r for r in readings if r.signal is Signal.DOSE_TODAY]

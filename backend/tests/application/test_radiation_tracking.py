@@ -2,9 +2,11 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
 
+from app.adapters.scenario import DEMO
 from app.application.bus import EventBus
 from app.application.radiation import TrackRadiation
 from app.config import Settings
+from app.container import Container
 from app.domain.radiation import DoseLedger
 from app.domain.readings import Reading
 from app.domain.rules import AlertKind, Level
@@ -55,3 +57,20 @@ def test_radiation_endpoint() -> None:
 
     assert body["type"] == "radiation"
     assert body["storm_active"] is False
+
+
+def test_each_lap_of_the_demo_starts_again_from_the_same_career_dose() -> None:
+    now = DEMO.start
+    container = Container.build(
+        Settings(db_path=":memory:", run_live_loop=False), clock=lambda: now, scenario=DEMO
+    )
+    mission = container.crew.default.mission
+    dose_on_day_5: list[float] = []
+    for hour in range(26 * 24):
+        now = DEMO.start + timedelta(hours=hour)
+        mission.step(now)
+        if hour % (10 * 24) == 5 * 24:
+            dose_on_day_5.append(mission.radiation.view()["accumulated_msv"])
+
+    assert len(dose_on_day_5) == 3
+    assert dose_on_day_5[0] == dose_on_day_5[1] == dose_on_day_5[2]

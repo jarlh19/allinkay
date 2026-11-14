@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { format, MESSAGES, type Language, type MessageKey } from "./messages";
 
@@ -12,16 +12,28 @@ interface I18n {
 
 const I18nContext = createContext<I18n | null>(null);
 
-function savedLanguage(): Language {
+function browserLanguage(): Language {
+  return window.navigator.language.toLowerCase().startsWith("es") ? "es" : "en";
+}
+
+/** The language chosen before; the first time, the browser's language. */
+export function startingLanguage(): Language {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) === "es" ? "es" : "en";
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (saved === "es" || saved === "en") return saved;
   } catch {
-    return "en";
+    // Storage can be blocked (private mode); fall back to the browser's language.
   }
+  return browserLanguage();
 }
 
 export function I18nProvider({ children, initial }: { children: ReactNode; initial?: Language }) {
-  const [language, setState] = useState<Language>(initial ?? savedLanguage);
+  const [language, setState] = useState<Language>(initial ?? startingLanguage);
+
+  useEffect(() => {
+    // Tells assistive technology and the browser which language the page is in.
+    document.documentElement.lang = language;
+  }, [language]);
 
   const setLanguage = useCallback((next: Language) => {
     setState(next);

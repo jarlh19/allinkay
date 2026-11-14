@@ -1,19 +1,15 @@
-import { systemStatus } from "../api/liveState";
-import type { Deviation, Evaluation, Reading, System } from "../api/types";
+import type { Deviation, Evaluation, Reading } from "../api/types";
 import { useI18n } from "../i18n/i18n";
-import { formatUnit, formatValue, signalKey, systemKey } from "./signals";
-import { StatusChip } from "./StatusChip";
+import { formatUnit, formatValue, signalKey } from "./signals";
 
 /** Baselines built from open NASA data say so in their source. */
 const OSDR_SOURCE = "NASA OSDR";
 
 interface Props {
-  system: System;
   signals: string[];
   readings: Record<string, Reading>;
   evaluation: Evaluation | null;
   heartRateHistory: number[];
-  focused: boolean;
 }
 
 function Sparkline({ values }: { values: number[] }) {
@@ -31,17 +27,14 @@ function Sparkline({ values }: { values: number[] }) {
   );
 }
 
-export function SystemPanel({ system, signals, readings, evaluation, heartRateHistory, focused }: Props) {
+export function SystemPanel({ signals, readings, evaluation, heartRateHistory }: Props) {
   const { t } = useI18n();
   const deviations = new Map<string, Deviation>(
     (evaluation?.deviations ?? []).map((d) => [d.signal, d]),
   );
 
   return (
-    <section className={`panel${focused ? " focus" : ""}`} id={`panel-${system}`}>
-      <h2>
-        {t(systemKey(system))} <StatusChip status={systemStatus(evaluation, system)} />
-      </h2>
+    <div className="detail-rows">
       {signals.map((signal) => {
         const reading = readings[signal];
         const deviation = deviations.get(signal);
@@ -81,6 +74,6 @@ export function SystemPanel({ system, signals, readings, evaluation, heartRateHi
           </div>
         );
       })}
-    </section>
+    </div>
   );
 }

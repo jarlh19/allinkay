@@ -24,8 +24,7 @@ export function ActionsPanel({ evaluation }: { evaluation: Evaluation | null }) 
   const attention = alerts.filter((a) => a.level === "attention");
 
   return (
-    <section className="panel wide">
-      <h2>{t("actions.title")}</h2>
+    <div>
       <div className="modes" style={{ paddingTop: 0, gridTemplateColumns: "1fr 1fr" }}>
         <button type="button" aria-pressed={open === "guide"} onClick={() => setOpen(open === "guide" ? null : "guide")}>
           {t("actions.guide")} · {t("actions.guideSub")}
@@ -57,6 +56,6 @@ export function ActionsPanel({ evaluation }: { evaluation: Evaluation | null }) 
             {t("routine.empty")}
           </p>
         ))}
-    </section>
+    </div>
   );
 }
