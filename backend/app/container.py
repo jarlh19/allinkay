@@ -17,7 +17,6 @@ from app.application.radiation import TrackRadiation
 from app.config import OSDR_CBC_CSV, Settings
 from app.domain.radiation import DoseLedger
 from app.domain.readings import Signal
-from app.domain.rules import CombinedPatternRule, OutsideNormalRule
 
 Clock = Callable[[], datetime]
 
@@ -54,7 +53,7 @@ class Container:
         baselines = synthetic_preflight_baselines(seed=settings.seed + 1, end=clock())
         wbc_baseline, _ = load_wbc_baseline(OSDR_CBC_CSV)
         baselines[wbc_baseline.signal] = wbc_baseline
-        evaluate = EvaluateHealth(baselines, [OutsideNormalRule(), CombinedPatternRule()], bus)
+        evaluate = EvaluateHealth(baselines, bus)
         ledger = DoseLedger(
             accumulated_msv=settings.career_dose_msv,
             usual_rate_msv=DEFAULT_PROFILES[Signal.DOSE_TODAY].mean,

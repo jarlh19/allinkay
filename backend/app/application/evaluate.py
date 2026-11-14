@@ -6,9 +6,10 @@ from typing import Any
 
 from app.application.bus import EventBus
 from app.domain.baseline import Baseline, Deviation, deviation
+from app.domain.modes import Mode, ModelStrategy, strategy_for
 from app.domain.readings import Frequency, Reading, Signal
 from app.domain.references import REFERENCES
-from app.domain.rules import Alert, Rule, evaluate_rules
+from app.domain.rules import Alert, evaluate_rules
 
 LIVE_PERSISTENCE = 10
 """Consecutive live readings outside the normal band needed before alerting, so a single
@@ -19,12 +20,13 @@ class EvaluateHealth:
     def __init__(
         self,
         baselines: dict[Signal, Baseline],
-        rules: list[Rule],
         bus: EventBus,
+        strategy: ModelStrategy | None = None,
         live_persistence: int = LIVE_PERSISTENCE,
     ) -> None:
         self._baselines = dict(baselines)
-        self._rules = rules
+        self._strategy = strategy or strategy_for(Mode.SHIP)
+        self._extra: list[Alert] = []
         self._bus = bus
         self._live_persistence = live_persistence
         self._current: dict[Signal, Deviation] = {}
@@ -33,6 +35,14 @@ class EvaluateHealth:
 
     def set_baseline(self, baseline: Baseline) -> None:
         self._baselines[baseline.signal] = baseline
+
+    @property
+    def mode(self) -> Mode:
+        return self._strategy.mode
+
+    def set_mode(self, mode: Mode) -> None:
+        self._strategy = strategy_for(mode)
+        self._refresh()
 
     def on_readings(self, readings: list[Reading], extra: list[Alert] | None = None) -> list[Alert]:
         for reading in readings:
@@ -44,8 +54,16 @@ class EvaluateHealth:
             self._streak[reading.signal] = (
                 self._streak.get(reading.signal, 0) + 1 if dev.outside_normal else 0
             )
-        confirmed = [d for d in self._current.values() if self._is_confirmed(d)]
-        self._alerts = [*(extra or []), *evaluate_rules(self._rules, confirmed)]
+        self._extra = list(extra or [])
+        return self._refresh()
+
+    def _refresh(self) -> list[Alert]:
+        confirmed = [
+            d
+            for d in self._current.values()
+            if self._strategy.watches(d.reading.signal) and self._is_confirmed(d)
+        ]
+        self._alerts = [*self._extra, *evaluate_rules(self._strategy.rules, confirmed)]
         self._bus.publish(self.view())
         return self._alerts
 
@@ -58,6 +76,8 @@ class EvaluateHealth:
     def view(self) -> dict[str, Any]:
         return {
             "type": "evaluation",
+            "mode": self._strategy.mode.value,
+            "mitigation": self._strategy.mitigation,
             "deviations": [
                 {**_deviation_to_dict(d), "confirmed": self._is_confirmed(d)}
                 for d in self._current.values()

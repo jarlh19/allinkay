@@ -7,8 +7,8 @@ from app.application.evaluate import EvaluateHealth
 from app.application.mission import PREFLIGHT_SOURCE, synthetic_preflight_baselines
 from app.config import Settings
 from app.domain.baseline import Baseline
+from app.domain.modes import Mode
 from app.domain.readings import Reading, Signal
-from app.domain.rules import CombinedPatternRule, OutsideNormalRule
 from app.main import create_app
 
 NOW = datetime(2026, 11, 14, 12, 0, tzinfo=UTC)
@@ -26,7 +26,7 @@ def evaluator(bus: EventBus) -> EvaluateHealth:
         ),
         Signal.HEART_RATE: Baseline.from_values(Signal.HEART_RATE, [66, 68, 70], "t"),
     }
-    return EvaluateHealth(baselines, [OutsideNormalRule(), CombinedPatternRule()], bus)
+    return EvaluateHealth(baselines, bus)
 
 
 def test_usual_readings_raise_no_alert() -> None:
@@ -95,3 +95,23 @@ def test_a_live_signal_alerts_after_staying_outside_its_normal() -> None:
 
     assert all(r == [] for r in results[:9])
     assert [a.signals for a in results[9]] == [(Signal.HEART_RATE,)]
+
+
+def test_field_mode_watches_only_portable_sensors_and_skips_the_pattern() -> None:
+    health = evaluator(EventBus())
+    health.on_readings([reading("sleep_hours", 5.17), reading("white_blood_cells", 4.4)])
+
+    health.set_mode(Mode.FIELD)
+
+    assert health.mode is Mode.FIELD
+    assert health.view()["alerts"] == []
+    assert health.view()["mitigation"] == "mitigation.field_indicators"
+
+
+def test_mode_endpoint_switches_the_model() -> None:
+    app = create_app(Settings(db_path=":memory:", run_live_loop=False), clock=lambda: NOW)
+    client = TestClient(app)
+
+    assert client.get("/api/mode").json() == {"mode": "ship"}
+    assert client.put("/api/mode", json={"mode": "field"}).json() == {"mode": "field"}
+    assert client.put("/api/mode", json={"mode": "moon"}).status_code == 422
