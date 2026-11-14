@@ -12,3 +12,7 @@ services:
         value: demo
       - key: ALLINKAY_SPEED
         value: "3600"
+      - key: ALLINKAY_GITHUB_REPO
+        value: jarlh19/allinkay
+      - key: ALLINKAY_GITHUB_TOKEN
+        sync: false

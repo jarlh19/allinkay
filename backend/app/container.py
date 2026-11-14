@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from app.adapters.osdr_csv import load_wbc_baseline
+from app.adapters.report_sinks import FallbackSink, GitHubIssueSink, SqliteReportSink
 from app.adapters.scenario import DEMO, AcceleratedClock, Scenario
 from app.adapters.simulator import DEFAULT_PROFILES, Simulator
 from app.adapters.sqlite_repo import SqliteReadingRepository
@@ -16,6 +17,7 @@ from app.application.forecast import ForecastSleep
 from app.application.ingest import IngestReadings
 from app.application.mission import Mission, synthetic_preflight_baselines
 from app.application.radiation import TrackRadiation
+from app.application.reports import ReportSink, SubmitReport
 from app.config import OSDR_CBC_CSV, Settings
 from app.domain.radiation import DoseLedger
 from app.domain.readings import Signal
@@ -34,6 +36,8 @@ class Container:
     bus: EventBus
     mission: Mission
     clock: Clock
+    reports: SubmitReport
+    local_reports: SqliteReportSink
     scenario: Scenario | None = None
 
     @property
@@ -74,8 +78,18 @@ class Container:
             usual_rate_msv=DEFAULT_PROFILES[Signal.DOSE_TODAY].mean,
         )
         radiation = TrackRadiation(ledger, bus)
+        local_reports = SqliteReportSink(settings.db_path)
+        sink: ReportSink = (
+            FallbackSink(
+                GitHubIssueSink(settings.github_repo, settings.github_token), local_reports
+            )
+            if settings.github_token
+            else local_reports
+        )
         return cls(
             settings=settings,
+            reports=SubmitReport(sink, utc_now),
+            local_reports=local_reports,
             repository=repository,
             bus=bus,
             mission=Mission(

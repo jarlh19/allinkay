@@ -21,6 +21,9 @@ class Settings:
     scenario: str = ""
     speed: float = 3600.0
     static_dir: str = ""
+    github_token: str = ""
+    github_repo: str = "jarlh19/allinkay"
+    reports_export: bool = False
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -33,4 +36,7 @@ class Settings:
             scenario=os.environ.get("ALLINKAY_SCENARIO", ""),
             speed=float(os.environ.get("ALLINKAY_SPEED", "3600")),
             static_dir=os.environ.get("ALLINKAY_STATIC_DIR", ""),
+            github_token=os.environ.get("ALLINKAY_GITHUB_TOKEN", ""),
+            github_repo=os.environ.get("ALLINKAY_GITHUB_REPO", "jarlh19/allinkay"),
+            reports_export=os.environ.get("ALLINKAY_REPORTS_EXPORT", "0") == "1",
         )

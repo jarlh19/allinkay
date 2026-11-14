@@ -9,6 +9,7 @@ from fastapi import FastAPI
 
 from app.api.health import router as health_router
 from app.api.live import router as live_router
+from app.api.reports import router as reports_router
 from app.api.web import add_security_headers, mount_frontend
 from app.config import Settings
 from app.container import Clock, Container
@@ -47,5 +48,6 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     add_security_headers(app)
     app.include_router(health_router)
     app.include_router(live_router)
+    app.include_router(reports_router)
     mount_frontend(app, resolved.static_dir)
     return app
