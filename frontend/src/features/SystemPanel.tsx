@@ -4,6 +4,9 @@ import { useI18n } from "../i18n/i18n";
 import { formatUnit, formatValue, signalKey, systemKey } from "./signals";
 import { StatusChip } from "./StatusChip";
 
+/** Baselines built from open NASA data say so in their source. */
+const OSDR_SOURCE = "NASA OSDR";
+
 interface Props {
   system: System;
   signals: string[];
@@ -65,7 +68,10 @@ export function SystemPanel({ system, signals, readings, evaluation, heartRateHi
                 })}
               </span>
             )}
-            {signal === "white_blood_cells" && <span className="note">{t("row.wbcSource")}</span>}
+            {deviation?.repeat_requested && <span className="note warn">{t("row.repeat")}</span>}
+            {deviation?.baseline_source.startsWith(OSDR_SOURCE) && (
+              <span className="note">{t("row.wbcSource")}</span>
+            )}
             {signal === "heart_rate" && heartRateHistory.length > 1 && (
               <div className="trend">
                 <Sparkline values={heartRateHistory} />

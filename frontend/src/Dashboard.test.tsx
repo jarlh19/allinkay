@@ -41,6 +41,7 @@ const state: LiveState = {
         z_score: -5.5,
         outside_normal: true,
         confirmed: true,
+        repeat_requested: false,
       },
     ],
     alerts: [

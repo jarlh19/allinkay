@@ -24,6 +24,7 @@ export interface Deviation {
   z_score: number;
   outside_normal: boolean;
   confirmed: boolean;
+  repeat_requested: boolean;
 }
 
 export interface Evidence {
