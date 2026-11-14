@@ -24,13 +24,13 @@ class Confirmation:
 CONFIRMATION: dict[Frequency, Confirmation] = {
     Frequency.LIVE: Confirmation(z=1.5, count=10, window=10),
     Frequency.DAILY: Confirmation(z=2.2, count=3, window=4),
-    Frequency.EXAM: Confirmation(z=2.58, count=2, window=2),
+    Frequency.EXAM: Confirmation(z=2.81, count=2, window=2),
 }
 """A reading counts toward an alert when it is at least as unusual as `z`, judged with the
 prediction interval of the person's normal, on the side that is a health concern. The alert
 needs `count` of the last `window` readings to count on the same side: ten live readings in a
 row, three of the last four days (one ordinary day inside a real change does not reset it), or
-an exam and its repeat (2.58 is the 99% reference change value for serial lab results).
+an exam and its repeat (2.81: the 99.5% reference change value for serial lab results).
 Chosen by measuring false alarms and misses on synthetic people (backend/validate_model.py)."""
 
 

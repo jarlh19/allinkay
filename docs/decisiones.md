@@ -93,14 +93,14 @@ Cada entrada dice el problema, lo elegido, las alternativas descartadas y por qu
   - El normal salía de 14 días y 3 análisis, pero se usaba como si fuera exacto.
   - El ánimo, una escala del 1 al 5, se trataba como una medida continua.
 - **Lo que no se puede:** con datos finitos no existen a la vez cero falsas alarmas y cero cambios sin detectar. Al bajar uno sube el otro, y lo único que baja los dos es más información. Se midió con 200 000 personas simuladas.
-- **Elegido por Jorge: «más seguro»,** es decir, que casi no se escapen cambios reales. Las metas quedan así:
+- **Elegido por Jorge:** primero pidió priorizar que no se escaparan cambios reales. Con los números medidos en la app real eligió el umbral del 99.5 % para los exámenes, que da la mitad de falsas alarmas que el del 99 % a cambio de 1 baja de glóbulos blancos más cada 200 que tarda más de 10 días en detectarse. Las metas quedan así:
   - Como máximo 1 falsa alarma cada 10 años-astronauta.
   - Como máximo el 1 % de los cambios del guion sin detectar en los primeros 10 días. Un cambio que sigue se detecta en las lecturas siguientes.
 - **Cómo:**
   - **Exámenes:**
     - El punto de ajuste es la media de 6 tomas antes del vuelo.
     - La dispersión es la variación biológica dentro de la persona más la variación analítica, ambas publicadas: EFLM Biological Variation Database, leucocitos CVI 11.1 % y glucosa CVI 4.9 %, con CVA = CVI / 2 (Fraser).
-    - Un resultado más allá del valor de cambio de referencia al 99 % (2.58) pide repetir el examen al día siguiente. Solo alerta si la repetición lo confirma, y nunca alerta por un solo resultado.
+    - Un resultado más allá del valor de cambio de referencia al 99.5 % (2.81) pide repetir el examen al día siguiente. Solo alerta si la repetición lo confirma, y nunca alerta por un solo resultado.
     - El comandante usa las 3 tomas reales de OSD-569.
   - **Normal personal:**
     - Se juzga con un intervalo de predicción, que combina la t de Student con el factor 1 + 1/n.
@@ -119,4 +119,10 @@ Cada entrada dice el problema, lo elegido, las alternativas descartadas y por qu
   - Exigir días seguidos: un solo día normal cortaba un cambio real.
   - Dos repeticiones o el promedio del examen y su repetición: el error que comparten todas las tomas es el del normal, y repetir no lo quita.
 - **Verificación:** `backend/validate_model.py` simula 200 personas sanas durante 90 días, en la nave y en campo, y 200 personas por cada guion de la tripulación. Mide la tasa de falsas alarmas por año-astronauta y la de cambios sin detectar, y falla si no se cumplen las metas. Una muestra menor corre en cada cambio, en `tests/validation`.
+- **Resultado medido** (200 personas durante 90 días):
+  - En la nave: 6 falsas alarmas en 60 años-astronauta, es decir, 1 cada 10 años. Cuatro son de exámenes y dos de señales diarias.
+  - En campo: 0.
+  - Cambios del guion sin detectar en 10 días: 5 de 1200 (0.42 %). Tres son bajas de glóbulos blancos.
+  - Con el umbral del 99 % eran 11 falsas alarmas en la nave y 4 cambios sin detectar.
+  - Con 200 personas, los conteos chicos tienen un margen de error amplio.
 - **Límite:** los números salen de personas simuladas con ruido normal. Los datos reales traen valores atípicos y tendencias que esta prueba no cubre, así que antes de usarlo con personas hay que validarlo con datos reales.
