@@ -53,6 +53,26 @@ describe("reduce", () => {
   it("tracks the connection", () => {
     expect(reduce(initialState, { kind: "connection", connected: true }).connected).toBe(true);
   });
+
+  it("keeps the crew list but forgets the previous member's data when switching", () => {
+    const withCrew = reduce(initialState, {
+      kind: "event",
+      event: {
+        type: "crew",
+        members: [{ id: "engineer", role: "engineer", mode: "field", status: "normal", alerts: 0 }],
+      },
+    });
+    const withReading = reduce(withCrew, {
+      kind: "event",
+      event: { type: "snapshot", readings: [reading("heart_rate", 80)] },
+    });
+
+    const switched = reduce(withReading, { kind: "reset" });
+
+    expect(switched.crew.map((m) => m.id)).toEqual(["engineer"]);
+    expect(switched.readings).toEqual({});
+    expect(switched.heartRateHistory).toEqual([]);
+  });
 });
 
 describe("status", () => {

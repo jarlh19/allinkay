@@ -130,3 +130,20 @@ def test_report_endpoint_rate_limits_by_forwarded_address() -> None:
     codes = [client.post("/api/reports", json=body, headers=headers).status_code for _ in range(6)]
 
     assert codes == [201] * 5 + [429]
+
+
+def test_report_names_the_crew_member_being_watched() -> None:
+    watched = ProblemReport.create(
+        "Mode did not change", "", "overall", "", 96, "field", "es", NOW, crew="engineer"
+    )
+
+    assert "**Crew member:** engineer" in watched.to_markdown()
+    assert "**Crew member:** not given" in report().to_markdown()
+
+
+def test_report_endpoint_accepts_only_known_crew_members() -> None:
+    client = TestClient(create_app(Settings(db_path=":memory:", run_live_loop=False)))
+    body = {"what_happened": "Panel froze", "crew": "engineer"}
+
+    assert client.post("/api/reports", json=body).status_code == 201
+    assert client.post("/api/reports", json={**body, "crew": "pilot"}).status_code == 422

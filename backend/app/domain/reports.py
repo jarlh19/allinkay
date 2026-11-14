@@ -10,6 +10,7 @@ from enum import StrEnum
 MAX_WHAT = 2000
 MAX_EXPECTED = 1000
 MAX_TESTER = 40
+MAX_CREW = 40
 
 _CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
@@ -49,6 +50,7 @@ class ProblemReport:
     mode: str
     language: str
     created_at: datetime
+    crew: str = ""
 
     @classmethod
     def create(
@@ -61,6 +63,7 @@ class ProblemReport:
         mode: str,
         language: str,
         created_at: datetime,
+        crew: str = "",
     ) -> ProblemReport:
         try:
             known_screen = Screen(screen)
@@ -75,6 +78,7 @@ class ProblemReport:
             mode=mode if mode in {"ship", "field"} else "ship",
             language=language if language in {"en", "es"} else "en",
             created_at=created_at,
+            crew=_clean(crew, MAX_CREW, "crew", required=False),
         )
 
     @property
@@ -88,6 +92,7 @@ class ProblemReport:
         day = str(self.mission_day) if self.mission_day is not None else "unknown"
         lines = [
             f"**Screen:** {self.screen.value}",
+            f"**Crew member:** {self.crew or 'not given'}",
             f"**Mission day:** {day}",
             f"**Mode:** {self.mode}",
             f"**Language:** {self.language}",

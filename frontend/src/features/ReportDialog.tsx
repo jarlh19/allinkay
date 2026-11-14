@@ -26,6 +26,7 @@ interface Props {
   screen: Screen;
   missionDay: number | null;
   mode: Mode;
+  crewId: string;
 }
 
 export async function sendReport(body: Record<string, unknown>): Promise<string> {
@@ -40,7 +41,7 @@ export async function sendReport(body: Record<string, unknown>): Promise<string>
   return created.reference;
 }
 
-export function ReportDialog({ open, onClose, screen, missionDay, mode }: Props) {
+export function ReportDialog({ open, onClose, screen, missionDay, mode, crewId }: Props) {
   const { t, language } = useI18n();
   const [what, setWhat] = useState("");
   const [expected, setExpected] = useState("");
@@ -65,6 +66,7 @@ export function ReportDialog({ open, onClose, screen, missionDay, mode }: Props)
         tester,
         mission_day: missionDay,
         mode,
+        crew: crewId,
         language,
       });
       setStatus({ kind: "sent", reference });

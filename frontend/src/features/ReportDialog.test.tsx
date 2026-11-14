@@ -7,7 +7,7 @@ import { ReportDialog } from "./ReportDialog";
 function renderDialog() {
   return render(
     <I18nProvider initial="en">
-      <ReportDialog open onClose={() => undefined} screen="model" missionDay={96} mode="ship" />
+      <ReportDialog open onClose={() => undefined} screen="model" missionDay={96} mode="field" crewId="engineer" />
     </I18nProvider>,
   );
 }
@@ -29,7 +29,7 @@ describe("ReportDialog", () => {
 
     await waitFor(() => expect(screen.getByText("Thanks! Report sent (#12).")).toBeInTheDocument());
     const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string) as Record<string, unknown>;
-    expect(body).toMatchObject({ what_happened: "The chart froze", screen: "model", mission_day: 96, language: "en" });
+    expect(body).toMatchObject({ what_happened: "The chart froze", screen: "model", mission_day: 96, language: "en", crew: "engineer", mode: "field" });
   });
 
   it("explains the rate limit", async () => {

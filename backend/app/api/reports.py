@@ -11,7 +11,15 @@ from pydantic import BaseModel, Field
 
 from app.application.reports import RateLimitedError
 from app.container import Container
-from app.domain.reports import MAX_EXPECTED, MAX_TESTER, MAX_WHAT, InvalidReportError, ProblemReport
+from app.domain.crew import UnknownCrewMemberError
+from app.domain.reports import (
+    MAX_CREW,
+    MAX_EXPECTED,
+    MAX_TESTER,
+    MAX_WHAT,
+    InvalidReportError,
+    ProblemReport,
+)
 
 router = APIRouter()
 
@@ -24,6 +32,7 @@ class ReportIn(BaseModel):
     mission_day: int | None = Field(default=None, ge=0, le=100_000)
     mode: str = Field(default="ship", max_length=10)
     language: str = Field(default="en", max_length=5)
+    crew: str = Field(default="", max_length=MAX_CREW)
 
 
 def _sender(request: Request) -> str:
@@ -37,6 +46,8 @@ def _sender(request: Request) -> str:
 def create_report(request: Request, body: ReportIn) -> dict[str, Any]:
     container: Container = request.app.state.container
     try:
+        if body.crew:
+            container.crew.get(body.crew)
         report = ProblemReport.create(
             what_happened=body.what_happened,
             expected=body.expected,
@@ -46,10 +57,13 @@ def create_report(request: Request, body: ReportIn) -> dict[str, Any]:
             mode=body.mode,
             language=body.language,
             created_at=datetime.now(UTC),
+            crew=body.crew,
         )
         reference = container.reports.submit(report, _sender(request))
     except InvalidReportError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+    except UnknownCrewMemberError as error:
+        raise HTTPException(status_code=422, detail=f"Unknown crew member: {body.crew}") from error
     except RateLimitedError as error:
         raise HTTPException(status_code=429, detail=str(error)) from error
     return {"reference": reference, "destination": container.reports.destination}

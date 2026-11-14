@@ -1,4 +1,13 @@
-import type { Clock, Evaluation, Forecast, LiveEvent, Radiation, Reading, System } from "./types";
+import type {
+  Clock,
+  CrewMemberSummary,
+  Evaluation,
+  Forecast,
+  LiveEvent,
+  Radiation,
+  Reading,
+  System,
+} from "./types";
 
 export const HISTORY_LENGTH = 24;
 
@@ -9,6 +18,7 @@ export interface LiveState {
   radiation: Radiation | null;
   clock: Clock | null;
   forecast: Forecast | null;
+  crew: CrewMemberSummary[];
   connected: boolean;
 }
 
@@ -19,10 +29,15 @@ export const initialState: LiveState = {
   radiation: null,
   clock: null,
   forecast: null,
+  crew: [],
   connected: false,
 };
 
-export type Action = { kind: "event"; event: LiveEvent } | { kind: "connection"; connected: boolean };
+export type Action =
+  | { kind: "event"; event: LiveEvent }
+  | { kind: "connection"; connected: boolean }
+  /** Another crew member was selected: forget the previous one's data, keep the crew list. */
+  | { kind: "reset" };
 
 function withReadings(state: LiveState, readings: Reading[]): LiveState {
   const next = { ...state.readings };
@@ -40,6 +55,9 @@ export function reduce(state: LiveState, action: Action): LiveState {
   if (action.kind === "connection") {
     return { ...state, connected: action.connected };
   }
+  if (action.kind === "reset") {
+    return { ...initialState, crew: state.crew };
+  }
   const event = action.event;
   switch (event.type) {
     case "snapshot":
@@ -53,6 +71,8 @@ export function reduce(state: LiveState, action: Action): LiveState {
       return { ...state, clock: event };
     case "forecast":
       return { ...state, forecast: event };
+    case "crew":
+      return { ...state, crew: event.members };
   }
 }
 

@@ -19,6 +19,7 @@ export function useLive(crewId: string) {
     let retry: number | undefined;
     let backoff = 1000;
     let stopped = false;
+    dispatch({ kind: "reset" });
 
     const connect = () => {
       socket = new WebSocket(liveUrl(crewId));

@@ -5,6 +5,7 @@ import type { Mode, System } from "./api/types";
 import { useLive } from "./api/useLive";
 import { ActionsPanel } from "./features/ActionsPanel";
 import { BodyPanel } from "./features/BodyPanel";
+import { CrewStrip, useRoleLabel } from "./features/CrewStrip";
 import { AlertCard, ModelPanel } from "./features/ModelPanel";
 import { RadiationPanel } from "./features/RadiationPanel";
 import { ReportDialog, type Screen } from "./features/ReportDialog";
@@ -14,7 +15,7 @@ import { I18nProvider, useI18n } from "./i18n/i18n";
 
 const MARS_MAX_DELAY_MIN = 22;
 
-const DEFAULT_CREW_ID = "commander";
+export const DEFAULT_CREW_ID = "commander";
 
 async function changeMode(crewId: string, mode: Mode): Promise<void> {
   const response = await fetch(`/api/crew/${encodeURIComponent(crewId)}/mode`, {
@@ -25,8 +26,16 @@ async function changeMode(crewId: string, mode: Mode): Promise<void> {
   if (!response.ok) throw new Error(`Mode change failed with status ${response.status}`);
 }
 
-export function Dashboard({ state }: { state: LiveState }) {
+interface DashboardProps {
+  state: LiveState;
+  crewId: string;
+  onCrew: (id: string) => void;
+}
+
+export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
   const { t, language, setLanguage } = useI18n();
+  const roleLabel = useRoleLabel();
+  const role = roleLabel(state.crew.find((member) => member.id === crewId)?.role ?? crewId);
   const [focused, setFocused] = useState<System | "model" | null>(null);
   const [reporting, setReporting] = useState(false);
   const { evaluation, radiation, readings, clock } = state;
@@ -44,7 +53,7 @@ export function Dashboard({ state }: { state: LiveState }) {
         <div>
           <h1>ALLINKAY</h1>
           <p>
-            {clock?.mission_day ? t("app.subtitle", { day: clock.mission_day }) : t("app.subtitleNoDay")}
+            {clock?.mission_day ? t("app.subtitle", { role, day: clock.mission_day }) : t("app.subtitleNoDay", { role })}
             {time && ` · ${t("app.lastReading", { time })}`}
           </p>
         </div>
@@ -59,6 +68,7 @@ export function Dashboard({ state }: { state: LiveState }) {
           </button>
         </div>
       </header>
+      <CrewStrip members={state.crew} selected={crewId} onSelect={onCrew} />
       {!state.connected && <div className="offline">{t("offline")}</div>}
       <ReportDialog
         key={reporting ? "open" : "closed"}
@@ -67,6 +77,7 @@ export function Dashboard({ state }: { state: LiveState }) {
         screen={(focused ?? "overall") as Screen}
         missionDay={clock?.mission_day ?? null}
         mode={evaluation?.mode ?? "ship"}
+        crewId={crewId}
       />
       {emergencies.map((alert, i) => (
         <AlertCard key={`emergency-${i}`} alert={alert} />
@@ -78,7 +89,7 @@ export function Dashboard({ state }: { state: LiveState }) {
           focused={focused}
           onFocus={focus}
           onMode={(mode) => {
-            changeMode(DEFAULT_CREW_ID, mode).catch((error: unknown) => console.error(error));
+            changeMode(crewId, mode).catch((error: unknown) => console.error(error));
           }}
         />
         {(Object.keys(SYSTEM_SIGNALS) as (keyof typeof SYSTEM_SIGNALS)[]).map((system) => (
@@ -101,8 +112,9 @@ export function Dashboard({ state }: { state: LiveState }) {
 }
 
 function LiveDashboard() {
-  const state = useLive(DEFAULT_CREW_ID);
-  return <Dashboard state={state} />;
+  const [crewId, setCrewId] = useState(DEFAULT_CREW_ID);
+  const state = useLive(crewId);
+  return <Dashboard state={state} crewId={crewId} onCrew={setCrewId} />;
 }
 
 export function App() {
