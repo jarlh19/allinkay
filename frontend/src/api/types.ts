@@ -73,9 +73,22 @@ export interface Clock {
   mission_day: number | null;
 }
 
+export interface Forecast {
+  type: "forecast";
+  signal: string;
+  unit: string;
+  history: number[];
+  points: { step: number; value: number; low: number; high: number }[];
+  trend_per_night: number | null;
+  normal_low: number | null;
+  normal_high: number | null;
+  method: string;
+}
+
 export type LiveEvent =
   | { type: "snapshot"; readings: Reading[] }
   | { type: "readings"; at: string; readings: Reading[] }
   | Evaluation
   | Radiation
-  | Clock;
+  | Clock
+  | Forecast;

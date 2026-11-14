@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from app.adapters.simulator import Simulator
 from app.application.bus import EventBus
 from app.application.evaluate import EvaluateHealth
+from app.application.forecast import ForecastSleep
 from app.application.ingest import IngestReadings
 from app.application.radiation import TrackRadiation
 from app.domain.baseline import Baseline, baselines_from_readings
@@ -23,8 +24,10 @@ class Mission:
         evaluate: EvaluateHealth,
         radiation: TrackRadiation,
         bus: EventBus,
+        forecast: ForecastSleep,
         mission_day: Callable[[datetime], int] | None = None,
     ) -> None:
+        self.forecast = forecast
         self.ingest = ingest
         self.evaluate = evaluate
         self.radiation = radiation
@@ -46,6 +49,7 @@ class Mission:
         readings = self.ingest.tick(at)
         if readings:
             self.radiation.on_readings(readings)
+            self.forecast.on_readings(readings)
             self.evaluate.on_readings(readings, extra=self.radiation.alerts())
         return readings
 

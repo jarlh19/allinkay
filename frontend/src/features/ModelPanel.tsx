@@ -1,6 +1,7 @@
 import { overallStatus } from "../api/liveState";
-import type { Alert, Evaluation } from "../api/types";
+import type { Alert, Evaluation, Forecast } from "../api/types";
 import { useI18n } from "../i18n/i18n";
+import { ForecastChart } from "./ForecastChart";
 import { signalKey } from "./signals";
 import { StatusChip } from "./StatusChip";
 
@@ -35,7 +36,15 @@ export function AlertCard({ alert }: { alert: Alert }) {
   );
 }
 
-export function ModelPanel({ evaluation, focused }: { evaluation: Evaluation | null; focused: boolean }) {
+export function ModelPanel({
+  evaluation,
+  forecast,
+  focused,
+}: {
+  evaluation: Evaluation | null;
+  forecast: Forecast | null;
+  focused: boolean;
+}) {
   const { t } = useI18n();
   const deviations = [...(evaluation?.deviations ?? [])]
     .sort((a, b) => Math.abs(b.z_score) - Math.abs(a.z_score))
@@ -50,6 +59,8 @@ export function ModelPanel({ evaluation, focused }: { evaluation: Evaluation | n
       <h2>
         {t("model.title")} <StatusChip status={overallStatus(evaluation)} />
       </h2>
+      <div className="model-grid">
+        <div>
       <p className="note" style={{ marginBottom: 10 }}>
         {t("model.deviation")}
       </p>
@@ -84,6 +95,14 @@ export function ModelPanel({ evaluation, focused }: { evaluation: Evaluation | n
         <AlertCard key={`${alert.kind}-${alert.signals.join("-")}`} alert={alert} />
       ))}
       {alerts.length === 0 && <p className="note">{t("model.none")}</p>}
+        </div>
+        <div>
+          <p className="note" style={{ marginBottom: 10 }}>
+            {t("forecast.title")}
+          </p>
+          <ForecastChart forecast={forecast} />
+        </div>
+      </div>
       <p className="source">{t("model.footer")}</p>
     </section>
   );
