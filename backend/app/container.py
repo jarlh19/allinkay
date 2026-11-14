@@ -12,6 +12,7 @@ from app.adapters.simulator import DEFAULT_PROFILES, Simulator
 from app.adapters.sqlite_repo import SqliteReadingRepository
 from app.application.bus import EventBus
 from app.application.evaluate import EvaluateHealth
+from app.application.forecast import ForecastSleep
 from app.application.ingest import IngestReadings
 from app.application.mission import Mission, synthetic_preflight_baselines
 from app.application.radiation import TrackRadiation
@@ -82,6 +83,7 @@ class Container:
                 evaluate,
                 radiation,
                 bus,
+                ForecastSleep(repository, baselines.get(Signal.SLEEP_HOURS), bus),
                 mission_day=scenario.mission_day if scenario else None,
             ),
             clock=clock,

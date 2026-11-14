@@ -59,6 +59,11 @@ def put_mode(request: Request, change: ModeChange) -> dict[str, str]:
     return {"mode": evaluate.mode.value}
 
 
+@router.get("/api/forecast")
+def forecast(request: Request) -> dict[str, Any]:
+    return _container(request.app.state).mission.forecast.view()
+
+
 @router.get("/api/radiation")
 def radiation(request: Request) -> dict[str, Any]:
     return _container(request.app.state).radiation.view()
@@ -77,6 +82,7 @@ async def live(websocket: WebSocket) -> None:
         await websocket.send_json(container.evaluate.view())
         await websocket.send_json(container.radiation.view())
         await websocket.send_json(container.mission.clock_view())
+        await websocket.send_json(container.mission.forecast.view())
         while True:
             event = await queue.get()
             await websocket.send_json(event)
