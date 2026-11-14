@@ -23,6 +23,7 @@ Una aplicación que el astronauta usa a bordo, sin depender de la Tierra, para e
 5. Ante una emergencia o una tormenta solar, la app me da una guía de acción paso a paso, sin esperar a la Tierra.
 6. Puedo pasar del modo «en la nave» al modo «en campo». En campo, el modelo es más liviano.
 7. El feedback de la Tierra aparece cuando llega, con la demora visible, y el modelo lo integra.
+8. Si algo falla o no se entiende, lo reporto desde la misma app con «Reportar un problema».
 
 ## Mapa de módulos (monolito modular, arquitectura hexagonal)
 
@@ -32,10 +33,11 @@ Una aplicación que el astronauta usa a bordo, sin depender de la Tierra, para e
 | `storage` | Guardar lecturas, línea base y alertas (SQLite, patrón Repository) | `domain` |
 | `ingestion` | Adaptadores de entrada: simulador con semilla, cargador del hemograma OSD-569 y, más adelante, el sensor real (USB o Bluetooth) | `domain` |
 | `earth-link` | Simulador de la Tierra: guarda y reenvía con una demora configurable | `domain` |
-| `api` | FastAPI: REST para consultar y WebSocket para lo en vivo; arma los casos de uso | `domain`, `storage`, `ingestion`, `earth-link` |
+| `feedback` | Reportes de las testers dentro de la app: formulario, contexto (pantalla, escenario y hora) y exportación para convertirlos en issues | `domain`, `storage` |
+| `api` | FastAPI: REST para consultar y WebSocket para lo en vivo; arma los casos de uso | `domain`, `storage`, `ingestion`, `earth-link`, `feedback` |
 | `web` | React: el panel de la maqueta, la figura humana, el modelo, la radiación y las acciones, con textos en inglés y español | `api` |
 
-Orden de construcción: `domain` → `storage` → `ingestion` (simulador) → `api` → `web` → `earth-link` → sensor real.
+Orden de construcción: `domain` → `storage` → `ingestion` (simulador) → `api` → `web` → `earth-link` → `feedback`.
 
 **Patrones:**
 - Adapter: un adaptador por fuente de datos.
@@ -80,9 +82,10 @@ frontend/src/features/     → panel, figura, modelo, radiación, acciones
 frontend/src/i18n/         → textos en inglés y español
 frontend/src/api/          → cliente REST y WebSocket
 data/osdr/                 → CSV de OSD-569, con su fuente y su licencia en un README
-docs/decisiones.md         → decisiones de arquitectura (pendiente de tu OK)
+docs/decisiones.md         → decisiones de arquitectura (D-001 a D-008)
 scripts/                   → verify.py y demo.py
-.github/ISSUE_TEMPLATE/    → plantillas «error» y «mejora» para las testers
+.github/ISSUE_TEMPLATE/    → plantillas «error» y «mejora» para convertir los reportes de las testers en issues
+LICENSE, NOTICE            → Apache 2.0 y créditos, incluida la cita de los datos de la NASA
 ```
 
 ## Estilo de código
@@ -128,7 +131,6 @@ class Deviation:
   - Agregar colaboradores.
   - Desplegar en la nube.
   - Cambiar el CI.
-  - Conectar sensores reales.
 - **Nunca:**
   - Subir secretos (`.env`) ni datos de personas reales.
   - Borrar una prueba que falla sin aprobación.
@@ -147,7 +149,7 @@ class Deviation:
 7. El escenario de demo (misión acelerada con semilla) es repetible: muestra primero la alerta temprana y luego la emergencia.
 8. La interfaz carga en inglés y cambia a español.
 9. La línea base de glóbulos blancos sale del CSV de OSD-569, con la cita visible en la pantalla.
-10. Geraldine y Aranza pueden reportar errores y mejoras con las plantillas de issues.
+10. Geraldine y Aranza, usando la app como astronautas, pueden enviar un reporte con «Reportar un problema». El reporte queda guardado con su contexto y se puede exportar para crear el issue.
 
 ## Fuera de alcance
 
@@ -155,19 +157,25 @@ class Deviation:
 - **Login, cuentas y varios tripulantes a la vez.**
 - **Despliegue en la nube y app móvil.**
 - **Datos de personas reales.** Los datos de Aranza solo sirven para calibrar rangos, sin guardarse en el repo.
-- **Sensores reales,** hasta que Aranza confirme el tipo y la conexión. La interfaz del adaptador queda lista.
+- **Sensores reales.** Se trabaja con datos sintéticos (D-005). La interfaz del adaptador queda lista para cuando Aranza confirme.
+- **Acceso de las testers al repositorio.** Prueban como usuarias externas (D-006).
 - **Una app para el lado de la Tierra:** es un simulador.
 - **El protocolo DTN real:** se simula la demora.
 - **Mecánica orbital:** las demoras son configurables, no se calculan.
 
 ## Decisiones
 
-Tomadas por Jorge el 14 de noviembre de 2026: monolito modular hexagonal, no microservicios; Python + React; repositorio privado en jarlh19 hasta la entrega. Se anotan en `docs/decisiones.md` si Jorge lo aprueba.
+En `docs/decisiones.md`:
+- D-001: monolito modular hexagonal.
+- D-002: Python con FastAPI y React con TypeScript.
+- D-003: repositorio privado hasta la entrega.
+- D-004: Marte.
+- D-005: datos sintéticos.
+- D-006: testers como usuarias externas con reporte dentro de la app.
+- D-007: licencia Apache 2.0.
+- D-008: idioma.
 
 ## Preguntas abiertas
 
-1. **¿Luna o Marte?** Define las demoras y las cifras de radiación. Lo decide el equipo.
-2. **Los sensores de Aranza:** cuáles son y cómo se conectan (USB o Bluetooth). Responde Aranza.
-3. **Los usuarios de GitHub de Geraldine y Aranza,** para agregarlas como colaboradoras. Responde Jorge.
-4. **La licencia del código** (por ejemplo, MIT). Lo decide el equipo, para no repetir el problema de RoboLab.
-5. **¿Creo `docs/decisiones.md` con las decisiones de hoy?** Responde Jorge.
+1. **Los sensores de Aranza:** cuáles son y cómo se conectan. Cuando ella confirme, se agrega su adaptador sin tocar el dominio.
+2. **Cómo usan la app las testers:** en la laptop de Jorge en la sede, o abriéndola desde sus celulares por el punto de acceso de Jorge. Lo segundo exige permitir el puerto en el firewall solo para la red del celular. Responde Jorge.
