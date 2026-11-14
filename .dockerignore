@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/*.db
+.git
+.github
+tareas
+CLAUDE.local.md
+.env
+.env.*

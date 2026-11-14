@@ -20,6 +20,7 @@ class Settings:
     career_dose_msv: float = 256.0
     scenario: str = ""
     speed: float = 3600.0
+    static_dir: str = ""
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -31,4 +32,5 @@ class Settings:
             career_dose_msv=float(os.environ.get("ALLINKAY_CAREER_DOSE_MSV", "256")),
             scenario=os.environ.get("ALLINKAY_SCENARIO", ""),
             speed=float(os.environ.get("ALLINKAY_SPEED", "3600")),
+            static_dir=os.environ.get("ALLINKAY_STATIC_DIR", ""),
         )
