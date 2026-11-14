@@ -7,6 +7,7 @@ import { ActionsPanel } from "./features/ActionsPanel";
 import { BodyPanel } from "./features/BodyPanel";
 import { AlertCard, ModelPanel } from "./features/ModelPanel";
 import { RadiationPanel } from "./features/RadiationPanel";
+import { ReportDialog, type Screen } from "./features/ReportDialog";
 import { SYSTEM_SIGNALS } from "./features/signals";
 import { SystemPanel } from "./features/SystemPanel";
 import { I18nProvider, useI18n } from "./i18n/i18n";
@@ -25,6 +26,7 @@ async function changeMode(mode: Mode): Promise<void> {
 export function Dashboard({ state }: { state: LiveState }) {
   const { t, language, setLanguage } = useI18n();
   const [focused, setFocused] = useState<System | "model" | null>(null);
+  const [reporting, setReporting] = useState(false);
   const { evaluation, radiation, readings, clock } = state;
   const emergencies = (evaluation?.alerts ?? []).filter((a) => a.level === "emergency");
   const time = clock?.at ? new Date(clock.at).toISOString().slice(11, 16) : null;
@@ -47,12 +49,23 @@ export function Dashboard({ state }: { state: LiveState }) {
         <div className="top-right">
           <span className="pill">{t("pill.earth", { delay: MARS_MAX_DELAY_MIN })}</span>
           <span className="pill">{t("pill.simulated")}</span>
+          <button type="button" className="lang" onClick={() => setReporting(true)}>
+            {t("report.open")}
+          </button>
           <button type="button" className="lang" onClick={() => setLanguage(language === "en" ? "es" : "en")}>
             {t("lang.switch")}
           </button>
         </div>
       </header>
       {!state.connected && <div className="offline">{t("offline")}</div>}
+      <ReportDialog
+        key={reporting ? "open" : "closed"}
+        open={reporting}
+        onClose={() => setReporting(false)}
+        screen={(focused ?? "overall") as Screen}
+        missionDay={clock?.mission_day ?? null}
+        mode={evaluation?.mode ?? "ship"}
+      />
       {emergencies.map((alert, i) => (
         <AlertCard key={`emergency-${i}`} alert={alert} />
       ))}
