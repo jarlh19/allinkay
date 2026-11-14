@@ -22,6 +22,7 @@ class Level(StrEnum):
 class AlertKind(StrEnum):
     OUTSIDE_NORMAL = "outside_normal"
     COMBINED_PATTERN = "combined_pattern"
+    SOLAR_STORM = "solar_storm"
 
 
 @dataclass(frozen=True)

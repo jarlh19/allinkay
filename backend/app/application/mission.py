@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from app.adapters.simulator import Simulator
 from app.application.evaluate import EvaluateHealth
 from app.application.ingest import IngestReadings
+from app.application.radiation import TrackRadiation
 from app.domain.baseline import Baseline, baselines_from_readings
 from app.domain.readings import Reading, Signal
 
@@ -14,14 +15,18 @@ PREFLIGHT_SOURCE = "pre-flight (synthetic)"
 
 
 class Mission:
-    def __init__(self, ingest: IngestReadings, evaluate: EvaluateHealth) -> None:
+    def __init__(
+        self, ingest: IngestReadings, evaluate: EvaluateHealth, radiation: TrackRadiation
+    ) -> None:
         self.ingest = ingest
         self.evaluate = evaluate
+        self.radiation = radiation
 
     def step(self, at: datetime) -> list[Reading]:
         readings = self.ingest.tick(at)
         if readings:
-            self.evaluate.on_readings(readings)
+            self.radiation.on_readings(readings)
+            self.evaluate.on_readings(readings, extra=self.radiation.alerts())
         return readings
 
 

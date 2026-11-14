@@ -34,7 +34,7 @@ class EvaluateHealth:
     def set_baseline(self, baseline: Baseline) -> None:
         self._baselines[baseline.signal] = baseline
 
-    def on_readings(self, readings: list[Reading]) -> list[Alert]:
+    def on_readings(self, readings: list[Reading], extra: list[Alert] | None = None) -> list[Alert]:
         for reading in readings:
             baseline = self._baselines.get(reading.signal)
             if baseline is None:
@@ -45,7 +45,7 @@ class EvaluateHealth:
                 self._streak.get(reading.signal, 0) + 1 if dev.outside_normal else 0
             )
         confirmed = [d for d in self._current.values() if self._is_confirmed(d)]
-        self._alerts = evaluate_rules(self._rules, confirmed)
+        self._alerts = [*(extra or []), *evaluate_rules(self._rules, confirmed)]
         self._bus.publish(self.view())
         return self._alerts
 

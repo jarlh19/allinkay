@@ -17,6 +17,7 @@ class Settings:
     seed: int = 2026
     tick_seconds: float = 1.0
     run_live_loop: bool = True
+    career_dose_msv: float = 256.0
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -25,4 +26,5 @@ class Settings:
             seed=int(os.environ.get("ALLINKAY_SEED", "2026")),
             tick_seconds=float(os.environ.get("ALLINKAY_TICK_SECONDS", "1.0")),
             run_live_loop=os.environ.get("ALLINKAY_LIVE_LOOP", "1") != "0",
+            career_dose_msv=float(os.environ.get("ALLINKAY_CAREER_DOSE_MSV", "256")),
         )
