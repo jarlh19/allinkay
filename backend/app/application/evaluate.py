@@ -11,9 +11,13 @@ from app.domain.readings import Frequency, Reading, Signal
 from app.domain.references import REFERENCES
 from app.domain.rules import Alert, evaluate_rules
 
-LIVE_PERSISTENCE = 10
-"""Consecutive live readings outside the normal band needed before alerting, so a single
-noisy sample does not raise a false alarm. Daily and exam readings count from the first."""
+PERSISTENCE: dict[Frequency, int] = {
+    Frequency.LIVE: 10,
+    Frequency.DAILY: 2,
+    Frequency.EXAM: 1,
+}
+"""Consecutive readings outside the normal band needed before alerting, so a single noisy
+sample does not raise a false alarm: ten live readings, two days in a row, or one exam."""
 
 
 class EvaluateHealth:
@@ -22,13 +26,13 @@ class EvaluateHealth:
         baselines: dict[Signal, Baseline],
         bus: EventBus,
         strategy: ModelStrategy | None = None,
-        live_persistence: int = LIVE_PERSISTENCE,
+        persistence: dict[Frequency, int] | None = None,
     ) -> None:
         self._baselines = dict(baselines)
         self._strategy = strategy or strategy_for(Mode.SHIP)
         self._extra: list[Alert] = []
         self._bus = bus
-        self._live_persistence = live_persistence
+        self._persistence = persistence or PERSISTENCE
         self._current: dict[Signal, Deviation] = {}
         self._streak: dict[Signal, int] = {}
         self._alerts: list[Alert] = []
@@ -70,7 +74,7 @@ class EvaluateHealth:
     def _is_confirmed(self, dev: Deviation) -> bool:
         if not dev.outside_normal:
             return False
-        needed = self._live_persistence if dev.reading.spec.frequency is Frequency.LIVE else 1
+        needed = self._persistence[dev.reading.spec.frequency]
         return self._streak.get(dev.reading.signal, 0) >= needed
 
     def view(self) -> dict[str, Any]:

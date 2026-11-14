@@ -18,6 +18,8 @@ class Settings:
     tick_seconds: float = 1.0
     run_live_loop: bool = True
     career_dose_msv: float = 256.0
+    scenario: str = ""
+    speed: float = 3600.0
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -27,4 +29,6 @@ class Settings:
             tick_seconds=float(os.environ.get("ALLINKAY_TICK_SECONDS", "1.0")),
             run_live_loop=os.environ.get("ALLINKAY_LIVE_LOOP", "1") != "0",
             career_dose_msv=float(os.environ.get("ALLINKAY_CAREER_DOSE_MSV", "256")),
+            scenario=os.environ.get("ALLINKAY_SCENARIO", ""),
+            speed=float(os.environ.get("ALLINKAY_SPEED", "3600")),
         )

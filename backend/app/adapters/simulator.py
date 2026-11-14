@@ -6,6 +6,7 @@ produces the same sequence, so demos and tests are repeatable.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import StrEnum
@@ -42,9 +43,9 @@ DEFAULT_PROFILES: dict[Signal, SignalProfile] = {
     Signal.MOOD: SignalProfile(3.8, 0.5, 0),
     Signal.REACTION_TIME: SignalProfile(270, 18, 0),
     Signal.BODY_TEMPERATURE: SignalProfile(36.7, 0.2, 1),
-    Signal.WHITE_BLOOD_CELLS: SignalProfile(5.97, 0.7, 1),
+    Signal.WHITE_BLOOD_CELLS: SignalProfile(5.97, 0.4, 1),
     Signal.GLUCOSE: SignalProfile(92, 6, 0),
-    Signal.SYMPTOMS: SignalProfile(0.2, 0, 0, Distribution.POISSON),
+    Signal.SYMPTOMS: SignalProfile(0.1, 0, 0, Distribution.POISSON),
     Signal.CABIN_TEMPERATURE: SignalProfile(22, 0.5, 1),
     Signal.CABIN_CO2: SignalProfile(3.0, 0.3, 1),
     Signal.CABIN_PRESSURE: SignalProfile(101.3, 0.3, 1),
@@ -62,7 +63,9 @@ class Simulator:
         profiles: dict[Signal, SignalProfile] | None = None,
         daily_every: timedelta = timedelta(days=1),
         exam_every: timedelta = timedelta(days=7),
+        adjust: Callable[[Signal, datetime], float] | None = None,
     ) -> None:
+        self._adjust = adjust
         self._rng = np.random.default_rng(seed)
         self._profiles = profiles if profiles is not None else DEFAULT_PROFILES
         missing = set(SPECS) - set(self._profiles)
@@ -77,7 +80,7 @@ class Simulator:
         for signal, spec in SPECS.items():
             if not self._is_due(signal, spec.frequency, at):
                 continue
-            value = self._sample(signal)
+            value = self._sample(signal, at)
             readings.append(Reading.create(signal, value, at, SOURCE))
             self._last_emitted[signal] = at
         return readings
@@ -88,12 +91,14 @@ class Simulator:
         last = self._last_emitted.get(signal)
         return last is None or at - last >= self._every[frequency]
 
-    def _sample(self, signal: Signal) -> float:
+    def _sample(self, signal: Signal, at: datetime) -> float:
         profile = self._profiles[signal]
         spec = SPECS[signal]
         if profile.distribution is Distribution.POISSON:
             raw = float(self._rng.poisson(profile.mean))
         else:
             raw = float(self._rng.normal(profile.mean, profile.sd))
+        if self._adjust is not None:
+            raw += self._adjust(signal, at)
         clipped = min(max(raw, spec.min_possible), spec.max_possible)
         return round(clipped, profile.decimals)

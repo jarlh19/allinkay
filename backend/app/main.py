@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from app.api.health import router as health_router
 from app.api.live import router as live_router
 from app.config import Settings
-from app.container import Clock, Container, utc_now
+from app.container import Clock, Container
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ async def run_live_loop(container: Container) -> None:
         await asyncio.sleep(container.settings.tick_seconds)
 
 
-def create_app(settings: Settings | None = None, clock: Clock = utc_now) -> FastAPI:
+def create_app(settings: Settings | None = None, clock: Clock | None = None) -> FastAPI:
     resolved = settings or Settings.from_env()
     container = Container.build(resolved, clock)
 

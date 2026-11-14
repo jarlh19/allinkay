@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 import pytest
 
 from app.domain.baseline import (
+    CONCERN,
     Baseline,
     BaselineError,
     Deviation,
@@ -148,3 +149,17 @@ def test_evaluate_rules_runs_every_rule() -> None:
 def test_every_signal_cites_a_known_reference() -> None:
     assert set(SIGNAL_EVIDENCE) == set(Signal)
     assert all(ref in REFERENCES for ref in SIGNAL_EVIDENCE.values())
+
+
+def test_only_the_concerning_side_counts_as_outside_normal() -> None:
+    sleep = Baseline.from_values(Signal.SLEEP_HOURS, [7.0, 7.5, 8.0], "t")
+    heart = Baseline.from_values(Signal.HEART_RATE, [66, 68, 70], "t")
+
+    assert not deviation(reading("sleep_hours", 9.9), sleep).outside_normal
+    assert deviation(reading("sleep_hours", 5.0), sleep).outside_normal
+    assert deviation(reading("heart_rate", 95), heart).outside_normal
+    assert deviation(reading("heart_rate", 45), heart).outside_normal
+
+
+def test_every_signal_has_a_concern_direction() -> None:
+    assert set(CONCERN) == set(Signal)

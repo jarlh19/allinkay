@@ -33,8 +33,9 @@ class Mission:
 def synthetic_preflight_baselines(
     seed: int, end: datetime, days: int = 14, step: timedelta = timedelta(hours=1)
 ) -> dict[Signal, Baseline]:
-    """A pre-flight reference period generated with its own seed (no real person's data)."""
-    simulator = Simulator(seed=seed)
+    """A pre-flight reference period generated with its own seed (no real person's data).
+    Lab exams are taken daily before flight so the reference is reliable."""
+    simulator = Simulator(seed=seed, exam_every=timedelta(days=1))
     start = end - timedelta(days=days)
     readings: list[Reading] = []
     at = start

@@ -49,9 +49,11 @@ def test_drifting_signals_publish_explained_alerts_and_a_pattern() -> None:
     health = evaluator(bus)
 
     health.on_readings([reading("sleep_hours", 5.17)])
+    health.on_readings([reading("sleep_hours", 5.0)])
     health.on_readings([reading("white_blood_cells", 4.4)])
 
-    queue.get_nowait()
+    for _ in range(2):
+        queue.get_nowait()
     view = queue.get_nowait()
     kinds = [a["kind"] for a in view["alerts"]]
     assert kinds.count("outside_normal") == 2
@@ -100,6 +102,7 @@ def test_a_live_signal_alerts_after_staying_outside_its_normal() -> None:
 def test_field_mode_watches_only_portable_sensors_and_skips_the_pattern() -> None:
     health = evaluator(EventBus())
     health.on_readings([reading("sleep_hours", 5.17), reading("white_blood_cells", 4.4)])
+    health.on_readings([reading("sleep_hours", 5.0)])
 
     health.set_mode(Mode.FIELD)
 
@@ -115,3 +118,12 @@ def test_mode_endpoint_switches_the_model() -> None:
     assert client.get("/api/mode").json() == {"mode": "ship"}
     assert client.put("/api/mode", json={"mode": "field"}).json() == {"mode": "field"}
     assert client.put("/api/mode", json={"mode": "moon"}).status_code == 422
+
+
+def test_a_single_short_night_waits_for_a_second_day() -> None:
+    health = evaluator(EventBus())
+
+    assert health.on_readings([reading("sleep_hours", 5.0)]) == []
+    assert [a.signals for a in health.on_readings([reading("sleep_hours", 5.1)])] == [
+        (Signal.SLEEP_HOURS,)
+    ]

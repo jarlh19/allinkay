@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 from dataclasses import dataclass
+from enum import StrEnum
 
 from app.domain.readings import Reading, Signal
 
@@ -18,17 +19,45 @@ MIN_SD: dict[Signal, float] = {
     Signal.DIASTOLIC_BP: 2.0,
     Signal.SPO2: 0.5,
     Signal.SLEEP_HOURS: 0.25,
-    Signal.MOOD: 0.5,
+    Signal.MOOD: 0.8,
     Signal.REACTION_TIME: 10.0,
     Signal.BODY_TEMPERATURE: 0.1,
     Signal.WHITE_BLOOD_CELLS: 0.3,
     Signal.GLUCOSE: 4.0,
-    Signal.SYMPTOMS: 0.5,
+    Signal.SYMPTOMS: 1.0,
     Signal.CABIN_TEMPERATURE: 0.3,
     Signal.CABIN_CO2: 0.2,
     Signal.CABIN_PRESSURE: 0.3,
     Signal.CABIN_PPO2: 0.3,
     Signal.DOSE_TODAY: 0.05,
+}
+
+
+class Concern(StrEnum):
+    BELOW = "below"
+    ABOVE = "above"
+    BOTH = "both"
+
+
+# Which side of the normal band is a health concern. Sleeping more or a better mood than
+# usual is not; less oxygen or more radiation is.
+CONCERN: dict[Signal, Concern] = {
+    Signal.HEART_RATE: Concern.BOTH,
+    Signal.SYSTOLIC_BP: Concern.BOTH,
+    Signal.DIASTOLIC_BP: Concern.BOTH,
+    Signal.SPO2: Concern.BELOW,
+    Signal.SLEEP_HOURS: Concern.BELOW,
+    Signal.MOOD: Concern.BELOW,
+    Signal.REACTION_TIME: Concern.ABOVE,
+    Signal.BODY_TEMPERATURE: Concern.BOTH,
+    Signal.WHITE_BLOOD_CELLS: Concern.BOTH,
+    Signal.GLUCOSE: Concern.BOTH,
+    Signal.SYMPTOMS: Concern.ABOVE,
+    Signal.CABIN_TEMPERATURE: Concern.BOTH,
+    Signal.CABIN_CO2: Concern.ABOVE,
+    Signal.CABIN_PRESSURE: Concern.BOTH,
+    Signal.CABIN_PPO2: Concern.BELOW,
+    Signal.DOSE_TODAY: Concern.ABOVE,
 }
 
 
@@ -71,7 +100,11 @@ class Deviation:
 
     @property
     def outside_normal(self) -> bool:
-        return abs(self.z_score) >= Z_THRESHOLD
+        """Outside the normal band on the side that is a health concern for this signal."""
+        if abs(self.z_score) < Z_THRESHOLD:
+            return False
+        concern = CONCERN[self.reading.signal]
+        return concern is Concern.BOTH or concern.value == self.direction
 
     @property
     def direction(self) -> str:

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from app.adapters.osdr_csv import load_wbc_baseline
+from app.adapters.scenario import DEMO, AcceleratedClock, Scenario
 from app.adapters.simulator import DEFAULT_PROFILES, Simulator
 from app.adapters.sqlite_repo import SqliteReadingRepository
 from app.application.bus import EventBus
@@ -32,6 +33,7 @@ class Container:
     bus: EventBus
     mission: Mission
     clock: Clock
+    scenario: Scenario | None = None
 
     @property
     def ingest(self) -> IngestReadings:
@@ -46,11 +48,23 @@ class Container:
         return self.mission.radiation
 
     @classmethod
-    def build(cls, settings: Settings, clock: Clock = utc_now) -> Container:
+    def build(
+        cls, settings: Settings, clock: Clock | None = None, scenario: Scenario | None = None
+    ) -> Container:
+        if scenario is None and settings.scenario == DEMO.name:
+            scenario = DEMO
+        if clock is None:
+            clock = AcceleratedClock(scenario.start, settings.speed) if scenario else utc_now
         repository = SqliteReadingRepository(settings.db_path)
         bus = EventBus()
-        ingest = IngestReadings(Simulator(seed=settings.seed), repository, bus)
-        baselines = synthetic_preflight_baselines(seed=settings.seed + 1, end=clock())
+        simulator = (
+            Simulator(seed=settings.seed, exam_every=scenario.exam_every, adjust=scenario.offset)
+            if scenario
+            else Simulator(seed=settings.seed)
+        )
+        ingest = IngestReadings(simulator, repository, bus)
+        start = scenario.start if scenario else clock()
+        baselines = synthetic_preflight_baselines(seed=settings.seed + 1, end=start)
         wbc_baseline, _ = load_wbc_baseline(OSDR_CBC_CSV)
         baselines[wbc_baseline.signal] = wbc_baseline
         evaluate = EvaluateHealth(baselines, bus)
@@ -65,4 +79,5 @@ class Container:
             bus=bus,
             mission=Mission(ingest, evaluate, radiation),
             clock=clock,
+            scenario=scenario,
         )
