@@ -8,6 +8,7 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_DB = BACKEND_DIR / "data" / "local" / "allinkay.db"
+OSDR_CBC_CSV = BACKEND_DIR.parent / "data" / "osdr" / "OSD-569_LSDS-7_complete_blood_count.csv"
 
 
 @dataclass(frozen=True)

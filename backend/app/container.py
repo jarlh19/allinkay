@@ -6,13 +6,14 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from app.adapters.osdr_csv import load_wbc_baseline
 from app.adapters.simulator import Simulator
 from app.adapters.sqlite_repo import SqliteReadingRepository
 from app.application.bus import EventBus
 from app.application.evaluate import EvaluateHealth
 from app.application.ingest import IngestReadings
 from app.application.mission import Mission, synthetic_preflight_baselines
-from app.config import Settings
+from app.config import OSDR_CBC_CSV, Settings
 from app.domain.rules import CombinedPatternRule, OutsideNormalRule
 
 Clock = Callable[[], datetime]
@@ -44,6 +45,8 @@ class Container:
         bus = EventBus()
         ingest = IngestReadings(Simulator(seed=settings.seed), repository, bus)
         baselines = synthetic_preflight_baselines(seed=settings.seed + 1, end=clock())
+        wbc_baseline, _ = load_wbc_baseline(OSDR_CBC_CSV)
+        baselines[wbc_baseline.signal] = wbc_baseline
         evaluate = EvaluateHealth(baselines, [OutsideNormalRule(), CombinedPatternRule()], bus)
         return cls(
             settings=settings,
