@@ -73,6 +73,10 @@ export function reduce(state: LiveState, action: Action): LiveState {
       return { ...state, forecast: event };
     case "crew":
       return { ...state, crew: event.members };
+    default:
+      // A page left open while the server is updated can get messages it does not know yet;
+      // ignoring them keeps the panel running instead of losing its whole state.
+      return state;
   }
 }
 
