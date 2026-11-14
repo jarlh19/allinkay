@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { HISTORY_LENGTH, initialState, overallStatus, reduce, systemStatus } from "./liveState";
-import type { Alert, Evaluation, Reading } from "./types";
+import type { Alert, Evaluation, LiveEvent, Reading } from "./types";
 
 const reading = (signal: string, value: number): Reading => ({
   signal,
@@ -48,6 +48,12 @@ describe("reduce", () => {
 
     expect(state.heartRateHistory).toHaveLength(HISTORY_LENGTH);
     expect(state.heartRateHistory.at(-1)).toBe(HISTORY_LENGTH + 4);
+  });
+
+  it("ignores a kind of message it does not know, from a newer server", () => {
+    const unknown = { type: "earth_feedback", text: "hello" } as unknown as LiveEvent;
+
+    expect(reduce(initialState, { kind: "event", event: unknown })).toBe(initialState);
   });
 
   it("tracks the connection", () => {
