@@ -44,4 +44,4 @@ def load_wbc_baseline(
         low=float(first["RANGE_MIN"]), high=float(first["RANGE_MAX"]), unit=first["UNITS"]
     )
     source = f"NASA OSDR OSD-569 ({subject}, pre-flight {', '.join(points)})"
-    return Baseline.from_values(Signal.WHITE_BLOOD_CELLS, values, source), general
+    return Baseline.from_lab_values(Signal.WHITE_BLOOD_CELLS, values, source), general

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections import deque
+from dataclasses import dataclass
 from typing import Any
 
 from app.application.bus import EventBus
@@ -11,13 +13,25 @@ from app.domain.readings import Frequency, Reading, Signal
 from app.domain.references import REFERENCES
 from app.domain.rules import Alert, evaluate_rules
 
-PERSISTENCE: dict[Frequency, int] = {
-    Frequency.LIVE: 10,
-    Frequency.DAILY: 2,
-    Frequency.EXAM: 1,
+
+@dataclass(frozen=True)
+class Confirmation:
+    z: float
+    count: int
+    window: int
+
+
+CONFIRMATION: dict[Frequency, Confirmation] = {
+    Frequency.LIVE: Confirmation(z=1.5, count=10, window=10),
+    Frequency.DAILY: Confirmation(z=2.2, count=3, window=4),
+    Frequency.EXAM: Confirmation(z=2.81, count=2, window=2),
 }
-"""Consecutive readings outside the normal band needed before alerting, so a single noisy
-sample does not raise a false alarm: ten live readings, two days in a row, or one exam."""
+"""A reading counts toward an alert when it is at least as unusual as `z`, judged with the
+prediction interval of the person's normal, on the side that is a health concern. The alert
+needs `count` of the last `window` readings to count on the same side: ten live readings in a
+row, three of the last four days (one ordinary day inside a real change does not reset it), or
+an exam and its repeat (2.81: the 99.5% reference change value for serial lab results).
+Chosen by measuring false alarms and misses on synthetic people (backend/validate_model.py)."""
 
 
 class EvaluateHealth:
@@ -26,15 +40,16 @@ class EvaluateHealth:
         baselines: dict[Signal, Baseline],
         bus: EventBus,
         strategy: ModelStrategy | None = None,
-        persistence: dict[Frequency, int] | None = None,
+        confirmation: dict[Frequency, Confirmation] | None = None,
     ) -> None:
         self._baselines = dict(baselines)
         self._strategy = strategy or strategy_for(Mode.SHIP)
         self._extra: list[Alert] = []
         self._bus = bus
-        self._persistence = persistence or PERSISTENCE
+        self._confirmation = confirmation or CONFIRMATION
         self._current: dict[Signal, Deviation] = {}
-        self._streak: dict[Signal, int] = {}
+        self._recent: dict[Signal, deque[str | None]] = {}
+        self._repeats_to_request: list[Signal] = []
         self._alerts: list[Alert] = []
 
     def set_baseline(self, baseline: Baseline) -> None:
@@ -59,11 +74,37 @@ class EvaluateHealth:
                 continue
             dev = deviation(reading, baseline)
             self._current[reading.signal] = dev
-            self._streak[reading.signal] = (
-                self._streak.get(reading.signal, 0) + 1 if dev.outside_normal else 0
-            )
+            self._count(dev)
         self._extra = list(extra or [])
         return self._refresh()
+
+    def _count(self, dev: Deviation) -> None:
+        signal = dev.reading.signal
+        rule = self._confirmation[dev.reading.spec.frequency]
+        recent = self._recent.setdefault(signal, deque(maxlen=rule.window))
+        side = dev.beyond(rule.z)
+        recent.append(side)
+        is_exam = dev.reading.spec.frequency is Frequency.EXAM
+        if side is not None and is_exam and self._counted(signal) < rule.count:
+            self._repeats_to_request.append(signal)
+
+    def _counted(self, signal: Signal) -> int:
+        """Readings that count toward an alert among the recent ones, on the busiest side."""
+        sides = [side for side in self._recent.get(signal, ()) if side is not None]
+        return max((sides.count(side) for side in set(sides)), default=0)
+
+    def take_repeat_requests(self) -> list[Signal]:
+        """Exams that came out unusual once and must be repeated before they can alert."""
+        requests, self._repeats_to_request = self._repeats_to_request, []
+        return requests
+
+    def _waiting_for_repeat(self, dev: Deviation) -> bool:
+        if dev.reading.spec.frequency is not Frequency.EXAM:
+            return False
+        recent = self._recent.get(dev.reading.signal)
+        if not recent or recent[-1] is None:
+            return False
+        return self._counted(dev.reading.signal) < self._confirmation[Frequency.EXAM].count
 
     def _refresh(self) -> list[Alert]:
         confirmed = [
@@ -76,10 +117,8 @@ class EvaluateHealth:
         return self._alerts
 
     def _is_confirmed(self, dev: Deviation) -> bool:
-        if not dev.outside_normal:
-            return False
-        needed = self._persistence[dev.reading.spec.frequency]
-        return self._streak.get(dev.reading.signal, 0) >= needed
+        needed = self._confirmation[dev.reading.spec.frequency].count
+        return self._counted(dev.reading.signal) >= needed
 
     def view(self) -> dict[str, Any]:
         return {
@@ -87,7 +126,11 @@ class EvaluateHealth:
             "mode": self._strategy.mode.value,
             "mitigation": self._strategy.mitigation,
             "deviations": [
-                {**_deviation_to_dict(d), "confirmed": self._is_confirmed(d)}
+                {
+                    **_deviation_to_dict(d),
+                    "confirmed": self._is_confirmed(d),
+                    "repeat_requested": self._waiting_for_repeat(d),
+                }
                 for d in self._current.values()
             ],
             "alerts": [_alert_to_dict(a) for a in self._alerts],

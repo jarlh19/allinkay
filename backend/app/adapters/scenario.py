@@ -10,8 +10,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 
+from app.adapters.simulator import Simulator
 from app.domain.readings import Reading, Signal
-from app.ports.sources import ReadingSource
 
 
 @dataclass(frozen=True)
@@ -82,11 +82,11 @@ DEMO = Scenario(
     drifts=(
         Drift(Signal.SLEEP_HOURS, start_day=2, per_day=-0.6, cap=-2.6),
         Drift(Signal.REACTION_TIME, start_day=2, per_day=18, cap=80),
-        Drift(Signal.WHITE_BLOOD_CELLS, start_day=4, per_day=-0.9, cap=-2.0),
-        Drift(Signal.MOOD, start_day=4, per_day=-0.3, cap=-1.2),
+        Drift(Signal.WHITE_BLOOD_CELLS, start_day=3, per_day=-1.75, cap=-3.5),
+        Drift(Signal.MOOD, start_day=2, per_day=-0.7, cap=-2.2),
     ),
     spikes=(Spike(Signal.DOSE_TODAY, start_day=8, hours=6, offset=118),),
-    exam_every=timedelta(days=3),
+    exam_every=timedelta(days=2),
     cycle_days=10,
 )
 
@@ -114,11 +114,11 @@ class RepeatingSource:
     """Starts a fresh source on every lap of the script, so each lap of the demo shows exactly
     the readings that were checked in the first one (the noise repeats along with the drifts)."""
 
-    def __init__(self, make: Callable[[], ReadingSource], scenario: Scenario) -> None:
+    def __init__(self, make: Callable[[], Simulator], scenario: Scenario) -> None:
         self._make = make
         self._scenario = scenario
         self._lap: int | None = None
-        self._source: ReadingSource | None = None
+        self._source: Simulator | None = None
 
     def read(self, at: datetime) -> list[Reading]:
         lap = self._scenario.lap(at)
@@ -126,6 +126,10 @@ class RepeatingSource:
             self._source = self._make()
             self._lap = lap
         return self._source.read(at)
+
+    def request_exam(self, signal: Signal, at: datetime) -> None:
+        if self._source is not None:
+            self._source.request_exam(signal, at)
 
 
 class SteppingClock:

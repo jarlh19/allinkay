@@ -144,7 +144,7 @@ class Deviation:
 
 1. En un clon limpio, `python scripts/verify.py` pasa completo.
 2. Con la red apagada, `python scripts/demo.py` levanta la app y el panel se actualiza en vivo cada segundo con el simulador.
-3. Con una línea base y lecturas de prueba, el modelo marca las señales fuera de ±1.5 desviaciones estándar. Si dos o más sistemas se desvían a la vez, aparece el patrón combinado. Cada alerta muestra la señal, el valor, su normal, la razón y la fuente.
+3. Con una línea base y lecturas de prueba, el modelo marca las señales fuera de su normal (±1.5 desviaciones estándar) y solo alerta cuando el cambio se confirma: 10 lecturas continuas seguidas, 3 de los últimos 4 días o un examen y su repetición (D-011). Si dos o más sistemas tienen alertas confirmadas a la vez, aparece el patrón combinado. Cada alerta muestra la señal, el valor, su normal, la razón y la fuente.
 4. El pronóstico de sueño a 3 noches y la proyección de días hasta 600 mSv coinciden con los cálculos de las pruebas.
 5. Una tormenta solar simulada dispara el camino de emergencia con la guía de acción.
 6. El feedback de la Tierra llega con la demora configurada y la pantalla muestra cuánto falta.
@@ -153,6 +153,7 @@ class Deviation:
 9. La línea base de glóbulos blancos sale del CSV de OSD-569, con la cita visible en la pantalla.
 10. La app está publicada en una URL de Render y se actualiza sola con cada cambio en `main` (D-009).
 11. Geraldine y Aranza, usando la app como astronautas desde su navegador, pueden enviar un reporte con «Reportar un problema». El reporte queda guardado con su contexto y se puede exportar para crear el issue.
+12. `python validate_model.py` (en `backend/`), con 200 personas simuladas durante 90 días en la nave y en campo, da como máximo 1 falsa alarma cada 10 años-astronauta y como máximo el 1 % de los cambios del guion sin detectar en 10 días (D-011).
 
 ## Fuera de alcance
 
@@ -179,6 +180,7 @@ En `docs/decisiones.md`:
 - D-008: idioma.
 - D-009: publicación en Render como un solo servicio.
 - D-010: varios tripulantes, una misión por persona.
+- D-011: alertas confirmadas, con metas de falsas alarmas y de cambios sin detectar (exámenes con repetición, intervalo de predicción, 3 de 4 días).
 
 ## Preguntas abiertas
 

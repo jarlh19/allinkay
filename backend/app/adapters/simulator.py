@@ -14,8 +14,11 @@ from enum import StrEnum
 import numpy as np
 
 from app.domain.readings import SPECS, Frequency, Reading, Signal
+from app.domain.variation import LAB_VARIATION
 
 SOURCE = "simulator"
+
+_LAB_CV = {signal: v.total_cv for signal, v in LAB_VARIATION.items()}
 
 
 class Distribution(StrEnum):
@@ -33,7 +36,9 @@ class SignalProfile:
 
 # Synthetic but plausible levels. White blood cells use the pre-flight mean of an
 # Inspiration4 crew member (NASA OSDR, OSD-569) and the radiation dose uses the cruise
-# rate measured by Curiosity on its way to Mars (Zeitlin et al., 2013).
+# rate measured by Curiosity on its way to Mars (Zeitlin et al., 2013). Lab exams vary as
+# much as published data says they do in a healthy person, analytical error included
+# (EFLM Biological Variation Database; see app.domain.variation).
 DEFAULT_PROFILES: dict[Signal, SignalProfile] = {
     Signal.HEART_RATE: SignalProfile(68, 4, 0),
     Signal.SYSTOLIC_BP: SignalProfile(116, 5, 0),
@@ -43,8 +48,10 @@ DEFAULT_PROFILES: dict[Signal, SignalProfile] = {
     Signal.MOOD: SignalProfile(3.8, 0.5, 0),
     Signal.REACTION_TIME: SignalProfile(270, 18, 0),
     Signal.BODY_TEMPERATURE: SignalProfile(36.7, 0.2, 1),
-    Signal.WHITE_BLOOD_CELLS: SignalProfile(5.97, 0.4, 1),
-    Signal.GLUCOSE: SignalProfile(92, 6, 0),
+    Signal.WHITE_BLOOD_CELLS: SignalProfile(
+        5.97, round(5.97 * _LAB_CV[Signal.WHITE_BLOOD_CELLS], 2), 1
+    ),
+    Signal.GLUCOSE: SignalProfile(92, round(92 * _LAB_CV[Signal.GLUCOSE], 1), 0),
     Signal.SYMPTOMS: SignalProfile(0.1, 0, 0, Distribution.POISSON),
     Signal.CABIN_TEMPERATURE: SignalProfile(22, 0.5, 1),
     Signal.CABIN_CO2: SignalProfile(3.0, 0.3, 1),
@@ -74,15 +81,26 @@ class Simulator:
             raise ValueError(f"Simulator profiles missing for: {names}")
         self._every = {Frequency.DAILY: daily_every, Frequency.EXAM: exam_every}
         self._last_emitted: dict[Signal, datetime] = {}
+        self._requested: dict[Signal, datetime] = {}
+
+    def request_exam(self, signal: Signal, at: datetime) -> None:
+        """An extra exam at `at` (a repeat); the regular schedule is not moved."""
+        if SPECS[signal].frequency is not Frequency.EXAM:
+            raise ValueError(f"{signal} is not a lab exam")
+        self._requested[signal] = at
 
     def read(self, at: datetime) -> list[Reading]:
         readings: list[Reading] = []
         for signal, spec in SPECS.items():
-            if not self._is_due(signal, spec.frequency, at):
+            scheduled = self._is_due(signal, spec.frequency, at)
+            requested = signal in self._requested and self._requested[signal] <= at
+            if not (scheduled or requested):
                 continue
             value = self._sample(signal, at)
             readings.append(Reading.create(signal, value, at, SOURCE))
-            self._last_emitted[signal] = at
+            self._requested.pop(signal, None)
+            if scheduled:
+                self._last_emitted[signal] = at
         return readings
 
     def _is_due(self, signal: Signal, frequency: Frequency, at: datetime) -> bool:
