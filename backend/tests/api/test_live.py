@@ -21,7 +21,7 @@ def test_snapshot_is_empty_before_any_tick() -> None:
 
 def test_snapshot_returns_every_signal_after_the_first_tick() -> None:
     app = quiet_app()
-    app.state.container.ingest.tick(NOW)
+    app.state.container.mission.step(NOW)
     client = TestClient(app)
 
     readings = client.get("/api/snapshot").json()["readings"]

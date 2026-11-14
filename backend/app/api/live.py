@@ -36,6 +36,11 @@ def history(
     return {"signal": known.value, "readings": [reading_to_dict(r) for r in readings]}
 
 
+@router.get("/api/evaluation")
+def evaluation(request: Request) -> dict[str, Any]:
+    return _container(request.app.state).evaluate.view()
+
+
 @router.websocket("/ws/live")
 async def live(websocket: WebSocket) -> None:
     container = _container(websocket.app.state)
@@ -46,6 +51,7 @@ async def live(websocket: WebSocket) -> None:
         await websocket.send_json(
             {"type": "snapshot", "readings": [reading_to_dict(r) for r in latest.values()]}
         )
+        await websocket.send_json(container.evaluate.view())
         while True:
             event = await queue.get()
             await websocket.send_json(event)

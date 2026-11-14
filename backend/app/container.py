@@ -9,8 +9,11 @@ from datetime import UTC, datetime
 from app.adapters.simulator import Simulator
 from app.adapters.sqlite_repo import SqliteReadingRepository
 from app.application.bus import EventBus
+from app.application.evaluate import EvaluateHealth
 from app.application.ingest import IngestReadings
+from app.application.mission import Mission, synthetic_preflight_baselines
 from app.config import Settings
+from app.domain.rules import CombinedPatternRule, OutsideNormalRule
 
 Clock = Callable[[], datetime]
 
@@ -24,12 +27,28 @@ class Container:
     settings: Settings
     repository: SqliteReadingRepository
     bus: EventBus
-    ingest: IngestReadings
+    mission: Mission
     clock: Clock
+
+    @property
+    def ingest(self) -> IngestReadings:
+        return self.mission.ingest
+
+    @property
+    def evaluate(self) -> EvaluateHealth:
+        return self.mission.evaluate
 
     @classmethod
     def build(cls, settings: Settings, clock: Clock = utc_now) -> Container:
         repository = SqliteReadingRepository(settings.db_path)
         bus = EventBus()
         ingest = IngestReadings(Simulator(seed=settings.seed), repository, bus)
-        return cls(settings=settings, repository=repository, bus=bus, ingest=ingest, clock=clock)
+        baselines = synthetic_preflight_baselines(seed=settings.seed + 1, end=clock())
+        evaluate = EvaluateHealth(baselines, [OutsideNormalRule(), CombinedPatternRule()], bus)
+        return cls(
+            settings=settings,
+            repository=repository,
+            bus=bus,
+            mission=Mission(ingest, evaluate),
+            clock=clock,
+        )

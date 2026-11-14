@@ -19,7 +19,7 @@ async def run_live_loop(container: Container) -> None:
     """Pull due readings on a fixed interval. A failed tick is logged and the loop goes on."""
     while True:
         try:
-            container.ingest.tick(container.clock())
+            container.mission.step(container.clock())
         except Exception:
             logger.exception("Live tick failed")
         await asyncio.sleep(container.settings.tick_seconds)
