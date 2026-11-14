@@ -1,7 +1,8 @@
 """Measure the model's two kinds of error on synthetic people (no real person's data).
 
 - False alarm: an alert for a change that did not happen (a healthy person, or a signal that a
-  crew member's script does not touch). Reported per astronaut-year.
+  crew member's script does not touch). Reported per astronaut-year, for the ship and the field
+  separately; the target applies to each, so the field cannot dilute the ship.
 - Miss: a change written in a crew member's demo script that raises no alert within the lap
   (10 days). A persistent change missed in the lap is still caught by later readings.
 
@@ -78,8 +79,8 @@ def main() -> int:
     parser.add_argument("--people", type=int, default=200)
     parser.add_argument("--days", type=int, default=90)
     args = parser.parse_args()
-    false_alarms = 0
-    person_days = 0
+    false_alarms: Counter[Mode] = Counter()
+    person_days: Counter[Mode] = Counter()
     misses = 0
     scripted = 0
 
@@ -89,8 +90,8 @@ def main() -> int:
             _, episodes = run(seed, args.days, mode, scenario=None)
             by_signal.update({s.value: n for s, n in episodes.items()})
         count = sum(by_signal.values())
-        false_alarms += count
-        person_days += args.people * args.days
+        false_alarms[mode] += count
+        person_days[mode] += args.people * args.days
         print(
             f"Healthy, {mode.value}: {args.people} people x {args.days} days, "
             f"false alarms {count} {dict(by_signal) or ''}"
@@ -113,8 +114,8 @@ def main() -> int:
             unexpected.update({s.value: n for s, n in episodes.items() if s not in expected})
         misses += sum(missed.values())
         scripted += len(expected) * args.people
-        false_alarms += sum(unexpected.values())
-        person_days += args.people * lap
+        false_alarms[member.mode] += sum(unexpected.values())
+        person_days[member.mode] += args.people * lap
         detail = ", ".join(
             f"{s.value} day {min(d):.1f}-{max(d):.1f}" if d else f"{s.value} never"
             for s, d in sorted(detected_on.items())
@@ -124,13 +125,16 @@ def main() -> int:
             f"missed {dict(missed) or 0}; false alarms {dict(unexpected) or 0}"
         )
 
-    years = person_days / 365.25
-    rate = false_alarms / years
+    rates = {}
+    for mode in (Mode.SHIP, Mode.FIELD):
+        years = person_days[mode] / 365.25
+        rates[mode] = false_alarms[mode] / years
+        print(
+            f"False alarms in the {mode.value}: {false_alarms[mode]} in {years:.0f} "
+            f"astronaut-years = {rates[mode]:.3f} per year (target <= {MAX_FALSE_ALARMS_PER_YEAR})"
+        )
+    rate = max(rates.values())
     miss_rate = misses / scripted if scripted else 0.0
-    print(
-        f"False alarms: {false_alarms} in {years:.0f} astronaut-years = {rate:.3f} per year "
-        f"(target <= {MAX_FALSE_ALARMS_PER_YEAR})"
-    )
     print(
         f"Missed changes: {misses} of {scripted} = {miss_rate:.2%} (target <= {MAX_MISS_RATE:.0%})"
     )
