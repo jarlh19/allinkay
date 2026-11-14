@@ -77,7 +77,13 @@ class Container:
             settings=settings,
             repository=repository,
             bus=bus,
-            mission=Mission(ingest, evaluate, radiation),
+            mission=Mission(
+                ingest,
+                evaluate,
+                radiation,
+                bus,
+                mission_day=scenario.mission_day if scenario else None,
+            ),
             clock=clock,
             scenario=scenario,
         )

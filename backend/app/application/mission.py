@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime, timedelta
 
 from app.adapters.simulator import Simulator
+from app.application.bus import EventBus
 from app.application.evaluate import EvaluateHealth
 from app.application.ingest import IngestReadings
 from app.application.radiation import TrackRadiation
@@ -16,13 +18,31 @@ PREFLIGHT_SOURCE = "pre-flight (synthetic)"
 
 class Mission:
     def __init__(
-        self, ingest: IngestReadings, evaluate: EvaluateHealth, radiation: TrackRadiation
+        self,
+        ingest: IngestReadings,
+        evaluate: EvaluateHealth,
+        radiation: TrackRadiation,
+        bus: EventBus,
+        mission_day: Callable[[datetime], int] | None = None,
     ) -> None:
         self.ingest = ingest
         self.evaluate = evaluate
         self.radiation = radiation
+        self._bus = bus
+        self._mission_day = mission_day
+        self._last_at: datetime | None = None
+
+    def clock_view(self) -> dict[str, object]:
+        at = self._last_at
+        return {
+            "type": "clock",
+            "at": at.isoformat() if at else None,
+            "mission_day": self._mission_day(at) if at and self._mission_day else None,
+        }
 
     def step(self, at: datetime) -> list[Reading]:
+        self._last_at = at
+        self._bus.publish(self.clock_view())
         readings = self.ingest.tick(at)
         if readings:
             self.radiation.on_readings(readings)
