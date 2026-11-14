@@ -135,5 +135,6 @@ def _build_member(
         ForecastSleep(repository, baselines.get(Signal.SLEEP_HOURS), bus),
         mission_day=scenario.mission_day if scenario else None,
         exams=source,
+        lap=scenario.lap if scenario else None,
     )
     return CrewSlot(member=member, mission=mission, repository=repository, bus=bus), repository
