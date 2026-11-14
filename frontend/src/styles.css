@@ -214,6 +214,10 @@ button { font: inherit; color: inherit; }
   .body-panel, .status-column { position: static; }
 }
 
+@media (max-width: 560px) {
+  .body-stage { grid-template-columns: minmax(0, 1fr); row-gap: 22px; }
+}
+
 @media (max-width: 1000px) {
   .cols3, .model-grid { grid-template-columns: 1fr; gap: 16px; }
   .cols3 > div { padding: 0; border-left: 0; }
