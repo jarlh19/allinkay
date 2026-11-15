@@ -233,3 +233,18 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - Its legs and helmet line up with the body; its arms reach forward, which is fine because the skin and skeleton are hidden in the field.
 - **Set aside:** keeping the EMU (a spacewalk suit, not a surface suit).
 
+## D-019 · The synthetic cabin is centred on the real ISS cabin
+
+- **Problem:** the cabin temperature (22 °C) and CO2 (3.0 mmHg) of the simulator were plausible guesses without a source, while NASA publishes what the International Space Station's cabin really measured.
+- **Chosen:**
+  - The level and spread of the synthetic cabin come from the Environmental Data App (EDA) of NASA OSDR, which publishes the ISS cabin readings of each Rodent Research mission. The simulator uses the median of the mission medians and the median of the mission spreads (interquartile range / 1.349, which ignores sensor drop-outs), so every mission counts once however long it was.
+  - Cabin temperature: 22.55 °C with a spread of 0.5 °C (14 missions, 2014 to 2024; it was 22 °C and 0.5).
+  - Cabin CO2: 2913 ppm, 2.2 mmHg at the simulator's 101.3 kPa, with a spread of 0.3 mmHg (10 missions, 2014 to 2021; it was 3.0 mmHg and 0.3).
+  - The summary by mission is a small CSV in `data/eda`, rebuilt by `scripts/eda_cabin_summary.py` from the EDA API, and a test keeps the simulator in step with it. The readings in the app are still synthetic; only their level and spread are real.
+  - Measured again with `validate_model.py` after the change: in the ship 5 false alarms in 60 astronaut-years, in the field 0 in 55, and 5 of 1200 scripted changes missed, the same as before; none of the false alarms comes from the cabin. The targets of D-011 are still met.
+- **Set aside:**
+  - Reading the EDA from the app: the app must work without a connection, and the EDA only has past missions in low Earth orbit.
+  - The public live telemetry of the ISS (Lightstreamer feed `ISSLIVE`): it also gives the cabin pressure and oxygen, but only the latest value, without history, and on 15 November 2026 its oxygen and CO2 had not been updated since 2 and 3 November. The pressure (101.3 kPa) and oxygen (21.2 kPa) keep their reference levels.
+  - The EDA's daily dose: it is measured in low Earth orbit, in mGy per day, not on the way to Mars, so the cruise rate measured by Curiosity stays (Zeitlin et al., 2013).
+  - Sleep: by actigraphy the ISS crews slept 6.09 ± 0.67 h per night (Barger et al., 2014, *Lancet Neurology* 13(9), 904–912), and the simulator uses 7.4 h. Changing it moves the values of the demo story, so it is left for its own decision.
+- **Trade-off:** RR-10 and RR-23 overlap in December 2020 and January 2021, so those weeks count twice. The mission CO2 medians range from 2141 to 3638 ppm (the four missions from 2019 on are all below 2700 ppm, and five of the six before are above 3100), so the median is sensitive: leaving RR-10 out would give 22.6 °C and 2.4 mmHg. The alerts compare each reading with the person's own baseline, so the level itself does not decide when they fire.
