@@ -6,6 +6,8 @@ This product includes data from the NASA Open Science Data Repository:
   https://osdr.nasa.gov/bio/repo/data/studies/OSD-569
 - OSD-575, SpaceX Inspiration4 comprehensive metabolic panel,
   https://osdr.nasa.gov/bio/repo/data/studies/OSD-575
+- Environmental Data App, ISS cabin temperature and CO2 during the Rodent Research
+  missions, summarised by mission in data/eda, https://visualization.osdr.nasa.gov/eda/
 
 We acknowledge the Community Coordinated Modeling Center (CCMC) at Goddard Space
 Flight Center for the use of the Space Weather Database Of Notifications, Knowledge,

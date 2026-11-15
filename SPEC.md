@@ -90,8 +90,9 @@ frontend/src/i18n/         → English and Spanish texts
 frontend/src/api/          → live state, WebSocket client and types
 data/osdr/                 → the OSD-569 and OSD-575 CSV files, with their source and licence in a README
 data/donki/                → the NASA DONKI answers for the March 2012 storm, with their source in a README
-docs/decisions.md          → architecture and model decisions (D-001 to D-012)
-scripts/                   → verify.py and demo.py
+data/eda/                  → the ISS cabin temperature and CO2 by mission (NASA OSDR EDA) that the simulator is centred on
+docs/decisions.md          → architecture and model decisions (D-001 to D-019)
+scripts/                   → verify.py, demo.py and eda_cabin_summary.py (rebuilds data/eda)
 LICENSE, NOTICE            → Apache 2.0 and credits, including the NASA data citation
 ```
 
@@ -157,6 +158,7 @@ def beyond(self, z: float) -> str | None:
 10. The app is published at a Render URL and updates itself on every change to `main` (D-009).
 11. Testers using the app as astronauts from their own browser can send a report with "Report a problem". It arrives as a GitHub issue with its context.
 12. `python validate_model.py` (in `backend/`), with 200 synthetic people over 90 days in the ship and in the field, gives at most one false alarm every 10 astronaut-years and at most 1% of the scripted changes missed within 10 days (D-011).
+13. The simulated cabin temperature and CO2 are centred on the ISS cabin summarised in `data/eda` from NASA OSDR's Environmental Data App, and a test keeps the simulator in step with it (D-019).
 
 ## Out of scope
 
