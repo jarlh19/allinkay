@@ -67,9 +67,7 @@ button { font: inherit; color: inherit; }
 .crew-name { font-weight: 600; font-size: 14px; }
 .crew-place { font-family: var(--mono); font-size: 12px; color: var(--text-3); }
 
-.layout { display: grid; grid-template-columns: 260px minmax(0, 1fr) minmax(0, 420px); gap: 16px; align-items: start; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; }
-.panel.focus { border-color: var(--accent); }
 .panel h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 14px; }
 .body-panel { display: flex; flex-direction: column; }
 
@@ -122,20 +120,12 @@ button { font: inherit; color: inherit; }
 .body-stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, 260px) minmax(0, 1fr); align-items: center; gap: 10px; }
 .gauges { list-style: none; display: flex; flex-direction: column; gap: 22px; }
 .gauge { position: relative; width: 100%; display: flex; align-items: center; gap: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 30px; padding: 6px 12px 6px 6px; cursor: pointer; color: var(--text); text-align: left; }
-.gauge:hover, .gauge[aria-current="true"] { border-color: var(--accent); }
-.gauge::after { content: ""; position: absolute; top: 50%; width: 14px; border-top: 1px dashed var(--accent); opacity: 0.7; }
-.gauge.left::after { left: 100%; }
-.gauge.right::after { right: 100%; }
-.gauge-text { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
-.gauge-name { font-size: 13px; font-weight: 600; }
 /* The system's icon sits in the ring, over the percentage. */
 .system-icon { width: 14px; height: 14px; flex: none; margin-bottom: 1px; fill: none; stroke: var(--holo); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.gauge-summary { font-size: 11px; color: var(--text-3); }
 .gauge .status { font-size: 11px; padding: 1px 7px; }
 /* Leader lines from each ring to its spot on the 3D body; drawn over the canvas, never over a ring. */
 .leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 1; display: none; }
 .body-stage[data-leaders] .leaders { display: block; }
-.body-stage[data-leaders] .gauge::after { display: none; }
 .leader { --leader: var(--holo); }
 .leader.warn { --leader: var(--warn); }
 .leader.crit { --leader: var(--crit); }
@@ -161,25 +151,17 @@ button { font: inherit; color: inherit; }
 .ring-arc.warn { stroke: var(--warn); }
 .ring-arc.crit { stroke: var(--crit); }
 
-.details { display: flex; flex-direction: column; gap: 8px; container: details / inline-size; }
-.detail-section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
-.detail-section h2 { margin: 0; }
-.detail-section h2 button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: transparent; border: 0; border-radius: 8px; color: var(--text-2); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 14px 16px; cursor: pointer; text-align: left; }
-.detail-section h2 button:hover { color: var(--text); }
-.detail-head-right { display: inline-flex; align-items: center; gap: 12px; }
-.chevron { width: 8px; height: 8px; border-right: 2px solid var(--text-3); border-bottom: 2px solid var(--text-3); transform: rotate(45deg); margin-top: -4px; transition: transform 0.15s ease-out; }
-.detail-section.open .chevron { transform: rotate(-135deg); margin-top: 4px; }
-.detail-body { padding: 0 16px 16px; }
-/* The details adapt to their own width: one column in the side column or on a phone, the
-   model and radiation side by side when the details span the page under the body. */
-.details .model-grid, .details .cols3 { grid-template-columns: 1fr; gap: 16px; }
-.details .cols3 > div { padding: 0; border-left: 0; }
-.details .model-grid svg { max-width: 560px; }
-@container details (min-width: 720px) {
-  .details .model-grid { grid-template-columns: 1.15fr 1fr; gap: 28px; }
-  .details .cols3 { grid-template-columns: 1.2fr 0.85fr 1.3fr; gap: 0; }
-  .details .cols3 > div { padding: 0 20px; border-left: 1px solid var(--line); }
-  .details .cols3 > div:first-child { padding-left: 0; border-left: 0; }
+/* A system's detail adapts to its own width: one column beside the hologram or on a phone, the
+   model and radiation side by side when the detail spans two columns under the body. */
+.mission-detail { container: detail / inline-size; }
+.mission-detail .model-grid, .mission-detail .cols3 { grid-template-columns: 1fr; gap: 16px; }
+.mission-detail .cols3 > div { padding: 0; border-left: 0; }
+.mission-detail .model-grid svg { max-width: 560px; }
+@container detail (min-width: 720px) {
+  .mission-detail .model-grid { grid-template-columns: 1.15fr 1fr; gap: 28px; }
+  .mission-detail .cols3 { grid-template-columns: 1.2fr 0.85fr 1.3fr; gap: 0; }
+  .mission-detail .cols3 > div { padding: 0 20px; border-left: 1px solid var(--line); }
+  .mission-detail .cols3 > div:first-child { padding-left: 0; border-left: 0; }
 }
 .figure { flex: 1; display: flex; justify-content: center; align-items: center; margin: 4px 0 16px; }
 .figure svg { width: 100%; max-width: 260px; height: auto; }
@@ -234,26 +216,10 @@ button { font: inherit; color: inherit; }
 .primary:disabled { opacity: 0.6; cursor: wait; }
 .offline { background: rgba(239, 91, 91, 0.12); color: var(--crit); border: 1px solid rgba(239, 91, 91, 0.4); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
 
-/* Only with three columns do the person and the status stay in view while the details scroll;
-   when the details sit below them, pinned columns would overlap what scrolls underneath. */
-@media (min-width: 1361px) {
-  .body-panel, .status-column { position: sticky; top: 16px; }
-}
-
-@media (max-width: 1360px) {
-  .layout { grid-template-columns: 260px minmax(0, 1fr); }
-  .details { grid-column: 1 / -1; }
-}
-
 @media (max-width: 980px) {
   .body-stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .body-stage .figure { grid-column: 1 / -1; order: -1; }
-  .gauge::after { display: none; }
   .body-stage[data-leaders] .leaders { display: none; }
-}
-
-@media (max-width: 760px) {
-  .layout { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 560px) {
@@ -281,7 +247,7 @@ button { font: inherit; color: inherit; }
   border-radius: 14px;
   box-shadow: inset 0 0 0 1px rgba(69, 212, 255, 0.04), 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 24px rgba(69, 212, 255, 0.06);
 }
-.mission-grid { display: grid; grid-template-columns: 270px minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+.mission-grid { display: grid; grid-template-columns: 270px minmax(0, 1fr) 400px; gap: 18px; align-items: start; }
 .mission-side { display: flex; flex-direction: column; gap: 16px; }
 .mission-detail h2 { gap: 10px; }
 .mission-detail-head { display: inline-flex; align-items: center; gap: 8px; }
@@ -296,6 +262,8 @@ button { font: inherit; color: inherit; }
   mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent), linear-gradient(180deg, transparent, #000 6%, #000 94%, transparent);
 }
 .mission-body .gauges { gap: 18px; }
+.mission-body .legend { justify-content: center; margin: 4px auto 10px; max-width: 640px; }
+.mission-body .modes { max-width: 420px; width: 100%; margin: 0 auto; }
 .mission-body .gauges.left { align-items: flex-end; }
 .mission-body .gauges.right { align-items: flex-start; }
 /* The middle bubbles sit further out, so the six draw an arc around the body. */
@@ -309,6 +277,7 @@ button { font: inherit; color: inherit; }
   box-shadow: inset 0 0 18px rgba(69, 212, 255, 0.12), 0 0 16px rgba(69, 212, 255, 0.1);
 }
 .gauge.bubble:hover { border-color: var(--holo); }
+.gauge.bubble[aria-current="true"] { border-color: var(--holo); box-shadow: inset 0 0 22px rgba(69, 212, 255, 0.22), 0 0 22px rgba(69, 212, 255, 0.3); }
 .gauge.bubble::after { display: none; }
 .bubble-name { display: flex; align-items: center; justify-content: center; gap: 6px; max-width: 136px; font-size: 11px; font-weight: 600; line-height: 1.2; letter-spacing: 0.05em; text-transform: uppercase; }
 .bubble-name .system-icon { width: 20px; height: 20px; }

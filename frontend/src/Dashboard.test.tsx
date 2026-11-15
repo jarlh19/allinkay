@@ -67,10 +67,14 @@ function renderDashboard(onCrew: (id: string) => void = () => undefined) {
 }
 
 describe("Dashboard", () => {
-  it("shows the mission day, the reading and that it is outside the normal", () => {
+  it("shows the mission day, and a system's reading outside the normal once its bubble is selected", () => {
     renderDashboard();
 
-    expect(screen.getByText(/Commander · Mission day 93/)).toBeInTheDocument();
+    expect(screen.getByText("DAY 93")).toBeInTheDocument();
+    expect(screen.queryByText("Outside your normal (6.8–8.0)")).not.toBeInTheDocument();
+
+    fireEvent.click(document.querySelector<HTMLElement>('.gauge.bubble[data-target="neurological"]') as HTMLElement);
+
     expect(screen.getByText("5.2")).toBeInTheDocument();
     expect(screen.getByText("Outside your normal (6.8–8.0)")).toBeInTheDocument();
   });
@@ -80,8 +84,8 @@ describe("Dashboard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Español" }));
 
-    expect(screen.getByText(/Misión, día 93/)).toBeInTheDocument();
-    expect(screen.getAllByText("Sueño de anoche").length).toBeGreaterThan(0);
+    expect(screen.getByText("DÍA 93")).toBeInTheDocument();
+    expect(screen.getByText(/Sueño de anoche: fuera de tu normal/)).toBeInTheDocument();
   });
 
   it("warns when the connection is lost", () => {
@@ -106,25 +110,6 @@ describe("Dashboard", () => {
     fireEvent.click(engineer);
 
     expect(onCrew).toHaveBeenCalledWith("engineer");
-  });
-
-  it("opens by itself the details of a system with an alert and keeps the rest folded", () => {
-    renderDashboard();
-
-    expect(screen.getByRole("button", { name: /^Neurological/, expanded: true })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Cardiovascular/, expanded: false })).toBeInTheDocument();
-  });
-
-  it("opens a system's details from its ring around the body and folds them again", () => {
-    renderDashboard();
-    const body = screen.getByRole("region", { name: "Your body" });
-
-    fireEvent.click(within(body).getByRole("button", { name: /^Cardiovascular/ }));
-
-    const header = screen.getByRole("button", { name: /^Cardiovascular/, expanded: true });
-    expect(screen.getByRole("region", { name: /^Cardiovascular/ })).toBeInTheDocument();
-    fireEvent.click(header);
-    expect(screen.queryByRole("region", { name: /^Cardiovascular/ })).not.toBeInTheDocument();
   });
 
   it("shows who is watched and how many signals are in their normal", () => {
@@ -187,39 +172,10 @@ describe("Dashboard", () => {
     );
 
     expect(screen.getAllByText("Career radiation limit reached (600 mSv)").length).toBeGreaterThan(0);
-    const header = screen.getByRole("button", { name: /^Radiation/, expanded: true });
-    expect(header).not.toHaveTextContent("Within limit");
-    expect(header).toHaveTextContent("Emergency");
-  });
-  it("switches to the mission view and back, and keeps its own address", () => {
-    renderDashboard();
-
-    fireEvent.click(screen.getByRole("button", { name: "Mission view" }));
-
-    expect(window.location.hash).toBe("#mission");
-    expect(document.querySelectorAll(".gauge.bubble")).toHaveLength(6);
-    // The attention from the sleep alert still reads in the mission view.
-    expect(screen.getByText("Sleep last night: outside your normal")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Panel view" }));
-
-    expect(window.location.hash).toBe("");
-    expect(document.querySelectorAll(".gauge.bubble")).toHaveLength(0);
-  });
-
-  it("shows a system's detail in the mission view, and opens it in the panel from its link", () => {
-    renderDashboard();
-    fireEvent.click(screen.getByRole("button", { name: "Mission view" }));
-
-    fireEvent.click(document.querySelector<HTMLElement>('.gauge.bubble[data-target="neurological"]') as HTMLElement);
-
-    // Still the mission view, now with the neurological readings beside the hologram.
-    expect(document.querySelectorAll(".gauge.bubble")).toHaveLength(6);
-    expect(screen.getByText("Outside your normal (6.8–8.0)")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Open in the full panel" }));
-
-    expect(document.querySelectorAll(".gauge.bubble")).toHaveLength(0);
-    expect(screen.getByRole("button", { name: /^Neurological/, expanded: true })).toBeInTheDocument();
+    fireEvent.click(document.querySelector<HTMLElement>('.gauge.bubble[data-target="radiation"]') as HTMLElement);
+    const detail = screen.getByRole("region", { name: /^Radiation/ });
+    const heading = within(detail).getAllByRole("heading")[0] as HTMLElement;
+    expect(heading).not.toHaveTextContent("Within limit");
+    expect(heading).toHaveTextContent("Emergency");
   });
 });

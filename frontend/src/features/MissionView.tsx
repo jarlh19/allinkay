@@ -1,48 +1,74 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 
 import type { LiveState } from "../api/liveState";
+import type { Mode } from "../api/types";
 import { useI18n } from "../i18n/i18n";
+import { ActionsPanel } from "./ActionsPanel";
 import { BodyPanel } from "./BodyPanel";
 import { CrewStrip } from "./CrewStrip";
 import { ModelAnalysis } from "./ModelAnalysis";
+import { AlertCard, ModelPanel } from "./ModelPanel";
+import { RadiationPanel } from "./RadiationPanel";
+import { ReportDialog, type Screen } from "./ReportDialog";
+import { SYSTEM_SIGNALS, systemKey } from "./signals";
+import { StatusChip } from "./StatusChip";
 import { StatusColumn } from "./StatusColumn";
-import type { Target } from "./statusSummary";
+import { targetStatus, type Target } from "./statusSummary";
+import { SystemPanel } from "./SystemPanel";
 import { TrendCard } from "./TrendCard";
 
-/** What the mission view shows for a selected system: the same detail as the panel's section. */
-export interface MissionDetail {
-  title: string;
-  status: ReactNode;
-  content: ReactNode;
-}
+/** Longest one-way delay of a message between Mars and Earth, in minutes. */
+const MARS_MAX_DELAY_MIN = 22;
 
 interface Props {
   state: LiveState;
   crewId: string;
   onCrew: (id: string) => void;
-  /** The detail of a system, shown beside the hologram when its bubble is selected. */
-  detailOf: (target: Target) => MissionDetail;
-  /** Opens a system's section in the full panel view. */
-  onDetail: (target: Target) => void;
-  onPanel: () => void;
-  /** Connection and emergency notices, which must show in every view. */
-  notices: ReactNode;
+  onMode: (mode: Mode) => void;
 }
 
 /**
- * The mission view: the same live data as the panel, laid out like the team's "Mission Health"
- * design, with the hologram in the middle and each system as a bubble around it. Selecting a
- * bubble or a part of the body keeps the view and shows that system's detail beside the hologram.
+ * The app's screen, laid out like the team's "Mission Health" design: the hologram in the middle
+ * with each system as a bubble around it, who is watched and their overall state on the left, and
+ * the trend, the model's analysis and the actions on the right. Selecting a bubble or a part of the
+ * body shows that system's detail beside the hologram.
  */
-export function MissionView({ state, crewId, onCrew, detailOf, onDetail, onPanel, notices }: Props) {
+export function MissionView({ state, crewId, onCrew, onMode }: Props) {
   const { t, language, setLanguage } = useI18n();
   const [selected, setSelected] = useState<Target | null>(null);
-  const select = (target: Target) => setSelected((current) => (current === target ? null : target));
-  const detail = selected ? detailOf(selected) : null;
-  const { evaluation, radiation, clock } = state;
+  const [reporting, setReporting] = useState(false);
+  const { evaluation, radiation, clock, readings } = state;
   const member = state.crew.find((m) => m.id === crewId);
   const memberNumber = Math.max(state.crew.findIndex((m) => m.id === crewId), 0) + 1;
   const mode = evaluation?.mode ?? member?.mode ?? "ship";
+  const emergencies = (evaluation?.alerts ?? []).filter((a) => a.level === "emergency");
+  const time = clock?.at ? new Date(clock.at).toISOString().slice(11, 16) : null;
+  const select = (target: Target) => setSelected((current) => (current === target ? null : target));
+
+  const titleOf = (target: Target): string => {
+    if (target === "model") return t("model.title");
+    if (target === "radiation") return t("radiation.title");
+    return t(systemKey(target));
+  };
+  const chipOf = (target: Target) => {
+    const status = targetStatus(target, evaluation, radiation);
+    if (target === "radiation" && radiation && status === "ok") {
+      return <StatusChip status="ok" label={t("radiation.withinLimit")} />;
+    }
+    return <StatusChip status={status} />;
+  };
+  const contentOf = (target: Target) => {
+    if (target === "model") return <ModelPanel evaluation={evaluation} forecast={state.forecast} />;
+    if (target === "radiation") return <RadiationPanel radiation={radiation} />;
+    return (
+      <SystemPanel
+        signals={SYSTEM_SIGNALS[target]}
+        readings={readings}
+        evaluation={evaluation}
+        heartRateHistory={state.heartRateHistory}
+      />
+    );
+  };
 
   return (
     <div className="app mission">
@@ -51,14 +77,18 @@ export function MissionView({ state, crewId, onCrew, detailOf, onDetail, onPanel
           <h1>
             MISSION <b>HEALTH</b>
           </h1>
-          <p>ALLINKAY · {t("mission.subtitle")}</p>
+          <p>
+            ALLINKAY · {t("mission.subtitle")}
+            {time && ` · ${t("app.lastReading", { time })}`}
+          </p>
         </div>
         <div className="top-right">
           {clock?.mission_day ? <span className="mission-day">{t("mission.day", { day: clock.mission_day })}</span> : null}
           <span className="mission-place">{t(mode === "field" ? "mode.field" : "mode.ship")}</span>
+          <span className="pill">{t("pill.earth", { delay: MARS_MAX_DELAY_MIN })}</span>
           <span className="pill">{t("pill.simulated")}</span>
-          <button type="button" className="lang" onClick={onPanel}>
-            {t("view.panel")}
+          <button type="button" className="lang" onClick={() => setReporting(true)}>
+            {t("report.open")}
           </button>
           <button type="button" className="lang" onClick={() => setLanguage(language === "en" ? "es" : "en")}>
             {t("lang.switch")}
@@ -66,7 +96,19 @@ export function MissionView({ state, crewId, onCrew, detailOf, onDetail, onPanel
         </div>
       </header>
       <CrewStrip members={state.crew} selected={crewId} onSelect={onCrew} />
-      {notices}
+      {!state.connected && <div className="offline">{t("offline")}</div>}
+      <ReportDialog
+        key={reporting ? "open" : "closed"}
+        open={reporting}
+        onClose={() => setReporting(false)}
+        screen={(selected ?? "overall") as Screen}
+        missionDay={clock?.mission_day ?? null}
+        mode={mode}
+        crewId={crewId}
+      />
+      {emergencies.map((alert, i) => (
+        <AlertCard key={`emergency-${i}`} alert={alert} />
+      ))}
       <div className="mission-grid">
         <StatusColumn
           evaluation={evaluation}
@@ -76,30 +118,26 @@ export function MissionView({ state, crewId, onCrew, detailOf, onDetail, onPanel
           connected={state.connected}
         />
         <BodyPanel
-          variant="mission"
           evaluation={evaluation}
           radiation={radiation}
-          heartRate={state.readings.heart_rate?.value ?? null}
+          heartRate={readings.heart_rate?.value ?? null}
           focused={selected}
           onFocus={select}
-          onMode={() => undefined}
+          onMode={onMode}
         />
         <div className="mission-side">
-          {selected && detail ? (
-            <section className="panel mission-detail" aria-labelledby="mission-detail-title">
+          {selected ? (
+            <section className="panel mission-detail" id={`panel-${selected}`} aria-labelledby="mission-detail-title">
               <h2 id="mission-detail-title">
-                <span>{detail.title}</span>
+                <span>{titleOf(selected)}</span>
                 <span className="mission-detail-head">
-                  {detail.status}
+                  {chipOf(selected)}
                   <button type="button" className="close" aria-label={t("mission.closeDetail")} onClick={() => setSelected(null)}>
                     ✕
                   </button>
                 </span>
               </h2>
-              {detail.content}
-              <button type="button" className="link" onClick={() => onDetail(selected)}>
-                {t("mission.openPanel")}
-              </button>
+              {contentOf(selected)}
             </section>
           ) : (
             <>
@@ -107,6 +145,10 @@ export function MissionView({ state, crewId, onCrew, detailOf, onDetail, onPanel
               <ModelAnalysis evaluation={evaluation} radiation={radiation} onOpen={() => setSelected("model")} />
             </>
           )}
+          <section className="panel actions-card" aria-labelledby="actions-title">
+            <h2 id="actions-title">{t("actions.title")}</h2>
+            <ActionsPanel evaluation={evaluation} />
+          </section>
         </div>
       </div>
     </div>

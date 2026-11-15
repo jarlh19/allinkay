@@ -183,3 +183,17 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - Inventing values or formulas for what is not measured.
   - Using the design's photo and background: their origin is unknown, and the repository will be public.
   - Replacing the panel: the detail of each system lives there.
+
+## D-015 · One screen: the mission view replaces the panel
+
+- **Problem:** two views showed the same live data. Once the mission view could show a system's detail beside the hologram, the panel only added the same detail laid out differently, and a judge or tester could land on either.
+- **Chosen:** the mission view (D-014) is the app's only screen, at the main address.
+  - Moved into it from the panel:
+    - the ship / field switch and the legend, under the hologram;
+    - "Report a problem" and the "Earth link: up to 22 min delay" label, in the header;
+    - the actions (action guide and mitigation routine), in their own card.
+  - Emergency and connection notices stay at the top.
+  - A system's detail opens beside the hologram when its bubble or its part of the body is selected; it is the same detail the panel's section had.
+  - The side column is 400 px wide, so the model's detail fits.
+- **Set aside:** keeping both views. Both would need maintaining and testing, and the video, the judges and the testers should all see the same screen.
+- **Trade-off:** the panel opened by itself every section with an alert. Here the alerting bubbles and the model's analysis show what needs attention, emergencies show at the top, and the detail opens on demand.
