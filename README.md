@@ -81,7 +81,7 @@ simulator (real sensors next)
 - **Backend:** Python 3.13, FastAPI, Pydantic, NumPy, SQLite, Uvicorn.
 - **Frontend:** React 19, Vite, TypeScript.
 - **Quality:**
-  - Ruff, pytest (128 tests), ESLint and Vitest (24 tests), and gitleaks.
+  - Ruff, pytest (129 tests), ESLint and Vitest (24 tests), and gitleaks.
   - GitHub Actions runs everything on every pull request, with actions pinned by hash.
 - **Deployment:** one Docker image on Render (the API also serves the built panel).
 
