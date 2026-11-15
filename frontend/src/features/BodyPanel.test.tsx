@@ -47,6 +47,6 @@ describe("BodyPanel outline legend", () => {
 
   it("says the outline is the skin in the ship and NASA's spacesuit in the field", () => {
     expect(legend("ship")).toContain("the skin");
-    expect(legend("field")).toContain("NASA's spacesuit (EMU)");
+    expect(legend("field")).toContain("NASA's Z2 spacesuit");
   });
 });

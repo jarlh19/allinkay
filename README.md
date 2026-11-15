@@ -19,7 +19,7 @@ Built for the NASA Space Apps Challenge 2026 challenge *Create Health Monitoring
 
 ## What ALLINKAY does
 
-- **One screen, around the body.** A 3D hologram of the astronaut (adapted from the BodyParts3D anatomy atlas) sits in the center, with a bubble for each system joined to the part of the body it watches. Only what needs attention turns amber or red, and selecting a bubble shows that system's readings in place. In the field, the hologram wears NASA's Extravehicular Mobility Unit spacesuit model (NASA 3D Resources).
+- **One screen, around the body.** A 3D hologram of the astronaut (adapted from the BodyParts3D anatomy atlas) sits in the center, with a bubble for each system joined to the part of the body it watches. Only what needs attention turns amber or red, and selecting a bubble shows that system's readings in place. In the field, the hologram wears NASA's Z2 spacesuit, its prototype for planetary surfaces (NASA 3D Resources).
 - **Your normal, not a general range.** Every signal is compared with that person's own baseline, built before flight.
 - **Confirmed alerts, explained.** An alert names the signal, how far it moved, why it matters (with the NASA source) and what routine to follow. It never fires on a single noisy reading: live signals need 10 readings in a row; daily ones need 3 of the last 4 days; and an unusual lab exam is **repeated the next day** and only alerts if the repeat agrees.
 - **Combined patterns.** When two or more systems move away at once, the alert says so.

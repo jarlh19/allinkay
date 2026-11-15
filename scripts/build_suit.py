@@ -1,19 +1,21 @@
-"""Build frontend/public/models/suit.glb from NASA's Extravehicular Mobility Unit model.
+"""Build frontend/public/models/suit.glb from a NASA spacesuit model.
 
 When a crew member works in the field, the hologram wears a spacesuit: the suit's outline takes
 the place of the skin, and the brain, heart and airways stay visible inside it. The suit is NASA's
-3D model of the Extravehicular Mobility Unit (credit NASA/Michael D. Carbajal), from NASA 3D
-Resources, which NASA offers free to download and use under its media usage guidelines.
+3D model of the Z2 Spacesuit (credit NASA/LaRC/Advanced Concepts Lab), NASA's prototype suit for
+planetary surfaces such as Mars, from NASA 3D Resources,
+which NASA offers free to download and use under its media usage guidelines.
 
-Input: "Extravehicular Mobility Unit.glb" from https://science.nasa.gov/3d-resources/extravehicular-mobility-unit/
+Input: "Z2 Spacesuit.glb" from https://github.com/nasa/NASA-3D-Resources/tree/master/3D%20Models/Z2%20Spacesuit
 (Draco compressed) and the panel's own frontend/public/models/anatomy.glb. The NASA file is not
-stored in this repository.
+stored in this repository. Other NASA suits with a single node work too; the Extravehicular
+Mobility Unit faces the other way and needs --turn 180.
 
 What it does:
 - Decodes every part of the suit and applies the model's own node transform.
 - Drops the parts that lie exactly on top of another part: the file carries six such copies, and in
   a glowing hologram each copy doubles the glare.
-- Turns it to face +z like the body, scales it so the helmet sits around the body's head, lines
+- Turns it to face +z like the body (--turn, in degrees about the vertical), scales it so the helmet sits around the body's head, lines
   it up with the head and the lower legs and puts the boot soles at y = 0 (1 unit = the person's height).
 - Merges the parts into one mesh and simplifies it to a size a browser loads quickly.
 - Bakes on every vertex the head, arm, leg and torso shares of the nearest skin vertex
@@ -21,7 +23,7 @@ What it does:
 - Stores the height where the chest ends, measured on the suit's own height, in the scene's extras.
 
 Requirements (not part of the app): numpy, scipy, trimesh, fast-simplification and DracoPy.
-Usage: python scripts/build_suit.py "<path to Extravehicular Mobility Unit.glb>"
+Usage: python scripts/build_suit.py "<path to Z2 Spacesuit.glb>" [--turn 180]
 """
 
 from __future__ import annotations
@@ -42,7 +44,7 @@ from build_anatomy import merge, simplify, write_glb  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 ANATOMY = ROOT / "frontend" / "public" / "models" / "anatomy.glb"
 OUTPUT = ROOT / "frontend" / "public" / "models" / "suit.glb"
-CREDIT = "Extravehicular Mobility Unit 3D model: NASA/Michael D. Carbajal, NASA 3D Resources"
+CREDIT = "Z2 Spacesuit 3D model: NASA/LaRC/Advanced Concepts Lab, NASA 3D Resources"
 TRIANGLES = 36000
 # Height on the body (soles 0, top of the head 1) where the head's centre sits.
 HEAD_FROM = 0.88
@@ -85,7 +87,7 @@ def copies(points: np.ndarray, other: np.ndarray) -> bool:
     return bool((distance < 1e-3).mean() >= 0.95)
 
 
-def load_suit(path: Path) -> trimesh.Trimesh:
+def load_suit(path: Path, degrees: float) -> trimesh.Trimesh:
     document, blob = read_glb(path)
     node = document["nodes"][0]
     turn = rotation(node.get("rotation", [0, 0, 0, 1]))
@@ -102,9 +104,10 @@ def load_suit(path: Path) -> trimesh.Trimesh:
             continue
         parts.append(trimesh.Trimesh(points, np.asarray(decoded.faces).reshape(-1, 3), process=False))
     mesh = merge(parts)
-    # The model faces -z; the panel's body faces +z.
-    v = mesh.vertices
-    return trimesh.Trimesh(np.column_stack([-v[:, 0], v[:, 1], -v[:, 2]]), mesh.faces, process=False)
+    # The panel's body faces +z; some models face another way.
+    angle = np.radians(degrees)
+    about_y = np.array([[np.cos(angle), 0, np.sin(angle)], [0, 1, 0], [-np.sin(angle), 0, np.cos(angle)]])
+    return trimesh.Trimesh(mesh.vertices @ about_y.T, mesh.faces, process=False)
 
 
 def load_skin() -> tuple[np.ndarray, np.ndarray]:
@@ -117,12 +120,12 @@ def load_skin() -> tuple[np.ndarray, np.ndarray]:
     return points, shares
 
 
-def main(source: Path) -> None:
+def main(source: Path, turn: float) -> None:
     skin, shares = load_skin()
     head = skin[skin[:, 1] > HEAD_FROM]
     head_centre = (head.min(axis=0) + head.max(axis=0)) / 2
 
-    suit = load_suit(source)
+    suit = load_suit(source, turn)
     v = suit.vertices
     low, high = v.min(axis=0), v.max(axis=0)
     helmet = v[v[:, 1] > high[1] - 0.13 * (high[1] - low[1])]
@@ -154,6 +157,12 @@ def main(source: Path) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    args = sys.argv[1:]
+    turn = 0.0
+    if "--turn" in args:
+        at = args.index("--turn")
+        turn = float(args[at + 1])
+        del args[at : at + 2]
+    if len(args) != 1:
         sys.exit(__doc__)
-    main(Path(sys.argv[1]))
+    main(Path(args[0]), turn)
