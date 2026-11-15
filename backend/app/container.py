@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from app.adapters.osdr_csv import load_wbc_baseline
+from app.adapters.osdr_csv import load_glucose_baseline, load_wbc_baseline
 from app.adapters.report_sinks import FallbackSink, GitHubIssueSink, SqliteReportSink
 from app.adapters.scenario import (
     CREW_SCENARIOS,
@@ -25,7 +25,7 @@ from app.application.ingest import IngestReadings
 from app.application.mission import Mission, synthetic_preflight_baselines
 from app.application.radiation import TrackRadiation
 from app.application.reports import ReportSink, SubmitReport
-from app.config import OSDR_CBC_CSV, Settings
+from app.config import OSDR_CBC_CSV, OSDR_CMP_CSV, Settings
 from app.domain.crew import CREW, DEFAULT_CREW_ID, CrewMember
 from app.domain.modes import strategy_for
 from app.domain.radiation import DoseLedger
@@ -119,9 +119,10 @@ def _build_member(
         )
     baselines = synthetic_preflight_baselines(seed=seed + 1, end=start)
     if member.id == DEFAULT_CREW_ID:
-        # The commander's white blood cell normal comes from open NASA data (OSD-569).
-        wbc_baseline, _ = load_wbc_baseline(OSDR_CBC_CSV)
-        baselines[wbc_baseline.signal] = wbc_baseline
+        # The commander's lab normals come from open NASA data: white blood cells from
+        # OSD-569 and glucose from OSD-575 (both Inspiration4 crew member C001).
+        for real in (load_wbc_baseline(OSDR_CBC_CSV)[0], load_glucose_baseline(OSDR_CMP_CSV)[0]):
+            baselines[real.signal] = real
     evaluate = EvaluateHealth(baselines, bus, strategy=strategy_for(member.mode))
     ledger = DoseLedger(
         accumulated_msv=member.career_dose_msv,

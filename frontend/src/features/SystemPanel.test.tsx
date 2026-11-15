@@ -21,7 +21,7 @@ const wbc = (overrides: Partial<Deviation>): Deviation => ({
   ...overrides,
 });
 
-function renderImmune(deviation: Deviation) {
+function renderImmune(deviation: Deviation, signal = "white_blood_cells") {
   const evaluation: Evaluation = {
     type: "evaluation",
     mode: "ship",
@@ -32,7 +32,7 @@ function renderImmune(deviation: Deviation) {
   return render(
     <I18nProvider initial="en">
       <SystemPanel
-        signals={["white_blood_cells"]}
+        signals={[signal]}
         readings={{}}
         evaluation={evaluation}
         heartRateHistory={[]}
@@ -55,6 +55,18 @@ describe("SystemPanel", () => {
     unmount();
 
     renderImmune(wbc({ baseline_source: "NASA OSDR OSD-569 (C001, pre-flight L-92, L-44, L-3)" }));
-    expect(screen.getByText(/real NASA data/)).toBeInTheDocument();
+    expect(screen.getByText("Your normal: real NASA data (OSD-569)")).toBeInTheDocument();
+  });
+
+  it("names the NASA study each normal comes from", () => {
+    renderImmune(
+      wbc({
+        signal: "glucose",
+        unit: "mg/dL",
+        baseline_source: "NASA OSDR OSD-575 (C001, pre-flight L-92, L-44, L-3); spread: EFLM",
+      }),
+      "glucose",
+    );
+    expect(screen.getByText("Your normal: real NASA data (OSD-575)")).toBeInTheDocument();
   });
 });

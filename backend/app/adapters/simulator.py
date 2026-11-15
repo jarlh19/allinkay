@@ -34,8 +34,9 @@ class SignalProfile:
     distribution: Distribution = Distribution.NORMAL
 
 
-# Synthetic but plausible levels. White blood cells use the pre-flight mean of an
-# Inspiration4 crew member (NASA OSDR, OSD-569) and the radiation dose uses the cruise
+# Synthetic but plausible levels. White blood cells and glucose use the pre-flight means of
+# Inspiration4 crew member C001 (NASA OSDR: OSD-569 for 5.4, 5.5 and 7.0 thousand/µL; OSD-575
+# for 83, 80 and 69 mg/dL), and the radiation dose uses the cruise
 # rate measured by Curiosity on its way to Mars (Zeitlin et al., 2013). Lab exams vary as
 # much as published data says they do in a healthy person, analytical error included
 # (EFLM Biological Variation Database; see app.domain.variation).
@@ -51,7 +52,7 @@ DEFAULT_PROFILES: dict[Signal, SignalProfile] = {
     Signal.WHITE_BLOOD_CELLS: SignalProfile(
         5.97, round(5.97 * _LAB_CV[Signal.WHITE_BLOOD_CELLS], 2), 1
     ),
-    Signal.GLUCOSE: SignalProfile(92, round(92 * _LAB_CV[Signal.GLUCOSE], 1), 0),
+    Signal.GLUCOSE: SignalProfile(77.33, round(77.33 * _LAB_CV[Signal.GLUCOSE], 1), 0),
     Signal.SYMPTOMS: SignalProfile(0.1, 0, 0, Distribution.POISSON),
     Signal.CABIN_TEMPERATURE: SignalProfile(22, 0.5, 1),
     Signal.CABIN_CO2: SignalProfile(3.0, 0.3, 1),

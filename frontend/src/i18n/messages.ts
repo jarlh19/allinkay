@@ -43,7 +43,7 @@ const en = {
 
   "row.outside": "Outside your normal ({low}–{high})",
   "row.normal": "Your normal: {low}–{high}",
-  "row.wbcSource": "Your normal: real NASA data (OSD-569)",
+  "row.nasaSource": "Your normal: real NASA data ({study})",
   "row.repeat": "Unusual result: repeat this exam tomorrow to confirm it",
   "row.last24": "last 24 readings",
 
@@ -219,7 +219,7 @@ const es: Record<MessageKey, string> = {
 
   "row.outside": "Fuera de tu normal ({low}–{high})",
   "row.normal": "Tu normal: {low}–{high}",
-  "row.wbcSource": "Tu normal: datos reales de la NASA (OSD-569)",
+  "row.nasaSource": "Tu normal: datos reales de la NASA ({study})",
   "row.repeat": "Resultado inusual: repite este examen mañana para confirmarlo",
   "row.last24": "últimas 24 lecturas",
 
