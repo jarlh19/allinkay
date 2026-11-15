@@ -18,6 +18,8 @@ const LEFT: Target[] = ["neurological", "model", "immune"];
 const RIGHT: Target[] = ["cardiovascular", "radiation", "environment"];
 
 const COLOR: Record<SystemStatus, string> = { ok: "#6fa3d8", warn: "#e3a33b", crit: "#ef5b5b" };
+/** The page colour (`--bg`): the mission look has no panel behind the body. */
+const PAGE_BACKGROUND = 0x0e141b;
 
 interface Props {
   evaluation: Evaluation | null;
@@ -25,9 +27,13 @@ interface Props {
   focused: Target | null;
   onFocus: (target: Target) => void;
   onMode: (mode: Mode) => void;
+  /** "mission" draws the rings as round bubbles and leaves out the title, legend and mode buttons. */
+  variant?: "panel" | "mission";
+  /** Latest heart rate, shown in the cardiovascular bubble of the mission look. */
+  heartRate?: number | null;
 }
 
-export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: Props) {
+export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode, variant = "panel", heartRate = null }: Props) {
   const { t } = useI18n();
   const status = (system: System): SystemStatus => targetStatus(system, evaluation, radiation);
   const head = status("neurological");
@@ -86,6 +92,42 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
         : total === 0
           ? t("summary.waiting")
           : t("summary.inNormal", { n, total });
+    const name = t(target === "model" ? "gauge.model" : systemKey(target));
+    const targetState = targetStatus(target, evaluation, radiation);
+    if (variant === "mission") {
+      const beats = target === "cardiovascular" && heartRate !== null ? Math.round(heartRate) : null;
+      return (
+        <li key={target}>
+          <button
+            type="button"
+            className={`gauge bubble ${side}`}
+            data-target={target}
+            aria-current={focused === target ? "true" : undefined}
+            onClick={() => onFocus(target)}
+          >
+            <span className="bubble-name">
+              <SystemIcon target={target} />
+              {name}
+            </span>
+            <Ring share={share} status={targetState} size={66}>
+              {beats !== null ? (
+                <>
+                  {beats}
+                  <small>{t("unit.bpm")}</small>
+                </>
+              ) : (
+                `${Math.round(share * 100)}%`
+              )}
+            </Ring>
+            <span className="sr-only">
+              {beats !== null ? `${beats} ${t("unit.bpm")}. ` : ""}
+              {summary}
+            </span>
+            <StatusChip status={targetState} />
+          </button>
+        </li>
+      );
+    }
     return (
       <li key={target}>
         <button
@@ -96,14 +138,14 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
           aria-controls={`panel-${target}`}
           onClick={() => onFocus(target)}
         >
-          <Ring share={share} status={targetStatus(target, evaluation, radiation)} size={52}>
+          <Ring share={share} status={targetState} size={52}>
             <SystemIcon target={target} />
             {Math.round(share * 100)}%
           </Ring>
           <span className="gauge-text">
-            <span className="gauge-name">{t(target === "model" ? "gauge.model" : systemKey(target))}</span>
+            <span className="gauge-name">{name}</span>
             <span className="gauge-summary">{summary}</span>
-            <StatusChip status={targetStatus(target, evaluation, radiation)} />
+            <StatusChip status={targetState} />
           </span>
         </button>
       </li>
@@ -113,12 +155,20 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
   const radFocus = focused === "radiation";
 
   return (
-    <section className="panel body-panel" aria-labelledby="body-title">
-      <h2 id="body-title">{t("body.figureTitle")}</h2>
+    <section className={variant === "mission" ? "body-panel mission-body" : "panel body-panel"} aria-labelledby="body-title">
+      <h2 id="body-title" className={variant === "mission" ? "sr-only" : undefined}>
+        {t("body.figureTitle")}
+      </h2>
       <div className="body-stage" ref={stage} data-leaders={withLeaders ? "" : undefined}>
       <ul className="gauges left">{LEFT.map((target) => gauge(target, "left"))}</ul>
       <div className="figure">
-        <Body3D statuses={bodyStatuses} label={t("body.legend")} onPick={onPick} onAnchors={onAnchors}>
+        <Body3D
+          statuses={bodyStatuses}
+          label={t("body.legend")}
+          onPick={onPick}
+          onAnchors={onAnchors}
+          background={variant === "mission" ? PAGE_BACKGROUND : undefined}
+        >
         <svg viewBox="0 0 300 330" role="img" aria-label={t("body.legend")}>
           <circle cx="150" cy="165" r="146" fill="none" stroke="#233041" strokeWidth="2" strokeDasharray="2 9" />
           <g
@@ -173,17 +223,21 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
         ))}
       </svg>
       </div>
-      <p className="legend">
-        <i />
-        {t("body.legend")}
-      </p>
-      <div className="modes" role="group">
-        {(["ship", "field"] as Mode[]).map((m) => (
-          <button key={m} type="button" aria-pressed={mode === m} onClick={() => onMode(m)}>
-            {t(m === "ship" ? "mode.ship" : "mode.field")}
-          </button>
-        ))}
-      </div>
+      {variant === "panel" && (
+        <>
+          <p className="legend">
+            <i />
+            {t("body.legend")}
+          </p>
+          <div className="modes" role="group">
+            {(["ship", "field"] as Mode[]).map((m) => (
+              <button key={m} type="button" aria-pressed={mode === m} onClick={() => onMode(m)}>
+                {t(m === "ship" ? "mode.ship" : "mode.field")}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }

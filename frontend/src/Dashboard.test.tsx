@@ -191,4 +191,35 @@ describe("Dashboard", () => {
     expect(header).not.toHaveTextContent("Within limit");
     expect(header).toHaveTextContent("Emergency");
   });
+  it("switches to the mission view and back, and keeps its own address", () => {
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole("button", { name: "Mission view" }));
+
+    expect(window.location.hash).toBe("#mission");
+    expect(document.querySelectorAll(".gauge.bubble")).toHaveLength(6);
+    // The attention from the sleep alert still reads in the mission view.
+    expect(screen.getByText("Sleep last night: outside your normal")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Panel view" }));
+
+    expect(window.location.hash).toBe("");
+    expect(document.querySelectorAll(".gauge.bubble")).toHaveLength(0);
+  });
+
+  it("shows a system's detail in the mission view, and opens it in the panel from its link", () => {
+    renderDashboard();
+    fireEvent.click(screen.getByRole("button", { name: "Mission view" }));
+
+    fireEvent.click(document.querySelector<HTMLElement>('.gauge.bubble[data-target="neurological"]') as HTMLElement);
+
+    // Still the mission view, now with the neurological readings beside the hologram.
+    expect(document.querySelectorAll(".gauge.bubble")).toHaveLength(6);
+    expect(screen.getByText("Outside your normal (6.8–8.0)")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Open in the full panel" }));
+
+    expect(document.querySelectorAll(".gauge.bubble")).toHaveLength(0);
+    expect(screen.getByRole("button", { name: /^Neurological/, expanded: true })).toBeInTheDocument();
+  });
 });
