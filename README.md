@@ -55,6 +55,7 @@ These numbers come from synthetic people with normal noise. Real data has outlie
 | [NASA OSDR, OSD-575](https://osdr.nasa.gov/bio/repo/data/studies/OSD-575) (Inspiration4 comprehensive metabolic panel) | The commander's glucose set point: the same crew member and draws, 83, 80 and 69 mg/dL. The file is in [`data/osdr`](data/osdr). |
 | [NASA DONKI](https://ccmc.gsfc.nasa.gov/tools/DONKI/) (space weather event catalogue, CCMC) | The real event the demo storm refers to, shown on screen: the X5.4 solar flare of 7 March 2012 (peak 00:24 UTC) and the protons above 100 MeV that GOES-13 detected 3.7 hours later (event `2012-03-07T04:05:00-SEP-001`). The files are in [`data/donki`](data/donki). |
 | [NASA OSDR, Environmental Data App](https://visualization.osdr.nasa.gov/eda/) (ISS cabin telemetry) | The level and spread of the synthetic cabin: the median of the Rodent Research missions, 22.55 °C (14 missions, 2014 to 2024) and 2913 ppm of CO2, about 2.2 mmHg (10 missions, 2014 to 2021). The summary by mission is in [`data/eda`](data/eda). |
+| [NASA PDS, MSL RAD](https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/DATA/CRUISE/) (Curiosity's Radiation Assessment Detector in cruise, `MSL-M-RAD-3-RDR-V1.0`) | The demo's dose. It replays what RAD measured inside the spacecraft on its way to Mars from 29 February to 10 March 2012, storm of 7 March included: about 1.7 mSv per day before the storm, and on 8 March a second wave that crosses ten times that level and raises the storm emergency. Dose equivalent uses RAD's cosmic-ray quality factor (3.82, Zeitlin et al., 2013) and, for the storm's protons, the factor that matches the published 19.5 mSv (Guo et al., 2015). The file is in [`data/rad`](data/rad) and `scripts/build_rad_dose.py` rebuilds it. |
 | [Guo et al., 2015](https://arxiv.org/abs/1503.06631) | Curiosity's RAD, inside the spacecraft on its way to Mars, recorded 19.5 mSv over the same storm (7 to 15 March 2012) |
 | [NASA-STD-3001, OCHMO-TB-020 Rev G](https://www.nasa.gov/sites/default/files/atoms/files/radiation_protection_technical_brief_ochmo.pdf) | 600 mSv career limit [V1 4030], 250 mSv per solar particle event, ALARA principle [V1 4029] |
 | NASA Human Research Program risk pages | The evidence cited in each alert: sleep, behavioural health, cardiovascular, immune, hypoxia and radiation |
@@ -64,7 +65,7 @@ These numbers come from synthetic people with normal noise. Real data has outlie
 | [EFLM Biological Variation Database](https://biologicalvariation.eu/) | Within-subject variation of leukocytes and glucose |
 | Fraser, C. G. (2001). *Biological Variation: From Principles to Practice*. AACC Press. | Reference change value and the analytical goal (CVA = CVI / 2) |
 
-**Every other reading in the demo is synthetic.** No real person's data is used, apart from the open, anonymised OSD-569 and OSD-575 datasets. The size and timing of the demo storm are synthetic too; only the event it refers to is real. The cabin temperature and CO2 readings are synthetic as well, centred on the real ISS cabin.
+**Every other reading in the demo is synthetic.** The radiation dose is RAD's measurement, and the commander's white blood cell and glucose normals come from the open, anonymised OSD-569 and OSD-575 datasets; no real person's data is used apart from those. The cabin temperature and CO2 readings are synthetic, centred on the real ISS cabin.
 
 ## Architecture
 
@@ -90,7 +91,7 @@ simulator (real sensors next)
 - **Backend:** Python 3.13, FastAPI, Pydantic, NumPy, SQLite, Uvicorn.
 - **Frontend:** React 19, Vite, TypeScript and three.js (the 3D hologram).
 - **Quality:**
-  - Ruff, pytest (137 tests), ESLint and Vitest (44 tests), and gitleaks.
+  - Ruff, pytest (149 tests), ESLint and Vitest (44 tests), and gitleaks.
   - GitHub Actions runs everything on every pull request, with actions pinned by hash.
 - **Deployment:** one Docker image on Render (the API also serves the built panel).
 

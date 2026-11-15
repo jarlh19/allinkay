@@ -33,7 +33,7 @@ An application the astronaut uses on board, without depending on Earth, to under
 |---|---|---|
 | `domain` | Pure core with no input or output: readings, personal baselines and their prediction intervals, published lab variation, alert rules with their explanation, combined patterns, the sleep forecast, the radiation ledger, crew members and the ship and field models | — |
 | `storage` | Readings per crew member in SQLite (Repository pattern) | `domain` |
-| `ingestion` | Input adapters: the seeded simulator with the demo scripts, the OSD-569 blood count and OSD-575 metabolic panel loaders, and the NASA DONKI event reader. Real sensors come next | `domain` |
+| `ingestion` | Input adapters: the seeded simulator with the demo scripts, the OSD-569 blood count and OSD-575 metabolic panel loaders, the NASA DONKI event reader and the MSL RAD dose replay. Real sensors come next | `domain` |
 | `feedback` | Testers' reports from inside the app, with their context, sent as GitHub issues or kept locally | `domain` |
 | `api` | FastAPI: REST to query, and one WebSocket per crew member for live data; wires the use cases | all of the above |
 | `web` | React: the crew strip, the body with a ring per system, the model analysis, folding details per system, radiation and actions, in English and Spanish | `api` |
@@ -81,7 +81,7 @@ On Windows, use `.venv\Scripts\` instead of `.venv/bin/`.
 backend/app/domain/        → pure logic: readings, baseline, variation, stats, rules, forecast, radiation, crew, modes, references, reports
 backend/app/application/   → use cases: ingest, evaluate, forecast, track radiation, mission, crew, reports, event bus
 backend/app/ports/         → interfaces (Protocol): ReadingSource, ExamScheduler, ReadingRepository
-backend/app/adapters/      → simulator, demo scenarios and clock, SQLite repository, OSDR and DONKI loaders, report sinks
+backend/app/adapters/      → simulator, demo scenarios and clock, SQLite repository, OSDR, DONKI and RAD loaders, report sinks
 backend/app/api/           → FastAPI routes and WebSocket, Pydantic schemas
 backend/tests/             → domain, application and API tests, plus a small validation sample
 backend/validate_model.py  → measures false alarms and missed changes on synthetic people
@@ -91,8 +91,9 @@ frontend/src/api/          → live state, WebSocket client and types
 data/osdr/                 → the OSD-569 and OSD-575 CSV files, with their source and licence in a README
 data/donki/                → the NASA DONKI answers for the March 2012 storm, with their source in a README
 data/eda/                  → the ISS cabin temperature and CO2 by mission (NASA OSDR EDA) that the simulator is centred on
-docs/decisions.md          → architecture and model decisions (D-001 to D-019)
-scripts/                   → verify.py, demo.py and eda_cabin_summary.py (rebuilds data/eda)
+data/rad/                  → the dose that Curiosity's RAD measured in cruise (NASA PDS), with its source in a README
+docs/decisions.md          → architecture and model decisions (D-001 to D-020)
+scripts/                   → verify.py, demo.py, eda_cabin_summary.py (rebuilds data/eda) and build_rad_dose.py (rebuilds data/rad)
 LICENSE, NOTICE            → Apache 2.0 and credits, including the NASA data citation
 ```
 
@@ -150,7 +151,7 @@ def beyond(self, z: float) -> str | None:
 2. With the network off, `python scripts/demo.py` starts the app and the panel updates live every second with the simulator.
 3. Given a baseline and test readings, the model marks signals outside the person's normal (±1.5 standard deviations) and alerts only when the change is confirmed: 10 live readings in a row, 3 of the last 4 days, or an exam and its repeat (D-011). When two or more systems have confirmed alerts at once, the combined pattern appears. Every alert shows the signal, the value, its normal, the reason and the source.
 4. The 3-night sleep forecast and the days left before 600 mSv match the calculations in the tests.
-5. A simulated solar storm and reaching the career limit both trigger the emergency path with the action guide.
+5. A solar storm (the one RAD measured on 8 March 2012, replayed) and reaching the career limit both trigger the emergency path with the action guide (D-020).
 6. Earth's feedback arrives with the configured delay and the screen shows how long is left. *Not met: not built in this version.*
 7. The demo scenario (seeded, accelerated mission) is repeatable: it shows the early warning first and the emergency after.
 8. The interface opens in the browser's language (English or Spanish) and can switch between them.
@@ -165,7 +166,7 @@ def beyond(self, z: float) -> str | None:
 - **Real medical diagnosis:** this is decision support.
 - **Login and accounts.**
 - **A mobile app.** The published web works in a phone browser.
-- **Real people's data.** Apart from the open, anonymised OSD-569 and OSD-575 datasets, every reading is synthetic.
+- **Real people's data.** Apart from the open, anonymised OSD-569 and OSD-575 datasets, no person's data is used. The radiation dose is RAD's measurement inside a spacecraft; every other reading is synthetic.
 - **Real sensors** in this version: the data is synthetic (D-005). The ingestion port is ready for them.
 - **An app for the Earth side,** the real DTN protocol and orbital mechanics.
 
