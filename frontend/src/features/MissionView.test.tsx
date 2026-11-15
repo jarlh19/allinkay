@@ -37,6 +37,16 @@ const bubble = (target: string) =>
   document.querySelector<HTMLElement>(`.gauge.bubble[data-target="${target}"]`) as HTMLElement;
 
 describe("MissionView", () => {
+  it("links to the project website in a new tab, keeping the live app open", () => {
+    renderView();
+
+    const link = screen.getByRole("link", { name: /Project website/ });
+    expect(link).toHaveAttribute("href", "/site/");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener");
+    expect(link).toHaveAccessibleName("Project website (opens in a new tab)");
+  });
+
   it("shows the six systems as bubbles, with the live heart rate in the cardiovascular one", () => {
     renderView();
 

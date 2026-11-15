@@ -60,6 +60,9 @@ button { font: inherit; color: inherit; }
 .pill { font-family: var(--mono); font-size: 12px; color: var(--text-2); border: 1px solid var(--line-2); border-radius: 999px; padding: 5px 12px; white-space: nowrap; }
 .pill b { color: var(--text); font-weight: 500; }
 .lang { background: transparent; border: 1px solid var(--line-2); border-radius: 999px; padding: 5px 12px; cursor: pointer; font-family: var(--mono); font-size: 12px; color: var(--text-2); }
+/* The way from the live app to the project website: the one header link with the hologram's colour. */
+.site-link { color: var(--holo); border-color: rgba(69, 212, 255, 0.45); text-decoration: none; display: inline-flex; align-items: center; }
+.site-link:hover { border-color: var(--holo); color: var(--text); }
 
 .crew { display: flex; gap: 8px; flex-wrap: wrap; }
 .crew-member { display: flex; align-items: center; gap: 10px; background: transparent; border: 1px solid var(--line-2); border-radius: 8px; padding: 8px 12px; cursor: pointer; color: var(--text-2); text-align: left; }
