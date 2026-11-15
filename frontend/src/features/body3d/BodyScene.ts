@@ -8,6 +8,7 @@ import {
   HemisphereLight,
   Mesh,
   NoToneMapping,
+  type Object3D,
   PerspectiveCamera,
   Raycaster,
   Scene,
@@ -71,6 +72,34 @@ interface ModelExtras {
   anchors?: Partial<Record<BodyTarget, Spot>>;
 }
 
+/** What the hologram's outer surface needs: its geometry and each vertex's body zones. */
+interface Shell {
+  geometry: BufferGeometry;
+  weights: Float32Array;
+  dominant: Zone[];
+}
+
+/**
+ * The outer surface from a model: the skin of the anatomy model, or the spacesuit. Both carry the
+ * head, arm, leg and torso shares in their vertex colours and stand in the same frame.
+ */
+function shellFrom(model: Object3D, name: string): Shell {
+  const mesh = model.getObjectByName(name);
+  if (!(mesh instanceof Mesh)) throw new Error(`The model has no ${name}`);
+  const source = mesh.geometry as BufferGeometry;
+  const baked = source.getAttribute("color");
+  if (!(baked instanceof BufferAttribute) || baked.itemSize !== 4) throw new Error(`The ${name} has no body zones`);
+  const geometry = skinGeometry(source);
+  const { weights, dominant } = zoneData(geometry, baked, (model.userData as ModelExtras).chestFrom ?? CHEST_FROM);
+  const count = geometry.getAttribute("position").count;
+  geometry.setAttribute("color", new BufferAttribute(new Float32Array(count * 3), 3));
+  geometry.setAttribute("alert", new BufferAttribute(new Float32Array(count), 1));
+  return { geometry, weights, dominant };
+}
+
+/** How strongly the suit glows next to the skin. */
+const SUIT_OPACITY = 0.4;
+
 /** The panel behind the canvas (`--panel`), so the bloom can work on an opaque picture. */
 export const PANEL_BACKGROUND = 0x141c25;
 /** Glow around bright parts: strength, spread and the brightness where it starts. */
@@ -113,8 +142,12 @@ export class BodyScene {
   private readonly environmentSpot: [number, number, number];
   private readonly spot = new Vector3();
   private readonly onFrame?: (anchors: Anchors, canvas: HTMLCanvasElement) => void;
-  private readonly weights: Float32Array;
-  private readonly dominant: Zone[];
+  private weights: Float32Array;
+  private dominant: Zone[];
+  private readonly skin: Shell;
+  private suit: Shell | null = null;
+  private suitUrl: string | null = null;
+  private suitLoading = false;
   private readonly anatomy: Anatomy;
   private statuses: BodyStatuses = { head: "ok", chest: "ok", abdomen: "ok", radiation: "ok", environment: "ok" };
   private readonly resizeObserver: ResizeObserver;
@@ -147,20 +180,12 @@ export class BodyScene {
     background: number,
   ) {
     this.onFrame = onFrame;
-    const skin = model.getObjectByName("skin");
-    if (!(skin instanceof Mesh)) throw new Error("The anatomy model has no skin");
-    const source = skin.geometry as BufferGeometry;
-    const baked = source.getAttribute("color");
-    if (!(baked instanceof BufferAttribute) || baked.itemSize !== 4) throw new Error("The skin has no body zones");
     const extras = model.userData as ModelExtras;
     this.spots = { ...BODY_SPOTS, ...extras.anchors };
-    const geometry = skinGeometry(source);
-    const { weights, dominant } = zoneData(geometry, baked, extras.chestFrom ?? CHEST_FROM);
-    this.weights = weights;
-    this.dominant = dominant;
-    const count = geometry.getAttribute("position").count;
-    geometry.setAttribute("color", new BufferAttribute(new Float32Array(count * 3), 3));
-    geometry.setAttribute("alert", new BufferAttribute(new Float32Array(count), 1));
+    this.skin = shellFrom(model, "skin");
+    this.weights = this.skin.weights;
+    this.dominant = this.skin.dominant;
+    const geometry = this.skin.geometry;
     const height = (geometry.boundingBox?.max.y ?? 1) - (geometry.boundingBox?.min.y ?? 0);
     this.height = height;
 
@@ -240,13 +265,50 @@ export class BodyScene {
     this.applyStatuses();
   }
 
+  /**
+   * Puts the spacesuit on the hologram (a model URL) or takes it off (null). The suit loads the first
+   * time it is asked for; its outline then takes the place of the skin, with the same body zones.
+   */
+  setSuit(url: string | null): void {
+    this.suitUrl = url;
+    if (url && !this.suit && !this.suitLoading) {
+      this.suitLoading = true;
+      new GLTFLoader()
+        .loadAsync(url)
+        .then((gltf) => {
+          this.suit = shellFrom(gltf.scene, "suit");
+          this.wearSuit();
+        })
+        .catch((error: unknown) => console.error("The spacesuit could not load; the body stays without it", error))
+        .finally(() => {
+          this.suitLoading = false;
+        });
+      return;
+    }
+    this.wearSuit();
+  }
+
+  private wearSuit(): void {
+    const shell = this.suitUrl && this.suit ? this.suit : this.skin;
+    if (this.body.geometry === shell.geometry) return;
+    this.body.geometry = shell.geometry;
+    this.weights = shell.weights;
+    this.dominant = shell.dominant;
+    this.anatomy.showSkeleton(shell === this.skin);
+    // The suit has many surfaces one behind another; at full strength their glow adds up to a glare.
+    const opacity = this.shell.uniforms.uOpacity;
+    if (opacity) opacity.value = shell === this.skin ? 1 : SUIT_OPACITY;
+    this.applyStatuses();
+  }
+
   dispose(): void {
     cancelAnimationFrame(this.frame);
     this.resizeObserver.disconnect();
     this.visibilityObserver.disconnect();
     this.renderer.domElement.removeEventListener("click", this.onClick);
     this.renderer.domElement.removeEventListener("pointermove", this.onMove);
-    this.body.geometry.dispose();
+    this.skin.geometry.dispose();
+    this.suit?.geometry.dispose();
     this.shell.dispose();
     this.pedestal.dispose();
     this.anatomy.dispose();
@@ -290,7 +352,7 @@ export class BodyScene {
     }
     colors.needsUpdate = true;
     alerts.needsUpdate = true;
-    // The outline is the skin: it shows radiation, cyan when usual, amber or red with an alert.
+    // The outline is the skin, or the suit in the field: it shows radiation, cyan when usual, amber or red with an alert.
     setHoloColor(this.shell, "uRimColor", this.statuses.radiation === "ok" ? HOLO_CYAN : STATUS_COLOR[this.statuses.radiation]);
     this.pedestal.setColor(this.statuses.environment === "ok" ? HOLO_CYAN : STATUS_COLOR[this.statuses.environment]);
     this.anatomy.setStatuses(this.statuses.head, this.statuses.chest);

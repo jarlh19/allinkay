@@ -161,7 +161,13 @@ def zone_weights(skin: trimesh.Trimesh, bones: dict[str, np.ndarray]) -> np.ndar
     return (weights / weights.sum(axis=1, keepdims=True)).astype(np.float32)
 
 
-def write_glb(parts: list[dict], extras: dict, path: Path) -> None:
+def write_glb(
+    parts: list[dict],
+    extras: dict,
+    path: Path,
+    generator: str = "allinkay scripts/build_anatomy.py",
+    credit: str = CREDIT,
+) -> None:
     """A minimal glTF 2.0 binary: one node per part, positions, indices and an optional COLOR_0."""
     blob = bytearray()
     views: list[dict] = []
@@ -209,8 +215,8 @@ def write_glb(parts: list[dict], extras: dict, path: Path) -> None:
     document = {
         "asset": {
             "version": "2.0",
-            "generator": "allinkay scripts/build_anatomy.py",
-            "copyright": CREDIT,
+            "generator": generator,
+            "copyright": credit,
         },
         "scene": 0,
         "scenes": [{"nodes": list(range(len(nodes))), "extras": extras}],

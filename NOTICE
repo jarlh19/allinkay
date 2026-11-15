@@ -13,3 +13,12 @@ simplified; moved to the panel's frame; the front of the pelvis flattened; body
 zones and pointer spots added. The OBJ headers of the source files still quote the
 database's earlier licence (CC BY-SA 2.1 Japan); the database's licence page now
 states CC BY 4.0. Built by scripts/build_anatomy.py.
+
+The spacesuit worn in the field (frontend/public/models/suit.glb) is adapted from
+NASA's 3D model of the Extravehicular Mobility Unit, credit NASA/Michael D. Carbajal,
+from NASA 3D Resources (https://science.nasa.gov/3d-resources/extravehicular-mobility-unit/),
+which NASA offers free to download and use under its media usage guidelines
+(https://www.nasa.gov/nasa-brand-center/images-and-media/). Use of the model does not
+imply NASA endorsement. Changes: duplicate parts removed; parts merged and simplified;
+turned and scaled to the panel's frame; body zones added from the nearest skin.
+Built by scripts/build_suit.py.

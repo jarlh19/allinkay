@@ -197,3 +197,16 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - The side column is 400 px wide, so the model's detail fits.
 - **Set aside:** keeping both views. Both would need maintaining and testing, and the video, the judges and the testers should all see the same screen.
 - **Trade-off:** the panel opened by itself every section with an alert. Here the alerting bubbles and the model's analysis show what needs attention, emergencies show at the top, and the detail opens on demand.
+
+## D-016 · In the field the hologram wears NASA's spacesuit
+
+- **Problem:** the ship and field modes looked the same on the hologram, although in the field the crew member works inside a spacesuit, and the suit is what stands between the body and the radiation.
+- **Chosen:** in the field, the outline of the hologram is NASA's 3D model of the Extravehicular Mobility Unit (NASA 3D Resources, credit NASA/Michael D. Carbajal).
+  - The suit takes the place of the skin, with the same body zones, so a click and the alert colours work as before; the outline still shows radiation.
+  - The brain, heart and airways stay visible inside it. The skeleton is hidden, because its straight arms would show outside the suit's bent sleeves.
+  - The suit glows at 40 % of the skin's strength: its layers add up to a glare at full strength.
+  - It loads the first time the field mode is shown (about 0.7 MB), so the first screen loads as fast as before.
+- **Set aside:**
+  - The suit as a translucent shell over the skin: the suit's arms are bent outwards and the body's hang straight, so the two never line up.
+  - The Advanced Crew Escape Suit from the same collection: it is worn for launch and landing, not for work outside.
+- **Trade-off:** the EMU is the suit used for spacewalks from the International Space Station, not a Mars surface suit; it is the closest suit NASA publishes as a 3D model.

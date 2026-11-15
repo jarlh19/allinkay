@@ -56,6 +56,12 @@ export class Anatomy {
     this.tint("heart", chest);
   }
 
+  /** Hidden while the body wears the suit: the straight arms of the skeleton would show outside its bent sleeves. */
+  showSkeleton(visible: boolean): void {
+    const skeleton = this.meshes.get("skeleton");
+    if (skeleton) skeleton.visible = visible;
+  }
+
   update(seconds: number, moving: boolean, pulse: number): void {
     const beat = moving ? Math.pow(Math.max(0, Math.sin(seconds * Math.PI * 2 * HEART_BEAT_HZ)), 6) : 0;
     const heart = this.meshes.get("heart");
