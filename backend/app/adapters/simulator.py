@@ -39,7 +39,11 @@ class SignalProfile:
 # for 83, 80 and 69 mg/dL), and the radiation dose uses the cruise
 # rate measured by Curiosity on its way to Mars (Zeitlin et al., 2013). Lab exams vary as
 # much as published data says they do in a healthy person, analytical error included
-# (EFLM Biological Variation Database; see app.domain.variation).
+# (EFLM Biological Variation Database; see app.domain.variation). The cabin temperature and
+# CO2 are centred on the real ISS cabin: the median of the Rodent Research missions in NASA
+# OSDR's Environmental Data App (14 with temperature, 2014 to 2024; 10 with CO2, 2014 to
+# 2021), with the median robust spread (data/eda; CO2 converted from ppm at the
+# simulator's 101.3 kPa).
 DEFAULT_PROFILES: dict[Signal, SignalProfile] = {
     Signal.HEART_RATE: SignalProfile(68, 4, 0),
     Signal.SYSTOLIC_BP: SignalProfile(116, 5, 0),
@@ -54,8 +58,8 @@ DEFAULT_PROFILES: dict[Signal, SignalProfile] = {
     ),
     Signal.GLUCOSE: SignalProfile(77.33, round(77.33 * _LAB_CV[Signal.GLUCOSE], 1), 0),
     Signal.SYMPTOMS: SignalProfile(0.1, 0, 0, Distribution.POISSON),
-    Signal.CABIN_TEMPERATURE: SignalProfile(22, 0.5, 1),
-    Signal.CABIN_CO2: SignalProfile(3.0, 0.3, 1),
+    Signal.CABIN_TEMPERATURE: SignalProfile(22.55, 0.5, 1),
+    Signal.CABIN_CO2: SignalProfile(2.2, 0.3, 1),
     Signal.CABIN_PRESSURE: SignalProfile(101.3, 0.3, 1),
     Signal.CABIN_PPO2: SignalProfile(21.2, 0.3, 1),
     Signal.DOSE_TODAY: SignalProfile(1.8, 0.1, 2),
