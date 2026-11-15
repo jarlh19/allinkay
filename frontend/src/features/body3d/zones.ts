@@ -14,28 +14,19 @@ export const ZONE_SYSTEM: Record<Zone, System> = {
   legs: "radiation",
 };
 
-// Proportions measured on the base mesh, as fractions of its height (feet at 0, top at 1).
-const HEAD_FROM = 0.86;
-const SHOULDERS_FROM = 0.8;
-const CHEST_FROM = 0.66;
-const ABDOMEN_FROM = 0.5;
-const TORSO_HALF_WIDTH = 0.1;
-
 /**
- * The zone of a point of the body, from its height (0 at the feet, 1 at the top of the head)
- * and its distance to the body's midline, both as fractions of the body height.
+ * What each skin vertex carries from the anatomy model: how much it belongs to the head, an arm,
+ * a leg or the torso, taken from the nearest bone and softened across the borders.
  */
-export function zoneOf(height: number, sideways: number): Zone {
-  if (height >= HEAD_FROM) return "head";
-  if (height >= SHOULDERS_FROM) return "chest";
-  if (sideways > TORSO_HALF_WIDTH) return "arms";
-  if (height >= CHEST_FROM) return "chest";
-  if (height >= ABDOMEN_FROM) return "abdomen";
-  return "legs";
+export interface BakedZones {
+  head: number;
+  arms: number;
+  legs: number;
+  torso: number;
 }
 
-/** Half-width of the soft band where one zone's colour fades into the next. */
-const BLEND = 0.01;
+/** Half-width of the band, as a fraction of the body height, where the chest fades into the abdomen. */
+const BLEND = 0.012;
 
 /** 0 below `edge`, 1 above it, with a smooth (Hermite) ramp across the band. */
 function ramp(value: number, edge: number): number {
@@ -44,25 +35,20 @@ function ramp(value: number, edge: number): number {
 }
 
 /**
- * How much each zone (in ZONES order) a point belongs to, as a continuous function of its
- * height and its distance to the midline. Inside a zone it is all that zone; across a border it
- * fades smoothly, so the colours follow the body's lines instead of the mesh's triangles.
+ * How much a skin vertex belongs to each zone, in ZONES order. The torso is split into chest and
+ * abdomen at `chestFrom`, the height (0 at the soles, 1 at the top of the head) where the
+ * breastbone ends; the shares always add up to one.
  */
-export function zoneWeights(height: number, sideways: number): number[] {
-  const head = ramp(height, HEAD_FROM);
-  const body = 1 - head;
-  // Below the shoulders, whatever lies outside the torso is an arm.
-  const arm = ramp(sideways, TORSO_HALF_WIDTH) * (1 - ramp(height, SHOULDERS_FROM));
-  const torso = body * (1 - arm);
-  const chest = ramp(height, CHEST_FROM);
-  const abdomen = ramp(height, ABDOMEN_FROM) - chest;
-  const legs = 1 - ramp(height, ABDOMEN_FROM);
-  const weights: Record<Zone, number> = {
-    head,
+export function zoneShares(baked: BakedZones, height: number, chestFrom: number): number[] {
+  const total = baked.head + baked.arms + baked.legs + baked.torso || 1;
+  const torso = baked.torso / total;
+  const chest = ramp(height, chestFrom);
+  const shares: Record<Zone, number> = {
+    head: baked.head / total,
     chest: torso * chest,
-    abdomen: torso * abdomen,
-    arms: body * arm,
-    legs: torso * legs,
+    abdomen: torso * (1 - chest),
+    arms: baked.arms / total,
+    legs: baked.legs / total,
   };
-  return ZONES.map((zone) => weights[zone]);
+  return ZONES.map((zone) => shares[zone]);
 }

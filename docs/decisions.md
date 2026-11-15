@@ -151,3 +151,20 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - The guiding principle is ALARA ("as low as reasonably achievable", [V1 4029]).
 - **Set aside:** an "approaching the limit" alert at, for example, 90%. The standard gives no such threshold, and the panel already projects the days left at the current rate.
 - **Why:** a broken requirement deserves the emergency path, and every number in an alert should come from a source.
+
+## D-013 · The 3D body is a hologram of a real anatomy atlas
+
+- **Problem:** the team's reference for the central figure is a see-through "medical hologram" with the skeleton and organs inside. The first 3D body was a smooth mannequin with coloured blocks on it: it read as clothing, not as health.
+- **Chosen:**
+  - One model for the skin, skeleton, brain, heart and airways, all from the same body in the BodyParts3D atlas (CC BY 4.0, see NOTICE). Every part sits exactly inside the skin, and the pose (arms at the sides) is the one of the reference.
+  - A hologram look: cyan, see-through faces, a bright outline, scan lines, a rising sweep, a glow (bloom) and a lit pedestal.
+  - Status colour only where there is an alert: a zone, the brain or the heart turns amber or red; the outline of the skin shows radiation, and the pedestal shows the environment.
+  - The healthy heart stays pale, not red, because red means critical everywhere else on the panel.
+  - Body zones come from the nearest bone, baked into the model, so clicks and colours follow the real arms and legs.
+  - `scripts/build_anatomy.py` rebuilds the model from the official download.
+- **Set aside:**
+  - Keeping the mannequin and drawing organs as spheres: it stayed far from the reference.
+  - Anatomy models from 3D marketplaces: most are paid or have no open licence.
+  - Fitting an atlas skeleton inside the old mannequin: its arms were in a different pose.
+  - Unity: a second engine a day before the deadline. It remains an idea for a later VR or AR version.
+- **Cost:** the model is about 2 MB, loaded only when the 3D body is shown. Devices without WebGL keep the 2D figure.
