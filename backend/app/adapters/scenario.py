@@ -1,7 +1,8 @@
 """Scripted demo mission: synthetic drifts and a solar storm on an accelerated clock.
 
 Nothing here is a real person's data. The script shows how the app reacts: first an early
-warning, then a combined pattern across systems, then a solar storm emergency.
+warning, then a combined pattern across systems, then a solar storm emergency. The storm
+names a real reference event (NASA DONKI, 7 March 2012); its size and timing are synthetic.
 """
 
 from __future__ import annotations

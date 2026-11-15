@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
+from app.adapters.donki_json import load_storm_reference
 from app.adapters.osdr_csv import load_glucose_baseline, load_wbc_baseline
 from app.adapters.report_sinks import FallbackSink, GitHubIssueSink, SqliteReportSink
 from app.adapters.scenario import (
@@ -25,10 +26,10 @@ from app.application.ingest import IngestReadings
 from app.application.mission import Mission, synthetic_preflight_baselines
 from app.application.radiation import TrackRadiation
 from app.application.reports import ReportSink, SubmitReport
-from app.config import OSDR_CBC_CSV, OSDR_CMP_CSV, Settings
+from app.config import DONKI_FLR_JSON, DONKI_SEP_JSON, OSDR_CBC_CSV, OSDR_CMP_CSV, Settings
 from app.domain.crew import CREW, DEFAULT_CREW_ID, CrewMember
 from app.domain.modes import strategy_for
-from app.domain.radiation import DoseLedger
+from app.domain.radiation import DoseLedger, StormReference
 from app.domain.readings import Signal
 
 Clock = Callable[[], datetime]
@@ -65,12 +66,19 @@ class Container:
             step = timedelta(seconds=settings.tick_seconds * settings.speed)
             clock = SteppingClock(scenario.start, step) if scenario else utc_now
         start = scenario.start if scenario else clock()
+        # The demo storm names the real event it refers to (NASA DONKI, 7 March 2012).
+        storm_reference = load_storm_reference(DONKI_SEP_JSON, DONKI_FLR_JSON)
         slots: list[CrewSlot] = []
         repositories: list[SqliteReadingRepository] = []
         for index, member in enumerate(CREW):
             member_scenario = _scenario_for(member, scenario)
             slot, repository = _build_member(
-                settings, member, member_scenario, settings.seed + index * SEED_STEP, start
+                settings,
+                member,
+                member_scenario,
+                settings.seed + index * SEED_STEP,
+                start,
+                storm_reference,
             )
             slots.append(slot)
             repositories.append(repository)
@@ -105,6 +113,7 @@ def _build_member(
     scenario: Scenario | None,
     seed: int,
     start: datetime,
+    storm_reference: StormReference,
 ) -> tuple[CrewSlot, SqliteReadingRepository]:
     repository = SqliteReadingRepository(settings.db_path, crew=member.id)
     bus = EventBus()
@@ -131,7 +140,7 @@ def _build_member(
     mission = Mission(
         IngestReadings(source, repository, bus),
         evaluate,
-        TrackRadiation(ledger, bus),
+        TrackRadiation(ledger, bus, storm_reference if _has_storm(scenario) else None),
         bus,
         ForecastSleep(repository, baselines.get(Signal.SLEEP_HOURS), bus),
         mission_day=scenario.mission_day if scenario else None,
@@ -139,3 +148,8 @@ def _build_member(
         lap=scenario.lap if scenario else None,
     )
     return CrewSlot(member=member, mission=mission, repository=repository, bus=bus), repository
+
+
+def _has_storm(scenario: Scenario | None) -> bool:
+    """Only a script with a dose spike has a storm to refer to."""
+    return scenario is not None and any(s.signal is Signal.DOSE_TODAY for s in scenario.spikes)

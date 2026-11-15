@@ -187,3 +187,17 @@ def test_the_commander_lab_normals_come_from_open_nasa_data() -> None:
     assert commander["glucose"].startswith("NASA OSDR OSD-575 (C001")
     engineer = lab_sources(container, "engineer")
     assert not engineer["glucose"].startswith("NASA OSDR")
+
+
+def test_only_the_demo_storm_names_its_real_reference_event() -> None:
+    demo = Container.build(
+        Settings(db_path=":memory:", run_live_loop=False), clock=lambda: NOW, scenario=DEMO
+    )
+    for slot in demo.crew:
+        reference = slot.mission.radiation.view()["storm_reference"]
+        assert reference["sep_id"] == "2012-03-07T04:05:00-SEP-001"
+        assert reference["flare_class"] == "X5.4"
+
+    assert (
+        quiet_container().crew.get("commander").mission.radiation.view()["storm_reference"] is None
+    )
