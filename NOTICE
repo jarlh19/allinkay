@@ -13,6 +13,11 @@ We acknowledge the Community Coordinated Modeling Center (CCMC) at Goddard Space
 Flight Center for the use of the Space Weather Database Of Notifications, Knowledge,
 Information (DONKI), https://ccmc.gsfc.nasa.gov/tools/DONKI/ (files in data/donki).
 
+This product includes data from NASA's Planetary Data System: the Mars Science
+Laboratory Radiation Assessment Detector reduced data record (MSL-M-RAD-3-RDR-V1.0,
+cruise, 28 February to 15 March 2012), PPI node,
+https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/ (dose columns only, in data/rad).
+
 The 3D body (frontend/public/models/anatomy.glb) is adapted from BodyParts3D:
 "BodyParts3D, © The Database Center for Life Science licensed under CC Attribution
 4.0 International" (https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html).

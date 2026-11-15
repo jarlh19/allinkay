@@ -5,9 +5,17 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from functools import cache
 
 from app.adapters.donki_json import load_storm_reference
 from app.adapters.osdr_csv import load_glucose_baseline, load_wbc_baseline
+from app.adapters.rad_csv import (
+    DoseReplay,
+    RadObservation,
+    ReplayedDose,
+    calibrate,
+    load_rad_observations,
+)
 from app.adapters.report_sinks import FallbackSink, GitHubIssueSink, SqliteReportSink
 from app.adapters.scenario import (
     CREW_SCENARIOS,
@@ -26,10 +34,17 @@ from app.application.ingest import IngestReadings
 from app.application.mission import Mission, synthetic_preflight_baselines
 from app.application.radiation import TrackRadiation
 from app.application.reports import ReportSink, SubmitReport
-from app.config import DONKI_FLR_JSON, DONKI_SEP_JSON, OSDR_CBC_CSV, OSDR_CMP_CSV, Settings
+from app.config import (
+    DONKI_FLR_JSON,
+    DONKI_SEP_JSON,
+    OSDR_CBC_CSV,
+    OSDR_CMP_CSV,
+    RAD_DOSE_CSV,
+    Settings,
+)
 from app.domain.crew import CREW, DEFAULT_CREW_ID, CrewMember
 from app.domain.modes import strategy_for
-from app.domain.radiation import DoseLedger, StormReference
+from app.domain.radiation import DoseEquivalent, DoseLedger, StormReference
 from app.domain.readings import Signal
 
 Clock = Callable[[], datetime]
@@ -117,7 +132,8 @@ def _build_member(
 ) -> tuple[CrewSlot, SqliteReadingRepository]:
     repository = SqliteReadingRepository(settings.db_path, crew=member.id)
     bus = EventBus()
-    source: Simulator | RepeatingSource
+    source: Simulator | RepeatingSource | ReplayedDose
+    usual_dose_msv = DEFAULT_PROFILES[Signal.DOSE_TODAY].mean
     if scenario is None:
         source = Simulator(seed=seed)
     else:
@@ -126,6 +142,10 @@ def _build_member(
             lambda: Simulator(seed=seed, exam_every=script.exam_every, adjust=script.offset),
             script,
         )
+        if script.dose_replay_start is not None:
+            replay = _rad_replay(script.dose_replay_start)
+            source = ReplayedDose(source, replay, lambda at: timedelta(days=script.day(at)))
+            usual_dose_msv = replay.conversion.background_msv_per_day
     baselines = synthetic_preflight_baselines(seed=seed + 1, end=start)
     if member.id == DEFAULT_CREW_ID:
         # The commander's lab normals come from open NASA data: white blood cells from
@@ -135,7 +155,7 @@ def _build_member(
     evaluate = EvaluateHealth(baselines, bus, strategy=strategy_for(member.mode))
     ledger = DoseLedger(
         accumulated_msv=member.career_dose_msv,
-        usual_rate_msv=DEFAULT_PROFILES[Signal.DOSE_TODAY].mean,
+        usual_rate_msv=usual_dose_msv,
     )
     mission = Mission(
         IngestReadings(source, repository, bus),
@@ -151,5 +171,20 @@ def _build_member(
 
 
 def _has_storm(scenario: Scenario | None) -> bool:
-    """Only a script with a dose spike has a storm to refer to."""
-    return scenario is not None and any(s.signal is Signal.DOSE_TODAY for s in scenario.spikes)
+    """Only a script with a storm (replayed or scripted) has an event to refer to."""
+    if scenario is None:
+        return False
+    replayed = scenario.dose_replay_start is not None
+    return replayed or any(s.signal is Signal.DOSE_TODAY for s in scenario.spikes)
+
+
+def _rad_replay(start: datetime) -> DoseReplay:
+    """RAD's measured dose from `start`, converted with the calibration of the same file."""
+    observations, conversion = _rad_data()
+    return DoseReplay(observations, start, conversion)
+
+
+@cache
+def _rad_data() -> tuple[list[RadObservation], DoseEquivalent]:
+    observations = load_rad_observations(RAD_DOSE_CSV)
+    return observations, calibrate(observations)

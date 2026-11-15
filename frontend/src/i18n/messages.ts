@@ -120,7 +120,7 @@ const en = {
   "radiation.stormActive": "✕ Active · {dose} mSv in this event",
   "radiation.eventLimit": "Event limit: {limit} mSv. If an alert comes, open the action guide.",
   "radiation.reference":
-    "Reference event ({source}): solar flare {flare} on {date} at {time} UTC; protons reached Earth orbit {hours} h later ({instrument}). The demo storm is synthetic in size.",
+    "Real storm ({source}): solar flare {flare} on {date} at {time} UTC; protons reached Earth orbit {hours} h later ({instrument}). The dose here replays what Curiosity's RAD measured in that storm on its way to Mars (NASA PDS).",
   "radiation.organs": "Organs at risk",
   "radiation.footer": "NASA-STD-3001 limits: {career} mSv for a whole career and {event} mSv per solar event. Estimated risk from the dose, not a diagnosis.",
   "organ.central_nervous_system": "Central nervous system",
@@ -298,7 +298,7 @@ const es: Record<MessageKey, string> = {
   "radiation.stormActive": "✕ Activa · {dose} mSv en este evento",
   "radiation.eventLimit": "Límite por evento: {limit} mSv. Si llega una alerta, abre la guía de acción.",
   "radiation.reference":
-    "Evento de referencia ({source}): erupción solar {flare} el {date} a las {time} UTC; los protones llegaron a la órbita de la Tierra {hours} h después ({instrument}). El tamaño de la tormenta de la demo es simulado.",
+    "Tormenta real ({source}): erupción solar {flare} el {date} a las {time} UTC; los protones llegaron a la órbita de la Tierra {hours} h después ({instrument}). La dosis que ves reproduce lo que midió el RAD de Curiosity en esa tormenta, camino a Marte (NASA PDS).",
   "radiation.organs": "Órganos en riesgo",
   "radiation.footer": "Límites del estándar NASA-STD-3001: {career} mSv en toda la carrera y {event} mSv por evento solar. Riesgo estimado según la dosis, no es un diagnóstico.",
   "organ.central_nervous_system": "Sistema nervioso central",

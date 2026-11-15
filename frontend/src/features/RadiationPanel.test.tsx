@@ -40,12 +40,12 @@ function renderPanel(value: Radiation, language: "en" | "es" = "en") {
 }
 
 describe("RadiationPanel", () => {
-  it("names the real event the demo storm refers to, in UTC", () => {
+  it("names the real storm whose measured dose the demo replays, in UTC", () => {
     renderPanel(radiation({ storm_reference: march2012 }));
 
     expect(
       screen.getByText(
-        "Reference event (NASA DONKI): solar flare X5.4 on 2012-03-07 at 00:24 UTC; protons reached Earth orbit 3.7 h later (GOES13: SEM/EPS >100 MeV). The demo storm is synthetic in size.",
+        "Real storm (NASA DONKI): solar flare X5.4 on 2012-03-07 at 00:24 UTC; protons reached Earth orbit 3.7 h later (GOES13: SEM/EPS >100 MeV). The dose here replays what Curiosity's RAD measured in that storm on its way to Mars (NASA PDS).",
       ),
     ).toBeInTheDocument();
   });
@@ -59,6 +59,6 @@ describe("RadiationPanel", () => {
   it("shows no reference when there is no scripted storm", () => {
     renderPanel(radiation({}));
 
-    expect(screen.queryByText(/Reference event/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Real storm/)).not.toBeInTheDocument();
   });
 });

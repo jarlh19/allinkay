@@ -1,8 +1,9 @@
-"""Scripted demo mission: synthetic drifts and a solar storm on an accelerated clock.
+"""Scripted demo mission: synthetic drifts and a real solar storm on an accelerated clock.
 
 Nothing here is a real person's data. The script shows how the app reacts: first an early
-warning, then a combined pattern across systems, then a solar storm emergency. The storm
-names a real reference event (NASA DONKI, 7 March 2012); its size and timing are synthetic.
+warning, then a combined pattern across systems, then a solar storm emergency. The dose is not
+scripted: it replays what Curiosity's RAD measured on its way to Mars from 29 February to
+10 March 2012, storm of 7 March 2012 included (NASA PDS; see app.adapters.rad_csv).
 """
 
 from __future__ import annotations
@@ -53,6 +54,8 @@ class Scenario:
     spikes: tuple[Spike, ...]
     exam_every: timedelta
     cycle_days: float | None = None
+    dose_replay_start: datetime | None = None
+    """When set, the dose readings replay RAD's measurements from this moment (UTC) onwards."""
 
     def elapsed_days(self, at: datetime) -> float:
         return (at - self.start) / timedelta(days=1)
@@ -86,10 +89,14 @@ DEMO = Scenario(
         Drift(Signal.WHITE_BLOOD_CELLS, start_day=3, per_day=-1.75, cap=-3.5),
         Drift(Signal.MOOD, start_day=2, per_day=-0.7, cap=-2.2),
     ),
-    spikes=(Spike(Signal.DOSE_TODAY, start_day=8, hours=6, offset=118),),
+    spikes=(),
     exam_every=timedelta(days=2),
     cycle_days=10,
+    dose_replay_start=datetime(2012, 2, 29, 12, 0, tzinfo=UTC),
 )
+"""With the replay starting at noon on 29 February 2012, the dose climbs through script day 7
+(7 March) and crosses the storm threshold on day 8 (8 March, 14:52 UTC), when the storm's
+second and stronger wave reached the spacecraft."""
 
 
 CREW_SCENARIOS: dict[str, Scenario] = {
@@ -101,14 +108,13 @@ CREW_SCENARIOS: dict[str, Scenario] = {
             Drift(Signal.HEART_RATE, start_day=5, per_day=9, cap=26),
             Drift(Signal.BODY_TEMPERATURE, start_day=5, per_day=0.3, cap=0.9),
         ),
-        spikes=(Spike(Signal.DOSE_TODAY, start_day=8, hours=6, offset=160),),
     ),
     "scientist": replace(DEMO, name="demo-scientist", drifts=()),
 }
 """Each crew member's script on the same clock. The commander drifts slowly inside the ship;
 the engineer works outside and heats up (heart rate and body temperature, read by portable
-sensors) and takes a larger dose during the storm with less shielding; the scientist stays
-well, so the crew view shows the contrast. Everyone lives through the same solar storm."""
+sensors); the scientist stays well, so the crew view shows the contrast. Everyone lives through
+the same measured solar storm."""
 
 
 class RepeatingSource:

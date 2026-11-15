@@ -91,13 +91,23 @@ def test_each_member_follows_their_own_script_in_the_demo() -> None:
     assert set(engineer) == {
         ("engineer", "outside_normal", ("heart_rate",)),
         ("engineer", "outside_normal", ("body_temperature",)),
+        ("engineer", "outside_normal", ("dose_today",)),
         ("engineer", "solar_storm", ("dose_today",)),
     }
     assert 5 < engineer[("engineer", "outside_normal", ("heart_rate",))] < 8
-    assert set(scientist) == {("scientist", "solar_storm", ("dose_today",))}
+    # The scientist stays well; only the measured storm reaches them.
+    assert set(scientist) == {
+        ("scientist", "outside_normal", ("dose_today",)),
+        ("scientist", "solar_storm", ("dose_today",)),
+    }
     storms = [v for k, v in seen.items() if k[1] == "solar_storm"]
     assert len(storms) == 3
     assert all(8 <= day < 8.3 for day in storms)
+    # RAD's dose climbed for a day before the storm threshold: everyone's dose leaves their
+    # normal on day 7, before the storm emergency on day 8.
+    rising = [v for k, v in seen.items() if k[1:] == ("outside_normal", ("dose_today",))]
+    assert len(rising) == 3
+    assert all(7 <= day < max(storms) for day in rising)
 
 
 def test_every_lap_of_the_demo_repeats_the_first() -> None:

@@ -5,7 +5,7 @@ import pytest
 from app.adapters.scenario import DEMO, SteppingClock
 from app.config import Settings
 from app.container import Container
-from app.domain.readings import Signal
+from app.domain.readings import Reading, Signal
 
 
 def first_hour_of_each_alert(days: int = 9) -> dict[str, float]:
@@ -39,7 +39,8 @@ def test_scenario_offsets_and_mission_day() -> None:
 
     assert DEMO.offset(Signal.SLEEP_HOURS, DEMO.start) == 0
     assert DEMO.offset(Signal.SLEEP_HOURS, at_day_5) == pytest.approx(-1.8)
-    assert DEMO.offset(Signal.DOSE_TODAY, DEMO.start + timedelta(days=8, hours=2)) == 118
+    # The dose is not scripted: it replays RAD's measurements.
+    assert DEMO.offset(Signal.DOSE_TODAY, DEMO.start + timedelta(days=8, hours=2)) == 0
     assert DEMO.mission_day(at_day_5) == 95
 
 
@@ -70,3 +71,29 @@ def test_mission_publishes_the_mission_day() -> None:
 
     clock = queue.get_nowait()
     assert clock == {"type": "clock", "at": now.isoformat(), "mission_day": 93}
+
+
+def dose_readings(days: float) -> list[Reading]:
+    now = DEMO.start
+    container = Container.build(
+        Settings(db_path=":memory:", run_live_loop=False), clock=lambda: now, scenario=DEMO
+    )
+    doses: list[Reading] = []
+    for hour in range(int(days * 24)):
+        now = DEMO.start + timedelta(hours=hour)
+        readings = container.crew.default.mission.step(now)
+        doses.extend(r for r in readings if r.signal is Signal.DOSE_TODAY)
+    return doses
+
+
+def test_the_demo_dose_is_curiositys_measured_dose_on_its_way_to_mars() -> None:
+    doses = dose_readings(days=10)
+    by_day = {round((d.taken_at - DEMO.start) / timedelta(days=1), 3): d.value for d in doses}
+
+    assert {d.source for d in doses} == {"MSL RAD (NASA PDS)"}
+    # Quiet cruise before the storm: RAD's cosmic-ray background, about 1.7 mSv per day.
+    quiet = [v for day, v in by_day.items() if day < 6.5]
+    assert min(quiet) > 1.5 and max(quiet) < 1.9
+    # 8 March 2012, the storm's second wave: read once an hour, it peaks at about 17 times the
+    # background, past the storm threshold of 10 times.
+    assert max(by_day.values()) == pytest.approx(29.9, abs=0.5)

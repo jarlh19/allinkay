@@ -18,7 +18,7 @@ ALLINKAY uses event `2012-03-07T04:05:00-SEP-001` as the reference for the demo 
 
 Curiosity's RAD instrument, inside the spacecraft on its way to Mars, recorded 19.5 mSv over
 this storm, from 7 to 15 March 2012 (Guo et al., 2015, https://arxiv.org/abs/1503.06631).
-The size and timing of the storm in the demo are synthetic; only the reference event is real.
+The demo's dose replays what RAD measured during this storm (see data/rad, D-020).
 
 CCMC describes DONKI data as research quality, provided as is. NOAA's Space Weather Prediction
 Center is the official source of space weather forecasts.

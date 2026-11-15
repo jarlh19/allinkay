@@ -248,3 +248,22 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - The EDA's daily dose: it is measured in low Earth orbit, in mGy per day, not on the way to Mars, so the cruise rate measured by Curiosity stays (Zeitlin et al., 2013).
   - Sleep: by actigraphy the ISS crews slept 6.09 ± 0.67 h per night (Barger et al., 2014, *Lancet Neurology* 13(9), 904–912), and the simulator uses 7.4 h. Changing it moves the values of the demo story, so it is left for its own decision.
 - **Trade-off:** RR-10 and RR-23 overlap in December 2020 and January 2021, so those weeks count twice. The mission CO2 medians range from 2141 to 3638 ppm (the four missions from 2019 on are all below 2700 ppm, and five of the six before are above 3100), so the median is sensitive: leaving RR-10 out would give 22.6 °C and 2.4 mmHg. The alerts compare each reading with the person's own baseline, so the level itself does not decide when they fire.
+
+## D-020 · The demo's dose is what Curiosity's RAD measured on its way to Mars
+
+- **Problem:** the dose was synthetic: a fixed 1.8 mSv per day and a made-up 6-hour storm. The storm already named a real event (D-017), but its size and timing were invented.
+- **Chosen:** the demo replays the dose that Curiosity's Radiation Assessment Detector (RAD) measured inside the spacecraft in cruise, from NASA's Planetary Data System (`MSL-M-RAD-3-RDR-V1.0`).
+  - **Window:** from noon on 29 February to 10 March 2012, one 10-day lap of the demo. The storm of 7 March climbs through script day 7 and, on day 8, its second wave crosses ten times the background and raises the storm emergency at 14:52 UTC on 8 March, as RAD saw it. After the storm, the cosmic rays drop below their usual level (a Forbush decrease), as measured.
+  - **Data kept:** only the start, length and total dose of each observation, from 17 daily files (`data/rad`, 77 KB). `scripts/build_rad_dose.py` rebuilds it from PDS.
+  - **Left out:** isolated dips below 85% of both neighbouring sides. In this file that is one observation a day, always between 09:46 and 11:02 UTC.
+  - **Dose equivalent:** RAD gives absorbed dose in its plastic detector, close to tissue.
+    - The cosmic-ray background (the median before 7 March, 18.6 µGy/h) uses RAD's measured quality factor of 3.82 (Zeitlin et al., 2013), giving 1.71 mSv per day.
+    - The storm's excess, mostly protons, uses a factor of 1.99. That factor turns the measured excess from 7 to 15 March into the 19.5 mSv published for that storm (Guo et al., 2015).
+  - **Everyone gets the ship's reading.** The engineer's extra storm dose for working outside was synthetic and is gone.
+  - **The usual rate** for the storm rule is the measured background, not 1.8.
+- **Effect on the demo:** the dose rises above everyone's normal on day 7, a day before the storm emergency. That is a new, real early warning. The storm emergency moves from day 8.0 to day 8.12.
+- **Set aside:**
+  - Computing the quality factor from RAD's LET spectra: more faithful, but it needs the full LET binning and a Q(L) function, and the result would still have to match the published total.
+  - Scaling the storm for the engineer outside: no measured basis.
+  - Replaying the whole 253-day cruise: about 5.7 GB of downloads for a 10-day demo lap.
+- **Limits:** RAD sat inside the cruise stage, not in a human body or a crewed ship, and its storm factor is fitted to a single published total.
