@@ -6,12 +6,14 @@ import { Game, type Metrics } from "./cognitive/Games";
 import {
   APP_VERSION,
   METRIC,
+  REVIEW,
   TESTS,
   loadSessions,
   reportFor,
   saveSession,
   type TestId,
   type TestReport,
+  type Trial,
 } from "./cognitive/engine";
 
 /** The cognitive tests (ALLINKAY MIND), each next to the test of NASA's Cognition battery it resembles. */
@@ -27,6 +29,22 @@ interface Props {
 }
 
 type View = { kind: "list" } | { kind: "game"; test: TestId; run: number } | { kind: "done"; test: TestId; metrics: Metrics; saved: boolean };
+
+const one = (v: number) => Math.round(v * 10) / 10;
+
+/** A small line of the correct-response speed across sessions (lower is faster). */
+function Sparkline({ values, label }: { values: number[]; label: string }) {
+  if (values.length < 2) return null;
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const range = Math.max(hi - lo, 1);
+  const points = values.map((v, i) => `${8 + (i * 284) / (values.length - 1)},${66 - ((v - lo) / range) * 52}`).join(" ");
+  return (
+    <svg className="mind-spark" viewBox="0 0 300 74" role="img" aria-label={label}>
+      <polyline points={points} />
+    </svg>
+  );
+}
 
 function formatValue(test: TestId, value: number): string {
   return METRIC[test].unit === "ms" ? `${Math.round(value)} ms` : `${Math.round(value)}%`;
@@ -53,7 +71,7 @@ export function TestsDialog({ open, onClose, crewId, crewName }: Props) {
   }, [open, onClose]);
 
   const finish = useCallback(
-    (test: TestId, metrics: Metrics) => {
+    (test: TestId, metrics: Metrics, trials: Trial[]) => {
       const saved = saveSession({
         schema_version: "1.0",
         module: "allinkay_mind",
@@ -64,6 +82,7 @@ export function TestsDialog({ open, onClose, crewId, crewName }: Props) {
         test_id: test,
         timestamp_utc: new Date().toISOString(),
         metrics,
+        trials,
       });
       setSessions(loadSessions());
       setView({ kind: "done", test, metrics, saved });
@@ -73,13 +92,9 @@ export function TestsDialog({ open, onClose, crewId, crewName }: Props) {
 
   if (!open) return null;
 
-  const comparison = (test: TestId, report: TestReport | null): string => {
-    if (!report) return t("tests.never");
-    if (report.status === "pending") return t("tests.pending", { n: Math.max(1, 4 - report.sessions) });
-    const base = formatValue(test, report.baseline as number);
-    if (report.status === "review") return t("tests.review", { c: Math.round(Math.abs(report.changePct ?? 0)), b: base });
-    return t("tests.steady", { b: base });
-  };
+  const reading = (report: TestReport | null): string =>
+    report ? t(`tests.j.${report.joint}` as MessageKey) : t("tests.never");
+  const isReview = (report: TestReport | null) => report !== null && REVIEW.includes(report.joint);
 
   let body;
   if (view.kind === "list") {
@@ -98,9 +113,9 @@ export function TestsDialog({ open, onClose, crewId, crewName }: Props) {
                 <p className="test-nasa">
                   {t("tests.nasaLabel")}: <strong>{t(`tests.${test}Nasa` as MessageKey)}</strong>
                 </p>
-                <p className={`test-last${report?.status === "review" ? " warn" : ""}`}>
-                  {report ? `${t("tests.latest", { v: formatValue(test, report.latest) })} · ` : ""}
-                  {comparison(test, report)}
+                <p className={`test-last${isReview(report) ? " warn" : ""}`}>
+                  {report ? `${t("tests.latest", { v: formatValue(test, report.latest.metrics[METRIC[test].field] ?? 0) })} · ` : ""}
+                  {reading(report)}
                 </p>
                 <button type="button" className="tests-start" onClick={() => setView({ kind: "game", test, run: Date.now() })}>
                   {t("tests.start")}
@@ -119,7 +134,7 @@ export function TestsDialog({ open, onClose, crewId, crewName }: Props) {
         <p className="mind-domain">{t(`tests.${view.test}` as MessageKey)}</p>
         <h3 id="mind-title">{t(`tests.${view.test}Game` as MessageKey)}</h3>
         <p className="mind-how">{t(`tests.${view.test}How` as MessageKey)}</p>
-        <Game key={view.run} test={view.test} onDone={(metrics) => finish(view.test, metrics)} />
+        <Game key={view.run} test={view.test} onDone={(metrics, trials) => finish(view.test, metrics, trials)} />
       </section>
     );
   } else {
@@ -131,7 +146,35 @@ export function TestsDialog({ open, onClose, crewId, crewName }: Props) {
         <h3>{t(`tests.${view.test}Game` as MessageKey)}</h3>
         <p className="mind-score">{formatValue(view.test, view.metrics[key] ?? 0)}</p>
         {view.test === "reaction" && <p className="mind-how">{t("tests.falseStarts", { n: view.metrics.false_starts ?? 0 })}</p>}
-        <p className={`mind-compare${report?.status === "review" ? " warn" : ""}`}>{comparison(view.test, report)}</p>
+        {report && (
+          <div className={`mind-compare${isReview(report) ? " warn" : ""}`}>
+            <strong>{reading(report)}</strong>
+            <p>{t(`tests.jm.${report.joint}` as MessageKey)}</p>
+          </div>
+        )}
+        {report && (
+          <ul className="mind-lines">
+            <li>
+              {report.speed.status === "pending" || report.speed.latest === null || report.speed.baseline === null
+                ? t("tests.speedPending")
+                : t("tests.speedLine", { now: Math.round(report.speed.latest), base: Math.round(report.speed.baseline), change: one(report.speed.change ?? 0) })}
+            </li>
+            <li>
+              {report.accuracy.status === "pending" || report.accuracy.latest === null || report.accuracy.baseline === null
+                ? t("tests.accuracyPending")
+                : t("tests.accuracyLine", { now: Math.round(report.accuracy.latest), base: Math.round(report.accuracy.baseline), change: one(report.accuracy.change ?? 0) })}
+            </li>
+            <li>
+              {t("tests.profile", {
+                errors: report.profile.errors,
+                attempts: report.profile.attempts,
+                ok: report.profile.medianCorrectMs === null ? "–" : `${Math.round(report.profile.medianCorrectMs)} ms`,
+                bad: report.profile.medianIncorrectMs === null ? "–" : `${Math.round(report.profile.medianIncorrectMs)} ms`,
+              })}
+            </li>
+          </ul>
+        )}
+        {report && <Sparkline values={report.speedTrend} label={t("tests.trend")} />}
         <p className="note">{view.saved ? t("tests.saved", { name: crewName }) : t("tests.notSaved")}</p>
         <div className="form-actions">
           <button type="button" className="lang" onClick={() => setView({ kind: "game", test: view.test, run: Date.now() })}>

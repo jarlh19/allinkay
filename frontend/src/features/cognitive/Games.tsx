@@ -15,11 +15,16 @@ import {
   type Pattern,
   type RecognitionTrial,
   type TestId,
+  type Trial,
 } from "./engine";
 
 export type Metrics = Record<string, number>;
+/** What a finished test hands back: its summary metrics and every answered trial. */
+export type Finish = (metrics: Metrics, trials: Trial[]) => void;
 
 const round1 = (v: number) => Math.round(v * 10) / 10;
+/** Milliseconds since a mark, to one decimal. */
+const elapsedSince = (mark: number) => round1(performance.now() - mark);
 
 /** The live counters above every test. */
 function Counters({ trial, total, level, correct, answered, times }: {
@@ -53,12 +58,13 @@ function useDigitKeys(onDigit: (index: number) => void, active: boolean) {
 
 type ReactionPhase = "ready" | "waiting" | "go" | "result" | "early";
 
-function ReactionAlert({ onDone }: { onDone: (m: Metrics) => void }) {
+function ReactionAlert({ onDone }: { onDone: Finish }) {
   const { t } = useI18n();
   const [phase, setPhase] = useState<ReactionPhase>("ready");
   const [times, setTimes] = useState<number[]>([]);
   const [falseStarts, setFalseStarts] = useState(0);
   const [last, setLast] = useState<number | null>(null);
+  const trials = useRef<Trial[]>([]);
   const timer = useRef<number | undefined>(undefined);
   const signalAt = useRef(0);
   useEffect(() => () => window.clearTimeout(timer.current), []);
@@ -75,6 +81,7 @@ function ReactionAlert({ onDone }: { onDone: (m: Metrics) => void }) {
       }, randomInt(1700, 4600));
     } else if (phase === "waiting") {
       window.clearTimeout(timer.current);
+      trials.current.push({ false_start: true });
       setFalseStarts((n) => n + 1);
       setPhase("early");
       timer.current = window.setTimeout(() => setPhase("ready"), 750);
@@ -82,12 +89,13 @@ function ReactionAlert({ onDone }: { onDone: (m: Metrics) => void }) {
       const ms = round1(performance.now() - signalAt.current);
       signalAt.current = 0;
       const next = [...times, ms];
+      trials.current.push({ response_ms: ms, level: 1, correct: true });
       setTimes(next);
       setLast(ms);
       setPhase("result");
       timer.current = window.setTimeout(() => {
         if (next.length >= TRIALS.reaction) {
-          onDone({ median_reaction_ms: Math.round((median(next) as number) * 100) / 100, valid_trials: next.length, false_starts: falseStarts });
+          onDone({ median_reaction_ms: Math.round((median(next) as number) * 100) / 100, valid_trials: next.length, false_starts: falseStarts }, trials.current);
         } else setPhase("ready");
       }, 600);
     }
@@ -125,7 +133,7 @@ function ReactionAlert({ onDone }: { onDone: (m: Metrics) => void }) {
 
 // ---------------------------------------------------------------- Memory Matrix
 
-function MemoryMatrix({ onDone }: { onDone: (m: Metrics) => void }) {
+function MemoryMatrix({ onDone }: { onDone: Finish }) {
   const { t } = useI18n();
   const [round, setRound] = useState(0);
   const [length, setLength] = useState(3);
@@ -137,6 +145,9 @@ function MemoryMatrix({ onDone }: { onDone: (m: Metrics) => void }) {
   const [longest, setLongest] = useState(0);
   const [result, setResult] = useState<boolean | null>(null);
   const timers = useRef<number[]>([]);
+  const trials = useRef<Trial[]>([]);
+  const [times, setTimes] = useState<number[]>([]);
+  const answerFrom = useRef(0);
   const later = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(fn, ms));
 
   // Each round lights its tiles one by one, then waits for the answer.
@@ -147,7 +158,11 @@ function MemoryMatrix({ onDone }: { onDone: (m: Metrics) => void }) {
       later(at + 540, () => setLit(null));
       at += 800;
     });
-    later(at, () => setPhase("answer"));
+    later(at, () => {
+      // The response clock leaves out the time the tiles were flashing.
+      answerFrom.current = performance.now();
+      setPhase("answer");
+    });
     const pending = timers.current;
     return () => pending.splice(0).forEach((id) => window.clearTimeout(id));
   }, [sequence]);
@@ -159,6 +174,9 @@ function MemoryMatrix({ onDone }: { onDone: (m: Metrics) => void }) {
     const wrong = tile !== sequence[next.length - 1];
     if (!wrong && next.length < sequence.length) return;
     const ok = !wrong;
+    const elapsed = elapsedSince(answerFrom.current);
+    trials.current.push({ level: sequence.length, sequence_length: sequence.length, correct: ok, response_ms: elapsed });
+    setTimes((list) => [...list, elapsed]);
     const nextCorrect = correct + Number(ok);
     const nextLongest = ok ? Math.max(longest, sequence.length) : longest;
     const nextLength = Math.max(3, Math.min(9, length + (ok ? 1 : -1)));
@@ -168,7 +186,14 @@ function MemoryMatrix({ onDone }: { onDone: (m: Metrics) => void }) {
     setPhase("feedback");
     later(850, () => {
       if (round + 1 >= TRIALS.memory) {
-        onDone({ correct_rounds: nextCorrect, total_rounds: TRIALS.memory, accuracy_pct: round1((100 * nextCorrect) / TRIALS.memory), max_correct_sequence: nextLongest, final_level: nextLength });
+        onDone(
+          {
+            correct_rounds: nextCorrect, total_rounds: TRIALS.memory, accuracy_pct: round1((100 * nextCorrect) / TRIALS.memory),
+            max_correct_sequence: nextLongest, final_level: nextLength,
+            median_response_ms: round1(median(trials.current.map((t) => t.response_ms as number)) as number),
+          },
+          trials.current,
+        );
         return;
       }
       setRound(round + 1);
@@ -183,7 +208,7 @@ function MemoryMatrix({ onDone }: { onDone: (m: Metrics) => void }) {
   const message = phase === "show" ? t("tests.m.watch") : phase === "answer" ? t("tests.m.repeat") : t(result ? "tests.correct" : "tests.incorrect");
   return (
     <>
-      <Counters trial={round + 1} total={TRIALS.memory} level={length} correct={correct} answered={round + (phase === "feedback" ? 1 : 0)} times={[]} />
+      <Counters trial={round + 1} total={TRIALS.memory} level={length} correct={correct} answered={round + (phase === "feedback" ? 1 : 0)} times={times} />
       <div className="mind-arena">
         <p className="mind-small">{t("tests.m.round", { n: round + 1, total: TRIALS.memory, k: sequence.length })}</p>
         <div className="mind-grid">
@@ -226,18 +251,19 @@ interface Adaptive {
   streak: number;
   correct: number;
   times: number[];
+  trials: Trial[];
 }
 
 /** Shared bookkeeping: response time, accuracy and the adaptive level. */
 function useAdaptive(maxLevel: number, streakToLevelUp: number) {
-  const [state, setState] = useState<Adaptive>({ trial: 0, level: 1, streak: 0, correct: 0, times: [] });
+  const [state, setState] = useState<Adaptive>({ trial: 0, level: 1, streak: 0, correct: 0, times: [], trials: [] });
   const [feedback, setFeedback] = useState<boolean | null>(null);
   const shownAt = useRef(0);
   // The response clock starts when the first trial is on screen.
   useEffect(() => {
     shownAt.current = performance.now();
   }, []);
-  const answer = (ok: boolean): Adaptive => {
+  const answer = (ok: boolean, extra: Partial<Trial> = {}): Adaptive => {
     const rt = round1(performance.now() - shownAt.current);
     const streak = ok ? state.streak + 1 : 0;
     let level = state.level;
@@ -247,7 +273,8 @@ function useAdaptive(maxLevel: number, streakToLevelUp: number) {
       level = Math.min(maxLevel, level + 1);
       nextStreak = 0;
     }
-    const next = { trial: state.trial + 1, level, streak: nextStreak, correct: state.correct + Number(ok), times: [...state.times, rt] };
+    const trial: Trial = { level: state.level, correct: ok, response_ms: rt, ...extra };
+    const next = { trial: state.trial + 1, level, streak: nextStreak, correct: state.correct + Number(ok), times: [...state.times, rt], trials: [...state.trials, trial] };
     setFeedback(ok);
     return next;
   };
@@ -261,16 +288,16 @@ function useAdaptive(maxLevel: number, streakToLevelUp: number) {
 
 // ---------------------------------------------------------------- Pattern Solver
 
-function PatternSolver({ onDone }: { onDone: (m: Metrics) => void }) {
+function PatternSolver({ onDone }: { onDone: Finish }) {
   const { t } = useI18n();
   const { state, feedback, answer, advance } = useAdaptive(3, 2);
   const [pattern, setPattern] = useState<Pattern>(() => makePattern(1));
   const pick = useCallback((i: number) => {
     if (feedback !== null) return;
-    const next = answer(pattern.options[i] === pattern.answer);
+    const next = answer(pattern.options[i] === pattern.answer, { rule: pattern.kind });
     window.setTimeout(() => {
       if (next.trial >= TRIALS.pattern) {
-        onDone({ correct: next.correct, total: TRIALS.pattern, accuracy_pct: next.correct * 10, median_response_ms: round1(median(next.times) as number), final_level: next.level });
+        onDone({ correct: next.correct, total: TRIALS.pattern, accuracy_pct: next.correct * 10, median_response_ms: round1(median(next.times) as number), final_level: next.level }, next.trials);
         return;
       }
       setPattern(makePattern(next.level as 1 | 2 | 3));
@@ -302,7 +329,7 @@ function Craft({ turns, mirrored = false, label }: { turns: number; mirrored?: b
   );
 }
 
-function SpatialNavigator({ onDone }: { onDone: (m: Metrics) => void }) {
+function SpatialNavigator({ onDone }: { onDone: Finish }) {
   const { t } = useI18n();
   const { state, feedback, answer, advance } = useAdaptive(4, 3);
   const [trial, setTrial] = useState<RecognitionTrial | NavigationTrial>(() => makeSpatialTrial(0, 1));
@@ -315,7 +342,7 @@ function SpatialNavigator({ onDone }: { onDone: (m: Metrics) => void }) {
   const pick = useCallback((i: number) => {
     if (feedback !== null) return;
     const ok = trial.mode === "recognition" ? trial.options[i] === trial.transform : trial.options[i] === trial.answer;
-    const next = answer(ok);
+    const next = answer(ok, { mode: trial.mode });
     const counts = { ...byMode, [trial.mode]: { correct: byMode[trial.mode].correct + Number(ok), total: byMode[trial.mode].total + 1 } };
     setByMode(counts);
     window.setTimeout(() => {
@@ -325,7 +352,7 @@ function SpatialNavigator({ onDone }: { onDone: (m: Metrics) => void }) {
           correct: next.correct, total: TRIALS.spatial, accuracy_pct: round1((100 * next.correct) / TRIALS.spatial),
           median_response_ms: round1(median(next.times) as number),
           recognition_accuracy_pct: pct(counts.recognition), navigation_accuracy_pct: pct(counts.navigation), final_level: next.level,
-        });
+        }, next.trials);
         return;
       }
       setTrial(makeSpatialTrial(next.trial, next.level));
@@ -372,7 +399,7 @@ function SpatialNavigator({ onDone }: { onDone: (m: Metrics) => void }) {
   );
 }
 
-export function Game({ test, onDone }: { test: TestId; onDone: (m: Metrics) => void }) {
+export function Game({ test, onDone }: { test: TestId; onDone: Finish }) {
   if (test === "reaction") return <ReactionAlert onDone={onDone} />;
   if (test === "memory") return <MemoryMatrix onDone={onDone} />;
   if (test === "pattern") return <PatternSolver onDone={onDone} />;
