@@ -24,36 +24,28 @@ const state: LiveState = {
   },
 };
 
-const detailOf = (target: string) => ({ title: `Detail of ${target}`, status: null, content: <p>{`${target} readings`}</p> });
-
-function renderView(onDetail = vi.fn()) {
+function renderView(onMode = vi.fn()) {
   render(
     <I18nProvider initial="en">
-      <MissionView
-        state={state}
-        crewId="commander"
-        onCrew={() => undefined}
-        detailOf={detailOf}
-        onDetail={onDetail}
-        onPanel={() => undefined}
-        notices={null}
-      />
+      <MissionView state={state} crewId="commander" onCrew={() => undefined} onMode={onMode} />
     </I18nProvider>,
   );
-  return onDetail;
+  return onMode;
 }
+
+const bubble = (target: string) =>
+  document.querySelector<HTMLElement>(`.gauge.bubble[data-target="${target}"]`) as HTMLElement;
 
 describe("MissionView", () => {
   it("shows the six systems as bubbles, with the live heart rate in the cardiovascular one", () => {
     renderView();
 
-    const bubbles = document.querySelectorAll(".gauge.bubble");
-    expect(bubbles).toHaveLength(6);
-    const heart = document.querySelector<HTMLElement>('.gauge.bubble[data-target="cardiovascular"]');
-    expect(heart).not.toBeNull();
-    expect(within(heart as HTMLElement).getByText(/72 bpm/)).toBeInTheDocument();
+    expect(document.querySelectorAll(".gauge.bubble")).toHaveLength(6);
+    expect(within(bubble("cardiovascular")).getByText(/72 bpm/)).toBeInTheDocument();
     expect(screen.getByText("DAY 93")).toBeInTheDocument();
     expect(screen.getByText("Simulated data")).toBeInTheDocument();
+    expect(screen.getByText(/Earth link: up to 22 min/)).toBeInTheDocument();
+    expect(screen.getByText(/The outline of the body is the skin/)).toBeInTheDocument();
   });
 
   it("draws only the series that exist and says how many values each has", () => {
@@ -64,32 +56,40 @@ describe("MissionView", () => {
     expect(screen.queryByText(/nights/)).not.toBeInTheDocument();
   });
 
-  it("keeps the view and shows a system's detail beside the hologram when its bubble is selected", () => {
-    const onDetail = renderView();
-    const bubble = document.querySelector<HTMLElement>('.gauge.bubble[data-target="immune"]') as HTMLElement;
+  it("shows a system's detail beside the hologram when its bubble is selected, and closes it", () => {
+    renderView();
 
-    fireEvent.click(bubble);
+    fireEvent.click(bubble("cardiovascular"));
 
     expect(document.querySelectorAll(".gauge.bubble")).toHaveLength(6);
-    expect(bubble).toHaveAttribute("aria-current", "true");
-    expect(screen.getByText("Detail of immune")).toBeInTheDocument();
-    expect(screen.getByText("immune readings")).toBeInTheDocument();
+    expect(bubble("cardiovascular")).toHaveAttribute("aria-current", "true");
+    const detail = screen.getByRole("region", { name: /^Cardiovascular/ });
+    expect(within(detail).getByText("Heart rate")).toBeInTheDocument();
     // The trend makes room for the detail and comes back when it closes.
     expect(screen.queryByText("last 3 readings")).not.toBeInTheDocument();
-    expect(onDetail).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "Close the detail" }));
 
-    expect(screen.queryByText("Detail of immune")).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /^Cardiovascular/ })).not.toBeInTheDocument();
     expect(screen.getByText("last 3 readings")).toBeInTheDocument();
   });
 
-  it("opens the selected system in the full panel from its link", () => {
-    const onDetail = renderView();
-    fireEvent.click(document.querySelector<HTMLElement>('.gauge.bubble[data-target="radiation"]') as HTMLElement);
+  it("switches between the ship and the field", () => {
+    const onMode = renderView();
 
-    fireEvent.click(screen.getByRole("button", { name: "Open in the full panel" }));
+    fireEvent.click(screen.getByRole("button", { name: "In the field" }));
 
-    expect(onDetail).toHaveBeenCalledWith("radiation");
+    expect(onMode).toHaveBeenCalledWith("field");
+    expect(screen.getByRole("button", { name: "In the ship" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("keeps the actions and the problem report at hand", () => {
+    renderView();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Action guide/ }));
+    expect(screen.getByText("Health emergency")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Report a problem" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

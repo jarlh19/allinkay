@@ -1,6 +1,4 @@
 const en = {
-  "app.subtitle": "{role} · Mission day {day}",
-  "app.subtitleNoDay": "{role}",
   "crew.title": "Crew",
   "crew.commander": "Commander",
   "crew.engineer": "Flight engineer",
@@ -79,7 +77,6 @@ const en = {
   "analysis.none": "No confirmed changes: nothing needs attention now.",
   "analysis.repeat": "Repeat exam to confirm: {signals}",
   "analysis.details": "See the model in detail",
-  "details.title": "Details by system",
   "summary.inNormal": "{n}/{total} in your normal",
   "gauge.model": "Your normal",
   "summary.waiting": "Waiting for readings",
@@ -87,15 +84,12 @@ const en = {
   "body.legend": "The outline of the body is the skin: it turns amber or red when radiation needs attention. The organs at risk are listed under Radiation.",
   "mode.ship": "In the ship",
   "mode.field": "In the field",
-  "view.mission": "Mission view",
-  "view.panel": "Panel view",
   "mission.subtitle": "Integrated crew health monitoring",
   "mission.day": "DAY {day}",
   "trend.title": "Trend",
   "trend.readings": "last {n} readings",
   "trend.nights": "last {n} nights",
   "unit.bpm": "bpm",
-  "mission.openPanel": "Open in the full panel",
   "mission.closeDetail": "Close the detail",
 
   "model.title": "Model: your normal",
@@ -180,8 +174,6 @@ const en = {
 export type MessageKey = keyof typeof en;
 
 const es: Record<MessageKey, string> = {
-  "app.subtitle": "{role} · Misión, día {day}",
-  "app.subtitleNoDay": "{role}",
   "crew.title": "Tripulación",
   "crew.commander": "Comandante",
   "crew.engineer": "Especialista de vuelo",
@@ -260,7 +252,6 @@ const es: Record<MessageKey, string> = {
   "analysis.none": "Sin cambios confirmados: nada requiere atención ahora.",
   "analysis.repeat": "Repetir examen para confirmar: {signals}",
   "analysis.details": "Ver el modelo en detalle",
-  "details.title": "Detalle por sistema",
   "summary.inNormal": "{n}/{total} en tu normal",
   "gauge.model": "Tu normal",
   "summary.waiting": "Esperando lecturas",
@@ -268,15 +259,12 @@ const es: Record<MessageKey, string> = {
   "body.legend": "El contorno del cuerpo es la piel: se vuelve ámbar o rojo cuando la radiación necesita atención. Los órganos en riesgo están en Radiación.",
   "mode.ship": "En la nave",
   "mode.field": "En campo",
-  "view.mission": "Vista misión",
-  "view.panel": "Vista panel",
   "mission.subtitle": "Monitoreo integral de la tripulación",
   "mission.day": "DÍA {day}",
   "trend.title": "Tendencia",
   "trend.readings": "últimas {n} lecturas",
   "trend.nights": "últimas {n} noches",
   "unit.bpm": "lpm",
-  "mission.openPanel": "Abrir en el panel completo",
   "mission.closeDetail": "Cerrar el detalle",
 
   "model.title": "Modelo: tu normal",
