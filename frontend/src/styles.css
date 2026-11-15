@@ -124,7 +124,58 @@ button { font: inherit; color: inherit; }
 .test-card p { font-size: 13px; color: var(--text-2); line-height: 1.5; }
 .test-card .test-nasa { font-size: 12px; color: var(--text-3); }
 .test-card .test-nasa strong { font-weight: 500; color: var(--text-2); }
-.test-status { font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--text-3); border: 1px solid var(--line-2); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+.test-last { font-size: 12px; color: var(--text-3); }
+.test-last.warn { color: var(--warn); }
+.tests-start { justify-self: start; margin-top: 4px; background: var(--panel-2); border: 1px solid var(--accent); color: var(--text); border-radius: 6px; padding: 8px 16px; font-weight: 500; cursor: pointer; }
+.tests-start:hover { border-color: var(--holo); }
+.tests-for { font-family: var(--mono); font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text-3); }
+.tests-back { background: none; border: 0; padding: 0; margin: -6px 0 10px; color: var(--accent); cursor: pointer; font-size: 13px; }
+/* The tests themselves (ALLINKAY MIND) inside the same window. */
+.mind h3 { font-size: 18px; font-weight: 600; color: var(--text); margin: 2px 0 6px; }
+.mind-domain { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--holo); }
+.mind-how { font-size: 13px; color: var(--text-2); line-height: 1.5; margin-bottom: 12px; }
+.mind-counters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.mind-counters div { border: 1px solid var(--line-2); border-radius: 6px; padding: 8px 10px; }
+.mind-counters dt { font-size: 11px; color: var(--text-3); }
+.mind-counters dd { font-family: var(--mono); font-size: 16px; font-weight: 500; color: var(--text); margin: 2px 0 0; }
+.mind-arena { min-height: 300px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg, #0e141b); padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
+.mind-small { font-family: var(--mono); font-size: 12px; color: var(--text-3); }
+.mind-message { min-height: 1.4em; font-size: 15px; font-weight: 500; color: var(--text); }
+.mind-signal { width: 150px; height: 150px; border-radius: 50%; border: 2px solid var(--line-2); background: var(--panel-2); cursor: pointer; transition: background 0.08s, border-color 0.08s; }
+.mind-signal.waiting { border-color: var(--warn); background: rgba(227, 163, 59, 0.12); }
+.mind-signal.go { border-color: var(--ok); background: var(--ok); }
+.mind-signal.early { border-color: var(--crit); background: rgba(239, 91, 91, 0.16); }
+.mind-grid { display: grid; grid-template-columns: repeat(3, 72px); gap: 10px; }
+.mind-tile { width: 72px; height: 72px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel-2); cursor: pointer; transition: background 0.12s, border-color 0.12s; }
+.mind-tile:disabled { cursor: default; }
+.mind-tile.lit { background: var(--holo); border-color: var(--holo); }
+.mind-tile.picked { border-color: var(--accent); background: rgba(111, 163, 216, 0.22); }
+.mind-sequence { font-family: var(--mono); font-size: 26px; font-weight: 500; color: var(--text); letter-spacing: 0.02em; }
+.mind-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: min(440px, 100%); }
+.mind-choice { display: flex; align-items: center; gap: 12px; text-align: left; background: transparent; border: 1px solid var(--line-2); border-radius: 6px; padding: 10px 12px; color: var(--text); font-size: 15px; font-weight: 500; cursor: pointer; }
+.mind-choice span { font-family: var(--mono); font-size: 12px; color: var(--text-3); }
+.mind-choice:hover:not(:disabled) { border-color: var(--accent); }
+.mind-choice:disabled { opacity: 0.6; cursor: default; }
+.mind-crafts { display: flex; gap: 18px; justify-content: center; }
+.mind-crafts figure { margin: 0; border: 1px solid var(--line-2); border-radius: 8px; padding: 8px; }
+.mind-crafts figcaption { font-family: var(--mono); font-size: 11px; color: var(--text-3); margin-top: 4px; }
+.mind-craft { width: 120px; height: 120px; display: block; }
+.mind-craft .hull { fill: #193749; stroke: var(--holo); stroke-width: 3; }
+.mind-craft .mark { fill: var(--ok); }
+.mind-craft .pivot { fill: var(--text); }
+.mind-route { list-style: decimal inside; font-family: var(--mono); font-size: 13px; color: var(--text-2); display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: center; }
+.mind-done { text-align: left; }
+.mind-score { font-family: var(--mono); font-size: 40px; font-weight: 500; color: var(--holo); margin: 4px 0 6px; }
+.mind-compare { font-size: 14px; color: var(--text); margin: 8px 0 10px; }
+.mind-compare.warn { color: var(--warn); }
+@media (max-width: 560px) {
+  .mind-counters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mind-choices { grid-template-columns: minmax(0, 1fr); }
+  .mind-grid { grid-template-columns: repeat(3, 64px); }
+  .mind-tile { width: 64px; height: 64px; }
+  .mind-craft { width: 100px; height: 100px; }
+}
+@media (prefers-reduced-motion: reduce) { .mind-signal, .mind-tile { transition: none; } }
 @media (max-width: 560px) { .tests-grid { grid-template-columns: minmax(0, 1fr); } }
 .overall-ring .ring-label strong { font-size: 30px; font-weight: 600; }
 .overall-ring .ring-label span { font-size: 11px; font-weight: 500; color: var(--text-2); }

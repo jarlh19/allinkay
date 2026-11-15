@@ -277,3 +277,18 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - When a test runs, its results will stay on the device. Feeding them to the model needs a new endpoint and the handling of personal data, so it stays out of the hackathon.
 - **Set aside:** linking to the Python prototypes. They run on a computer, not in a browser, and nothing outside the app may run inside it.
 
+## D-022 · The cognitive tests are playable in the app (ALLINKAY MIND)
+
+- **Problem:** D-021 listed the four cognitive tests as in development. The team's biomedical engineer then delivered them as ALLINKAY MIND: a Python (Pygame) app and a standalone web page with its own layout.
+- **Chosen:** her browser engine is ported to TypeScript and runs inside the same window as before. The trial counts, adaptive rules and metrics are hers; the styles are the app's, and the text is in English and Spanish.
+  - **Reaction Alert:** 10 valid trials; it records the median response and the false starts.
+  - **Memory Matrix:** 9 rounds of an adaptive sequence of 3 to 9 tiles.
+  - **Pattern Solver:** 10 questions from 11 rule families, across three levels.
+  - **Spatial Navigator:** 16 trials, alternating between recognising a transformation and following a route, across four levels.
+  - Results stay in the browser, per crew member, in her session format (`module: allinkay_mind`), so her Python tools can still read them.
+  - Each result is compared with the median of at least three earlier sessions of the same person, and a result 20% worse asks for a repeat. That threshold is her software heuristic, not a clinical cutoff, and the screen says so.
+- **Set aside:**
+  - Opening her standalone page, because its own layout and crew field broke the app's look.
+  - The Pygame app, because it does not run in a browser.
+- **Trade-off:** the results do not reach the model's neurological system yet. That needs an endpoint and the handling of personal data (D-021).
+

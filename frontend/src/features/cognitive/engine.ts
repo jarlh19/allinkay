@@ -1,0 +1,212 @@
+/**
+ * ALLINKAY MIND: the four cognitive tests designed by the team's biomedical engineer (her browser
+ * prototype, ported here). Pure logic: task generation, scoring and the comparison of a result with
+ * the same crew member's earlier sessions. Results stay on this device; nothing is sent anywhere.
+ */
+
+export const TESTS = ["reaction", "memory", "pattern", "spatial"] as const;
+export type TestId = (typeof TESTS)[number];
+
+/** Trials per session, as in the prototype. */
+export const TRIALS: Record<TestId, number> = { reaction: 10, memory: 9, pattern: 10, spatial: 16 };
+
+/** The metric each test is judged on, and whether lower or higher is better. */
+export const METRIC: Record<TestId, { field: string; unit: "ms" | "%"; lowerIsBetter: boolean }> = {
+  reaction: { field: "median_reaction_ms", unit: "ms", lowerIsBetter: true },
+  memory: { field: "accuracy_pct", unit: "%", lowerIsBetter: false },
+  pattern: { field: "accuracy_pct", unit: "%", lowerIsBetter: false },
+  spatial: { field: "accuracy_pct", unit: "%", lowerIsBetter: false },
+};
+
+/** Change from the personal baseline that asks for a review: a software heuristic, not a clinical cutoff. */
+export const REVIEW_CHANGE_PCT = 20;
+
+export type Rng = () => number;
+
+export const randomInt = (min: number, max: number, rng: Rng = Math.random): number =>
+  Math.floor(rng() * (max - min + 1)) + min;
+export const choose = <T,>(items: readonly T[], rng: Rng = Math.random): T => items[randomInt(0, items.length - 1, rng)] as T;
+export function shuffle<T>(items: readonly T[], rng: Rng = Math.random): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = randomInt(0, i, rng);
+    [out[i], out[j]] = [out[j] as T, out[i] as T];
+  }
+  return out;
+}
+
+export function median(values: readonly number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  return ((sorted[(sorted.length - 1) >> 1] as number) + (sorted[sorted.length >> 1] as number)) / 2;
+}
+
+// ---------------------------------------------------------------- Pattern Solver
+
+export type PatternKind =
+  | "add" | "subtract" | "multiply"
+  | "growing" | "alternating" | "squares" | "divide"
+  | "fibonacci" | "multiply_add" | "interleave" | "cubes";
+
+const PATTERN_KINDS: Record<1 | 2 | 3, PatternKind[]> = {
+  1: ["add", "subtract", "multiply"],
+  2: ["growing", "alternating", "squares", "divide"],
+  3: ["fibonacci", "multiply_add", "interleave", "cubes"],
+};
+
+export interface Pattern {
+  kind: PatternKind;
+  sequence: number[];
+  answer: number;
+  options: number[];
+  level: number;
+}
+
+/** A number sequence with one missing next term, and four shuffled options that include the answer. */
+export function makePattern(level: 1 | 2 | 3, rng: Rng = Math.random, kind?: PatternKind): Pattern {
+  const r = (a: number, b: number) => randomInt(a, b, rng);
+  const k = kind ?? choose(PATTERN_KINDS[level], rng);
+  let sequence: number[] = [];
+  let answer = 0;
+  switch (k) {
+    case "add": { const a = r(2, 22), d = r(2, 12); sequence = [0, 1, 2, 3, 4].map((i) => a + i * d); answer = a + 5 * d; break; }
+    case "subtract": { const a = r(40, 90), d = r(2, 7); sequence = [0, 1, 2, 3, 4].map((i) => a - i * d); answer = a - 5 * d; break; }
+    case "multiply": { const a = r(1, 4), m = choose([2, 3], rng); sequence = [0, 1, 2, 3, 4].map((i) => a * m ** i); answer = a * m ** 5; break; }
+    case "growing": { const a = r(1, 12), d = r(1, 4), m = r(1, 4); sequence = [a]; for (let i = 0; i < 5; i++) sequence.push((sequence.at(-1) as number) + d + i * m); answer = sequence.pop() as number; break; }
+    case "alternating": { const a = r(2, 12), b = r(15, 35), d = r(2, 7); sequence = [a, b, a + d, b + d, a + 2 * d]; answer = b + 2 * d; break; }
+    case "squares": { const a = r(1, 5); sequence = [0, 1, 2, 3, 4].map((i) => (a + i) ** 2); answer = (a + 5) ** 2; break; }
+    case "divide": { const m = choose([2, 3], rng), a = r(1, 5); sequence = [0, 1, 2, 3, 4].map((i) => a * m ** (5 - i)); answer = a; break; }
+    case "fibonacci": { const a = r(1, 7), b = r(2, 9); sequence = [a, b]; while (sequence.length < 6) sequence.push((sequence.at(-1) as number) + (sequence.at(-2) as number)); answer = sequence.pop() as number; break; }
+    case "multiply_add": { const a = r(1, 4), m = choose([2, 3], rng), d = r(1, 4); sequence = [a]; while (sequence.length < 6) sequence.push((sequence.at(-1) as number) * m + d); answer = sequence.pop() as number; break; }
+    case "interleave": { const a = r(1, 9), b = r(18, 32), d = r(2, 6), m = r(3, 7); sequence = [a, b, a + d, b + m, a + 2 * d]; answer = b + 2 * m; break; }
+    case "cubes": { const a = r(1, 3); sequence = [0, 1, 2, 3, 4].map((i) => (a + i) ** 3); answer = (a + 5) ** 3; break; }
+  }
+  const options = new Set([answer]);
+  for (const offset of shuffle([-15, -12, -10, -8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15], rng)) {
+    if (answer + offset >= 0) options.add(answer + offset);
+    if (options.size >= 4) break;
+  }
+  return { kind: k, sequence, answer, options: shuffle([...options].slice(0, 4), rng), level };
+}
+
+// ---------------------------------------------------------------- Spatial Navigator
+
+export const TRANSFORMS = ["clockwise", "counterclockwise", "mirrored", "unchanged"] as const;
+export type Transform = (typeof TRANSFORMS)[number];
+export const DIRECTIONS = ["north", "east", "south", "west"] as const;
+export type Direction = (typeof DIRECTIONS)[number];
+
+/** An asymmetric craft, so a mirror image never looks like a rotation. */
+const HULL: [number, number][] = [[-14, -65], [16, -36], [29, 3], [17, 38], [38, 52], [-16, 38], [-36, 15], [-23, -34]];
+const MARK: [number, number][] = [[9, -28], [19, -18], [9, -8], [-1, -18]];
+
+/** SVG points of the craft turned by quarter turns (positive = clockwise on screen), optionally mirrored. */
+export function craftPoints(quarterTurns: number, mirrored = false, shape: "hull" | "mark" = "hull"): string {
+  const turns = ((quarterTurns % 4) + 4) % 4;
+  return (shape === "hull" ? HULL : MARK)
+    .map(([x0, y0]) => {
+      let x = mirrored ? -x0 : x0;
+      let y = y0;
+      for (let i = 0; i < turns; i++) [x, y] = [-y, x];
+      return `${x + 80},${y + 80}`;
+    })
+    .join(" ");
+}
+
+export interface RecognitionTrial {
+  mode: "recognition";
+  start: number;
+  transform: Transform;
+  options: Transform[];
+}
+export interface NavigationTrial {
+  mode: "navigation";
+  start: number;
+  steps: number[];
+  answer: Direction;
+  options: Direction[];
+}
+
+/** Trials alternate: recognise how the craft changed, then follow a route of turns. */
+export function makeSpatialTrial(index: number, level: number, rng: Rng = Math.random): RecognitionTrial | NavigationTrial {
+  const start = randomInt(0, 3, rng);
+  if (index % 2 === 0) {
+    const pool: readonly Transform[] = level === 1 ? ["clockwise", "counterclockwise"] : TRANSFORMS;
+    return { mode: "recognition", start, transform: choose(pool, rng), options: shuffle(TRANSFORMS, rng) };
+  }
+  const steps = level === 1 ? [choose([-1, 1], rng)] : Array.from({ length: level }, () => choose([-2, -1, 1, 2], rng));
+  const final = (((start + steps.reduce((a, b) => a + b, 0)) % 4) + 4) % 4;
+  return { mode: "navigation", start, steps, answer: DIRECTIONS[final] as Direction, options: shuffle(DIRECTIONS, rng) };
+}
+
+/** Quarter turns of the target craft for a recognition trial. */
+export const targetTurns = (trial: RecognitionTrial): number =>
+  trial.start + (trial.transform === "clockwise" ? 1 : trial.transform === "counterclockwise" ? -1 : 0);
+
+// ---------------------------------------------------------------- Sessions and the personal comparison
+
+export interface SessionRecord {
+  schema_version: "1.0";
+  module: "allinkay_mind";
+  app_version: string;
+  mode: "adaptive";
+  source: "allinkay-app";
+  user_id: string;
+  test_id: TestId;
+  timestamp_utc: string;
+  metrics: Record<string, number>;
+}
+
+export const APP_VERSION = "2.0.0";
+const STORE = "allinkay_mind_sessions_v1";
+
+/** Saved sessions on this device. Storage can be unavailable (private mode): then nothing is kept. */
+export function loadSessions(storage: Storage | undefined = globalThis.localStorage): SessionRecord[] {
+  try {
+    const parsed: unknown = JSON.parse(storage?.getItem(STORE) ?? "[]");
+    return Array.isArray(parsed) ? (parsed as SessionRecord[]).filter((s) => s?.module === "allinkay_mind") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveSession(record: SessionRecord, storage: Storage | undefined = globalThis.localStorage): boolean {
+  try {
+    storage?.setItem(STORE, JSON.stringify([...loadSessions(storage), record]));
+    return storage !== undefined;
+  } catch {
+    return false;
+  }
+}
+
+export type ReportStatus = "pending" | "steady" | "review";
+
+export interface TestReport {
+  sessions: number;
+  latest: number;
+  baseline: number | null;
+  changePct: number | null;
+  status: ReportStatus;
+}
+
+/**
+ * The latest session against the median of up to five earlier ones (at least three) of the same
+ * person and version. A change of 20% in the worse direction asks for a review and a repeat; it is
+ * not a diagnosis.
+ */
+export function reportFor(test: TestId, userId: string, sessions: readonly SessionRecord[]): TestReport | null {
+  const { field, lowerIsBetter } = METRIC[test];
+  const own = sessions
+    .filter((s) => s.user_id === userId && s.test_id === test && Number.isFinite(Number(s.metrics?.[field])))
+    .sort((a, b) => a.timestamp_utc.localeCompare(b.timestamp_utc));
+  const last = own.at(-1);
+  if (!last) return null;
+  const latest = Number(last.metrics[field]);
+  const earlier = own.slice(0, -1).filter((s) => s.app_version === last.app_version).slice(-5).map((s) => Number(s.metrics[field]));
+  if (earlier.length < 3) return { sessions: own.length, latest, baseline: null, changePct: null, status: "pending" };
+  const baseline = median(earlier) as number;
+  if (baseline <= 0) return { sessions: own.length, latest, baseline, changePct: null, status: "pending" };
+  const changePct = (100 * (latest - baseline)) / baseline;
+  const worse = lowerIsBetter ? changePct : -changePct;
+  return { sessions: own.length, latest, baseline, changePct, status: worse >= REVIEW_CHANGE_PCT ? "review" : "steady" };
+}

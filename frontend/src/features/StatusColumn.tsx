@@ -27,7 +27,7 @@ function initials(label: string): string {
 
 /**
  * Left column: who is being watched, how many of their signals are in their normal, and the
- * cognitive tests that would feed the neurological system.
+ * cognitive tests they can take.
  */
 export function StatusColumn({ evaluation, radiation, member, memberNumber, connected }: Props) {
   const { t } = useI18n();
@@ -78,7 +78,9 @@ export function StatusColumn({ evaluation, radiation, member, memberNumber, conn
           {t("tests.open")}
         </button>
       </section>
-      <TestsDialog open={testsOpen} onClose={closeTests} />
+      {testsOpen && (
+        <TestsDialog open onClose={closeTests} crewId={member?.id ?? "crew"} crewName={role || t("tests.crewFallback")} />
+      )}
     </div>
   );
 }
