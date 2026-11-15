@@ -38,7 +38,7 @@ export interface Evidence {
 }
 
 export interface Alert {
-  kind: "outside_normal" | "combined_pattern" | "solar_storm";
+  kind: "outside_normal" | "combined_pattern" | "solar_storm" | "career_limit";
   level: "attention" | "emergency";
   systems: System[];
   signals: string[];

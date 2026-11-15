@@ -52,6 +52,7 @@ const en = {
   "alert.outside_normal": "{signal}: outside your normal",
   "alert.combined_pattern": "Combined pattern: {signals}",
   "alert.solar_storm": "Solar storm in progress",
+  "alert.career_limit": "Career radiation limit reached ({limit} mSv)",
   "alert.source": "Source",
   "alert.notDiagnosis": "Decision support, not a diagnosis.",
 
@@ -62,6 +63,7 @@ const en = {
   "action.reduce_exposure": "Limit time in less shielded areas.",
   "action.combined_review": "Several systems are drifting together: review sleep, workload and symptoms with the crew medical officer.",
   "action.solar_storm_guide": "Open the action guide and go to the shielded area now.",
+  "action.career_limit": "Tell the flight surgeon. Keep any further dose as low as possible: stay in the most shielded area and avoid spacewalks that are not essential.",
 
   "mitigation.ship_routines": "Routines and planning",
   "mitigation.field_indicators": "Indicators to mitigate",
@@ -221,6 +223,7 @@ const es: Record<MessageKey, string> = {
   "alert.outside_normal": "{signal}: fuera de tu normal",
   "alert.combined_pattern": "Patrón combinado: {signals}",
   "alert.solar_storm": "Tormenta solar en curso",
+  "alert.career_limit": "Límite de radiación de carrera alcanzado ({limit} mSv)",
   "alert.source": "Fuente",
   "alert.notDiagnosis": "Apoyo a la decisión, no es un diagnóstico.",
 
@@ -231,6 +234,7 @@ const es: Record<MessageKey, string> = {
   "action.reduce_exposure": "Limita el tiempo en las zonas menos protegidas.",
   "action.combined_review": "Varios sistemas se alejan a la vez: revisa sueño, carga de trabajo y síntomas con el médico de la tripulación.",
   "action.solar_storm_guide": "Abre la guía de acción y ve ahora a la zona protegida.",
+  "action.career_limit": "Avisa al médico de vuelo. Mantén la dosis adicional lo más baja posible: quédate en la zona más blindada y evita las caminatas espaciales que no sean imprescindibles.",
 
   "mitigation.ship_routines": "Rutinas y planificación",
   "mitigation.field_indicators": "Indicadores para mitigar",

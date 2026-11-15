@@ -74,3 +74,24 @@ def test_each_lap_of_the_demo_starts_again_from_the_same_career_dose() -> None:
 
     assert len(dose_on_day_5) == 3
     assert dose_on_day_5[0] == dose_on_day_5[1] == dose_on_day_5[2]
+
+
+def test_reaching_the_career_limit_raises_an_emergency_with_the_standard() -> None:
+    tracker = TrackRadiation(DoseLedger(accumulated_msv=599.9, usual_rate_msv=1.8), EventBus())
+
+    tracker.on_readings([dose(1.8, 0)])
+    assert tracker.alerts() == []
+    tracker.on_readings([dose(1.8, 2)])
+
+    alerts = tracker.alerts()
+    assert [(a.kind, a.level) for a in alerts] == [(AlertKind.CAREER_LIMIT, Level.EMERGENCY)]
+    assert alerts[0].evidence[0].normal_high == 600.0
+    assert alerts[0].action == "action.career_limit"
+
+
+def test_a_storm_after_the_career_limit_raises_both_alerts() -> None:
+    tracker = TrackRadiation(DoseLedger(accumulated_msv=605, usual_rate_msv=1.8), EventBus())
+
+    tracker.on_readings([dose(150, 0), dose(150, 1)])
+
+    assert {a.kind for a in tracker.alerts()} == {AlertKind.SOLAR_STORM, AlertKind.CAREER_LIMIT}

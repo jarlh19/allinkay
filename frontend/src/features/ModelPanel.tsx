@@ -14,6 +14,9 @@ export function alertTitle(alert: Alert, t: Translate): string {
     return t("alert.combined_pattern", { signals: names.join(", ") });
   }
   if (alert.kind === "solar_storm") return t("alert.solar_storm");
+  if (alert.kind === "career_limit") {
+    return t("alert.career_limit", { limit: alert.evidence[0]?.normal_high ?? 600 });
+  }
   return t("alert.outside_normal", { signal: t(signalKey(alert.signals[0] ?? "")) });
 }
 
