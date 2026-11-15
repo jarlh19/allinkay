@@ -3,3 +3,4 @@
 *.woff2 binary
 *.csv -text
 *.glb binary
+*.pdf binary
