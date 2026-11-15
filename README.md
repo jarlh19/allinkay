@@ -1,10 +1,14 @@
 # ALLINKAY: onboard health monitoring for astronauts
 
-ALLINKAY is a health panel that a crew uses **on board**, without waiting for Earth. It shows each astronaut, in time, when their own body moves away from **their own normal**: in sleep, reaction time, mood, white blood cells, oxygen, the cabin air and the radiation they receive. It also says what to do about it. Changes that stay inside the general reference ranges are included.
+ALLINKAY is a health monitor that a crew uses **on board**, without waiting for Earth. It shows each astronaut, in time, when their own body moves away from **their own normal**: in sleep, reaction time, mood, white blood cells, oxygen, the cabin air and the radiation they receive. It also says what to do about it. Changes that stay inside the general reference ranges are included.
 
 Built for the NASA Space Apps Challenge 2026 challenge *Create Health Monitoring Software for Astronauts on Space Missions*.
 
 **Live demo:** <https://allinkay.onrender.com>. It runs a simulated Mars mission where one second is one hour, so ten mission days pass in four minutes. The free hosting plan sleeps when idle, so the first load can take up to a minute.
+
+**Project website:** <https://allinkay.onrender.com/site/>, with the 30-second mission story, the evidence and the roadmap.
+
+![The ALLINKAY screen: a cyan 3D hologram of the body with a bubble for each system, the overall status on the left, and the trend, model analysis and actions on the right](site/images/screen.jpg)
 
 ## The problem
 
@@ -15,6 +19,7 @@ Built for the NASA Space Apps Challenge 2026 challenge *Create Health Monitoring
 
 ## What ALLINKAY does
 
+- **One screen, around the body.** A 3D hologram of the astronaut (adapted from the BodyParts3D anatomy atlas) sits in the center, with a bubble for each system joined to the part of the body it watches. Only what needs attention turns amber or red, and selecting a bubble shows that system's readings in place.
 - **Your normal, not a general range.** Every signal is compared with that person's own baseline, built before flight.
 - **Confirmed alerts, explained.** An alert names the signal, how far it moved, why it matters (with the NASA source) and what routine to follow. It never fires on a single noisy reading: live signals need 10 readings in a row; daily ones need 3 of the last 4 days; and an unusual lab exam is **repeated the next day** and only alerts if the repeat agrees.
 - **Combined patterns.** When two or more systems move away at once, the alert says so.
@@ -79,7 +84,7 @@ simulator (real sensors next)
 ```
 
 - **Backend:** Python 3.13, FastAPI, Pydantic, NumPy, SQLite, Uvicorn.
-- **Frontend:** React 19, Vite, TypeScript.
+- **Frontend:** React 19, Vite, TypeScript and three.js (the 3D hologram).
 - **Quality:**
   - Ruff, pytest (129 tests), ESLint and Vitest (39 tests), and gitleaks.
   - GitHub Actions runs everything on every pull request, with actions pinned by hash.
@@ -116,7 +121,7 @@ On Windows, use `.venv\Scripts\` instead of `.venv/bin/`.
 ## Limits
 
 - ALLINKAY is decision support, not a diagnosis or a medical device.
-- The demo uses synthetic readings. Real sensors (for example an AD8232 ECG module on an ESP32) are the next step: they would feed the same ingestion port.
+- The demo uses synthetic readings. Real sensors (for example an AD8232 ECG module on an ESP32) are the next step: they would feed the same ingestion port. The planned parts and milestones are in the [hardware roadmap](docs/hardware-roadmap.md); only a first bench recording exists so far.
 - Blood pressure and lab exams cannot yet be measured by low-cost portable modules, so in the field mode they are not watched.
 
 ## License

@@ -3,142 +3,273 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="ALLINKAY: an onboard health panel that compares each astronaut with their own normal and alerts only on confirmed changes. NASA Space Apps Challenge 2026." />
-    <title>ALLINKAY · Onboard health monitoring for astronauts</title>
+    <title>ALLINKAY · Your normal, on board</title>
+    <meta name="description" content="ALLINKAY is an onboard health monitor for astronauts. It compares each crew member with their own normal, alerts only on confirmed changes and says what to do, without waiting for Earth. NASA Space Apps Challenge 2026." />
+    <meta name="theme-color" content="#0e141b" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="canonical" href="https://allinkay.onrender.com/site/" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ALLINKAY" />
+    <meta property="og:title" content="ALLINKAY · Your normal, on board" />
+    <meta property="og:description" content="Onboard health monitoring for astronauts: each crew member against their own normal, confirmed alerts, and what to do without waiting for Earth." />
+    <meta property="og:url" content="https://allinkay.onrender.com/site/" />
+    <meta property="og:image" content="https://allinkay.onrender.com/site/images/og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The ALLINKAY screen: a cyan hologram of the body with a bubble for each system." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preload" href="fonts/IBMPlexSans-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="styles.css" />
+    <script src="main.js" defer></script>
   </head>
   <body>
-    <header class="hero">
-      <nav class="top">
-        <span class="brand">ALLINKAY</span>
-        <span class="event">NASA Space Apps Challenge 2026</span>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="bar">
+      <a class="wordmark" href="#top" aria-label="ALLINKAY, back to top">
+        <svg class="wordmark-glyph" viewBox="0 0 28 16" aria-hidden="true" focusable="false"><path d="M1 9h7l2-5 3 10 3-12 2 7h9" /></svg>
+        <span>ALLINKAY</span>
+      </a>
+      <nav class="nav" aria-label="Sections">
+        <a href="#story">Story</a>
+        <a href="#problem">Problem</a>
+        <a href="#how">How it works</a>
+        <a href="#proof">Proof</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#sources">Sources</a>
       </nav>
-      <div class="hero-grid">
-        <div class="hero-text">
-          <p class="kicker">Create Health Monitoring Software for Astronauts on Space Missions</p>
-          <h1>Your normal, on board.</h1>
+      <a class="bar-cta" href="https://allinkay.onrender.com">Live app</a>
+    </header>
+
+    <main id="main">
+      <div class="trace" aria-hidden="true">
+        <svg class="trace-svg" preserveAspectRatio="none">
+          <path class="trace-ghost" />
+          <path class="trace-line" />
+          <g class="trace-alerts"></g>
+          <circle class="trace-head" r="4" />
+        </svg>
+      </div>
+
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <h1 id="hero-title">Your normal, <span class="nowrap">on board.</span></h1>
           <p class="lead">
-            ALLINKAY is a health panel that a crew uses on board, without waiting for Earth. It shows each astronaut, in
-            time, when their body moves away from <strong>their own normal</strong>, and what to do about it.
+            ALLINKAY watches each astronaut against <strong>their own baseline</strong>, confirms a change before it alerts
+            and tells the crew what to do, all on the spacecraft, without waiting 22 minutes for Earth.
           </p>
           <div class="actions">
-            <a class="button primary" href="https://allinkay.onrender.com" id="open-app">Open the live app</a>
-            <a class="button" href="https://github.com/jarlh19/allinkay">View the code</a>
+            <a class="button primary" href="https://allinkay.onrender.com">
+              Open the live app
+              <svg class="icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5 10h10M11 6l4 4-4 4" /></svg>
+            </a>
+            <a class="button" href="#story">Watch the 30-second story</a>
           </div>
           <p class="app-status" id="app-status" aria-live="polite">The live app runs a simulated Mars mission: one second is one hour.</p>
         </div>
-        <figure class="hero-shot">
-          <img src="images/screen.jpg" alt="The ALLINKAY screen: the crew tabs, a 3D hologram of the body with a bubble for each system, the overall status, the trends, the model analysis and the actions." width="1600" height="860" />
+        <figure class="hero-shot" data-beat="start">
+          <img src="images/hero.jpg" width="1600" height="900" fetchpriority="high"
+               alt="The ALLINKAY screen: a cyan 3D hologram of the body on a lit pedestal, with six system bubbles around it, each joined to its part of the body." />
+          <figcaption>The live screen during the simulated mission. Synthetic data.</figcaption>
         </figure>
-      </div>
-    </header>
+      </section>
 
-    <main>
-      <section class="section" aria-labelledby="problem-title">
-        <h2 id="problem-title">The problem</h2>
-        <div class="cards three">
-          <article class="card">
-            <p class="figure-num">22 min</p>
-            <h3>Help from Earth arrives late</h3>
-            <p>
-              On a crewed Mars mission the one-way delay is 0 to 22 minutes, and blackouts can last days or months. Today,
-              health data from tools such as the CSA Bio-Monitor and Bio-Analyzer is interpreted by teams on Earth.
-            </p>
-            <p class="source"><a href="https://ntrs.nasa.gov/citations/20220013418">McBrayer et al., 2022</a></p>
-          </article>
-          <article class="card">
-            <p class="figure-num">14–27%</p>
-            <h3>General ranges hide personal changes</h3>
-            <p>
-              One day after landing, three of the four Inspiration4 crew members had 14% to 27% fewer white blood cells
-              than before flight. None of them left the general range of 3.8 to 10.8.
-            </p>
-            <p class="source"><a href="https://osdr.nasa.gov/bio/repo/data/studies/OSD-569">NASA OSDR, OSD-569</a></p>
-          </article>
-          <article class="card">
-            <p class="figure-num">660 mSv</p>
-            <h3>Radiation adds up</h3>
-            <p>
-              The round trip to Mars alone adds about 660 mSv (1.8 mSv per day in transit), more than NASA's career limit of
-              600 mSv.
-            </p>
-            <p class="source">
-              <a href="https://doi.org/10.1126/science.1235989">Zeitlin et al., 2013</a> ·
-              <a href="https://www.nasa.gov/sites/default/files/atoms/files/radiation_protection_technical_brief_ochmo.pdf">NASA-STD-3001</a>
-            </p>
-          </article>
+      <section class="story" id="story" aria-labelledby="story-title" data-beat="storm">
+        <div class="section-head">
+          <h2 id="story-title">The mission in 30 seconds</h2>
+          <p>Seven moments from the live app, in the order a crew would live them.</p>
+        </div>
+
+        <div class="player" data-player>
+          <div class="stage" data-stage tabindex="0" aria-roledescription="carousel" aria-label="The mission in 30 seconds. Space plays or pauses, arrow keys change the act.">
+            <section class="act act-image on" data-act data-duration="4.5" aria-roledescription="slide" aria-label="Act 1 of 7: The mission">
+              <img src="images/story-1-mission.jpg" width="1280" height="720" alt="The ALLINKAY screen with every system in the crew member's normal." />
+              <div class="caption"><p><strong>The mission.</strong> On the way to Mars, three crew members are up to 22 minutes from Earth. ALLINKAY watches each of them, on board.</p></div>
+            </section>
+            <section class="act act-type" data-act data-duration="4" aria-roledescription="slide" aria-label="Act 2 of 7: The problem">
+              <div class="type-act">
+                <p class="type-big">Help is <span class="hl">22 minutes</span> away. General ranges hide what changes in one person.</p>
+                <p class="type-small">After landing, three of the four Inspiration4 crew members had 14 to 27% fewer white blood cells than before flight, and none of them left the general range. <span class="cite">NASA OSDR, OSD-569</span></p>
+              </div>
+              <div class="caption"><p><strong>The problem.</strong> A fixed range says “normal” when the person is not.</p></div>
+            </section>
+            <section class="act act-image" data-act data-duration="4.5" aria-roledescription="slide" aria-label="Act 3 of 7: Your normal">
+              <img src="images/story-3-normal.jpg" width="1280" height="720" alt="The model detail: how far each signal is from the crew member's own normal." loading="lazy" />
+              <div class="caption"><p><strong>Your normal.</strong> Every signal is measured against the astronaut's own baseline, built before flight.</p></div>
+            </section>
+            <section class="act act-image" data-act data-duration="4.5" aria-roledescription="slide" aria-label="Act 4 of 7: Confirmed">
+              <img src="images/story-4-change.jpg" width="1280" height="720" alt="The neurological bubble and Your normal in amber; the model analysis lists mood outside the normal." loading="lazy" />
+              <div class="caption"><p><strong>Confirmed.</strong> One bad night is not an alarm. A change must hold: 10 live readings in a row, or 3 of the last 4 days.</p></div>
+            </section>
+            <section class="act act-image act-alert" data-act data-duration="4.5" aria-roledescription="slide" aria-label="Act 5 of 7: Solar storm">
+              <img src="images/story-5-storm.jpg" width="1280" height="720" alt="A solar storm emergency: the alert at the top for the whole crew and the body's outline glowing red." loading="lazy" />
+              <div class="caption"><p><strong>Solar storm.</strong> The emergency reaches the whole crew at once, and the skin's outline turns red.</p></div>
+            </section>
+            <section class="act act-image act-alert" data-act data-duration="4" aria-roledescription="slide" aria-label="Act 6 of 7: What to do">
+              <img src="images/story-6-guide.jpg" width="1280" height="720" alt="The action guide for a solar storm, with four numbered steps." loading="lazy" />
+              <div class="caption"><p><strong>What to do.</strong> The guide says what to do now: go to the shielded area, keep the dosimeter on, log symptoms.</p></div>
+            </section>
+            <section class="act act-type" data-act data-duration="4" aria-roledescription="slide" aria-label="Act 7 of 7: Measured">
+              <div class="type-act">
+                <p class="type-big">Measured, not promised.</p>
+                <p class="type-small">In 200 simulated people over 90 days: <strong>1 false alarm every 10 astronaut-years</strong> in the ship, none in 55 in the field, and <strong>1195 of 1200</strong> changes caught within 10 days.</p>
+              </div>
+              <div class="caption"><p><strong>The result.</strong> Decision support for the crew and the flight surgeon. Synthetic data, not a diagnosis.</p></div>
+            </section>
+          </div>
+
+          <div class="controls">
+            <button class="ctl" type="button" data-prev aria-label="Previous act">
+              <svg class="icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M12 5l-5 5 5 5" /></svg>
+            </button>
+            <button class="ctl ctl-play" type="button" data-play aria-label="Play">
+              <svg class="icon icon-play" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 5l8 5-8 5z" /></svg>
+              <svg class="icon icon-pause" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 5v10M13 5v10" /></svg>
+            </button>
+            <button class="ctl" type="button" data-next aria-label="Next act">
+              <svg class="icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8 5l5 5-5 5" /></svg>
+            </button>
+            <ol class="acts" aria-label="Acts" data-dots></ol>
+            <span class="clock" data-clock aria-hidden="true">00:00 / 00:30</span>
+          </div>
         </div>
       </section>
 
-      <section class="section" aria-labelledby="what-title">
-        <h2 id="what-title">What ALLINKAY does</h2>
-        <div class="split">
-          <ul class="features">
-            <li><strong>Your normal, not a general range.</strong> Every signal is compared with the person's own baseline from before flight.</li>
-            <li><strong>Confirmed, explained alerts.</strong> Each alert says which signal moved, how far, why it matters (with its NASA source) and what routine to follow.</li>
-            <li><strong>Combined patterns.</strong> When two or more systems move away at once, the alert says so.</li>
-            <li><strong>Forecast.</strong> The next three nights of sleep, and the days left before the radiation career limit.</li>
-            <li><strong>Radiation.</strong> Dose rate, accumulated dose, organs at risk, a solar storm guide, and an emergency at the 600 mSv career limit.</li>
-            <li><strong>In the ship or in the field.</strong> On a spacewalk, a lighter model watches only portable sensors.</li>
-            <li><strong>A whole crew.</strong> Each member has their own normal, alerts and place.</li>
-            <li><strong>Works without Earth.</strong> Everything runs on board.</li>
-          </ul>
+      <section class="problem" id="problem" aria-labelledby="problem-title">
+        <div class="section-head">
+          <h2 id="problem-title">Far from Earth, the general range is the wrong ruler</h2>
+          <p>Three facts the crew of a Mars mission cannot wish away.</p>
+        </div>
+        <dl class="readings">
+          <div class="reading" data-beat="calm" data-beat-offset="30">
+            <dt><span class="value">22<span class="unit">min</span></span></dt>
+            <dd>
+              <h3>Help from Earth arrives late</h3>
+              <p>On a crewed Mars mission the one-way delay is 0 to 22 minutes, and blackouts can last days or months. Today, health data from tools such as the CSA Bio-Monitor and Bio-Analyzer is interpreted by teams on Earth.</p>
+              <p class="cite"><a href="https://ntrs.nasa.gov/citations/20220013418">McBrayer et al., 2022</a></p>
+            </dd>
+          </div>
+          <div class="reading" data-beat="calm" data-beat-offset="30">
+            <dt><span class="value">14–27<span class="unit">%</span></span></dt>
+            <dd>
+              <h3>General ranges hide personal change</h3>
+              <p>One day after landing, three of the four Inspiration4 crew members had 14% to 27% fewer white blood cells than before flight. None of them left the general range of 3.8 to 10.8.</p>
+              <p class="cite"><a href="https://osdr.nasa.gov/bio/repo/data/studies/OSD-569">NASA OSDR, OSD-569</a></p>
+            </dd>
+          </div>
+          <div class="reading" data-beat="calm" data-beat-offset="30">
+            <dt><span class="value">660<span class="unit">mSv</span></span></dt>
+            <dd>
+              <h3>Radiation adds up</h3>
+              <p>The round trip to Mars alone adds about 660 mSv (1.8 mSv per day in transit), more than NASA's career limit of 600 mSv.</p>
+              <p class="cite"><a href="https://doi.org/10.1126/science.1235989">Zeitlin et al., 2013</a> · <a href="https://www.nasa.gov/sites/default/files/atoms/files/radiation_protection_technical_brief_ochmo.pdf">NASA-STD-3001</a></p>
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="how" id="how" aria-labelledby="how-title" data-beat="alert">
+        <div class="section-head">
+          <h2 id="how-title">How ALLINKAY decides</h2>
+          <p>Four steps, the same for every one of the 16 signals: vital signs, sleep, mood, reaction time, lab exams, cabin air and radiation.</p>
+        </div>
+        <div class="how-grid">
+          <ol class="steps">
+            <li>
+              <h3>Learn the person</h3>
+              <p>Sixty days of pre-flight readings and six lab draws become that astronaut's normal. A personal range is judged with a prediction interval, because it comes from a limited reference.</p>
+            </li>
+            <li>
+              <h3>Watch</h3>
+              <p>Live sensors, daily check-ins and lab exams arrive on board. The screen shows each system as a bubble around a hologram of the body, joined to the place it watches.</p>
+            </li>
+            <li>
+              <h3>Confirm</h3>
+              <p>Live signals must stay outside the normal for 10 readings in a row, daily ones on 3 of the last 4 days. An unusual lab exam is repeated the next day and alerts only if the repeat agrees.</p>
+            </li>
+            <li>
+              <h3>Act</h3>
+              <p>Each alert names the signal, how far it moved, why it matters with its NASA source, and the routine to follow. Emergencies, like a solar storm or the 600 mSv career limit, open a step-by-step guide.</p>
+            </li>
+          </ol>
           <figure class="shot">
-            <img src="images/storm.jpg" alt="A solar storm emergency: the alert shows at the top, the skin's outline and the radiation bubble turn red, and the action guide lists the steps." width="1600" height="1020" loading="lazy" />
-            <figcaption>A solar storm: the emergency shows at the top for the whole crew, the skin's outline turns red, and the action guide lists what to do now.</figcaption>
+            <img src="images/how-detail.jpg" width="1280" height="800" loading="lazy"
+                 alt="The neurological detail beside the hologram: mood at 2 of 5, outside the crew member's normal of 3 to 6, while sleep and reaction time stay inside it." />
+            <figcaption>Selecting a bubble opens that system's readings beside the hologram.</figcaption>
           </figure>
         </div>
       </section>
 
-      <section class="section" aria-labelledby="validity-title">
-        <h2 id="validity-title">Few false alarms, few missed changes, and we measured both</h2>
-        <p class="intro">
-          No monitor can have zero false alarms and zero missed changes: lowering one raises the other. So ALLINKAY
-          confirms before it alerts, and we measured both errors with a script that runs the same loop as the app.
-        </p>
-        <ul class="rules">
-          <li>Live signals must stay outside the normal for 10 readings in a row, and daily signals on 3 of the last 4 days.</li>
-          <li>An unusual lab exam is <strong>repeated the next day</strong>, and alerts only if the repeat agrees.</li>
-          <li>Exam thresholds use the published within-subject variation from the <a href="https://biologicalvariation.eu/">EFLM Biological Variation Database</a>.</li>
-          <li>Personal normals are judged with a prediction interval, because they come from a limited reference.</li>
-        </ul>
+      <section class="proof" id="proof" aria-labelledby="proof-title" data-beat="confirm">
+        <div class="section-head">
+          <h2 id="proof-title">Few false alarms, few missed changes, and we measured both</h2>
+          <p>No monitor reaches zero of both: lowering one raises the other. A script runs the same loop as the app over synthetic crews and fails the build if a target is missed.</p>
+        </div>
         <div class="table-wrap">
           <table>
-            <caption>200 synthetic people over 90 days, plus 200 people per crew script</caption>
+            <caption>200 synthetic people over 90 days, plus 200 people for each crew script</caption>
             <thead>
               <tr><th scope="col">Measure</th><th scope="col">Result</th><th scope="col">Target</th></tr>
             </thead>
             <tbody>
-              <tr><th scope="row">False alarms, in the ship</th><td>1 every 10 astronaut-years</td><td>at most 1 every 10 years</td></tr>
-              <tr><th scope="row">False alarms, in the field</th><td>none in 55 astronaut-years</td><td>at most 1 every 10 years</td></tr>
-              <tr><th scope="row">Changes detected within 10 days</th><td>1195 of 1200</td><td>at least 99%</td></tr>
+              <tr><th scope="row">False alarms in the ship</th><td class="num">1 every 10 astronaut-years</td><td>at most 1 every 10 years</td></tr>
+              <tr><th scope="row">False alarms in the field</th><td class="num">none in 55 astronaut-years</td><td>at most 1 every 10 years</td></tr>
+              <tr><th scope="row">Changes caught within 10 days</th><td class="num">1195 of 1200</td><td>at least 99%</td></tr>
             </tbody>
           </table>
         </div>
-        <p class="note">The numbers come from synthetic data. The model must be validated on real data before it is used with people.</p>
+        <p class="note">Exam thresholds use the within-subject variation from the <a href="https://biologicalvariation.eu/">EFLM Biological Variation Database</a>. The numbers come from synthetic data; the model must be validated on real data before it is used with people.</p>
       </section>
 
-      <section class="section" aria-labelledby="how-title">
-        <h2 id="how-title">How it is built</h2>
-        <div class="cards three">
-          <article class="card">
-            <h3>On board, offline</h3>
-            <p>A modular monolith with a hexagonal design: the model is plain Python with no input or output, so it can run on any onboard computer.</p>
-          </article>
-          <article class="card">
-            <h3>Live panel</h3>
-            <p>FastAPI streams each crew member over a WebSocket to a React screen with a three.js hologram of the body, in English and Spanish, on desktop and phone.</p>
-          </article>
-          <article class="card">
-            <h3>Checked on every change</h3>
-            <p>129 backend tests, 39 frontend tests, a secret scan and a sample of the model validation run in GitHub Actions on every pull request.</p>
-          </article>
+      <section class="built" id="built" aria-labelledby="built-title" data-beat="calm">
+        <div class="section-head">
+          <h2 id="built-title">How it is built</h2>
+        </div>
+        <dl class="specs">
+          <div><dt>On board, offline</dt><dd>A modular monolith with a hexagonal design. The model is plain Python with no input or output, so it can run on any onboard computer.</dd></div>
+          <div><dt>Live screen</dt><dd>FastAPI streams each crew member over a WebSocket to a React screen. The body is a three.js hologram adapted from the BodyParts3D anatomy atlas. English and Spanish, desktop and phone.</dd></div>
+          <div><dt>Checked on every change</dt><dd>129 backend tests, 39 frontend tests, a secret scan and a sample of the model validation run in GitHub Actions on every pull request.</dd></div>
+        </dl>
+      </section>
+
+      <section class="roadmap" id="roadmap" aria-labelledby="roadmap-title" data-beat="calm">
+        <div class="section-head">
+          <h2 id="roadmap-title">Roadmap</h2>
+          <p>Everything below is <strong>planned, not built yet</strong>, apart from a first bench recording. The live app runs on simulated sensors today.</p>
+        </div>
+        <div class="roadmap-grid">
+          <div class="lane">
+            <h3>Hardware beta</h3>
+            <ul class="planned">
+              <li><span class="part">NVIDIA Jetson Orin Nano</span><span class="role">Onboard computer: runs the model, the server and the 3D screen without Earth.</span></li>
+              <li><span class="part">ESP32 sensor hub</span><span class="role">Reads the sensors and sends them over a cable or the local network.</span></li>
+              <li><span class="part">AD8232</span><span class="role">Electrocardiogram, for heart rate.</span></li>
+              <li><span class="part">MAX30102</span><span class="role">Pulse and blood oxygen saturation.</span></li>
+              <li><span class="part">MAX30205</span><span class="role">Body temperature.</span></li>
+              <li><span class="part">SCD41 · BME280</span><span class="role">Cabin CO₂, temperature, humidity and pressure.</span></li>
+              <li><span class="part">MPU-6050</span><span class="role">Wrist motion, to estimate sleep.</span></li>
+            </ul>
+            <p class="note">None of these parts is rated for spaceflight; they are for a ground prototype.</p>
+            <p class="first-step"><strong>First step.</strong> The team's biomedical engineer made a first bench recording of a heart signal with skin electrodes. It already gives the time between beats (0.88 to 1.20 s); next comes a faster sampling rate. The raw recording stays private.</p>
+          </div>
+          <div class="lane">
+            <h3>Software</h3>
+            <ul class="planned">
+              <li><span class="part">Real sensors</span><span class="role">An input adapter that replaces the simulator, with the same model behind it.</span></li>
+              <li><span class="part">Seven-day trends</span><span class="role">A week of history for every signal, not only heart rate and sleep.</span></li>
+              <li><span class="part">Machine learning</span><span class="role">Models on the electrocardiogram, only after clinical validation.</span></li>
+              <li><span class="part">VR and AR</span><span class="role">The hologram in a headset for the flight surgeon.</span></li>
+            </ul>
+          </div>
         </div>
       </section>
 
-      <section class="section" aria-labelledby="data-title">
-        <h2 id="data-title">Data and sources</h2>
-        <ul class="sources">
+      <section class="sources" id="sources" aria-labelledby="sources-title" data-beat="calm">
+        <div class="section-head">
+          <h2 id="sources-title">Data and sources</h2>
+        </div>
+        <ul class="source-list">
           <li><a href="https://osdr.nasa.gov/bio/repo/data/studies/OSD-569">NASA OSDR, OSD-569</a>: the commander's white blood cell baseline (Inspiration4 crew member C001, pre-flight).</li>
           <li><a href="https://www.nasa.gov/sites/default/files/atoms/files/radiation_protection_technical_brief_ochmo.pdf">NASA-STD-3001, OCHMO-TB-020</a>: the 600 mSv career limit, the 250 mSv solar event limit and the ALARA principle.</li>
           <li>NASA Human Research Program risk pages: the evidence cited in each alert.</li>
@@ -147,17 +278,25 @@
           <li><a href="https://biologicalvariation.eu/">EFLM Biological Variation Database</a> and Fraser (2001): how much a lab result varies in the same healthy person.</li>
           <li><a href="https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html">BodyParts3D</a>, © The Database Center for Life Science, licensed under CC Attribution 4.0 International: the 3D body, adapted for the hologram.</li>
         </ul>
-        <p class="note">Every other reading in the demo is synthetic. No real person's data is used, apart from the open, anonymised OSD-569 dataset.</p>
+        <p class="note">Every other reading is synthetic. No real person's data is used, apart from the open, anonymised OSD-569 dataset. All images on this page are screenshots of the app.</p>
+      </section>
+
+      <section class="close" aria-labelledby="close-title" data-beat="end">
+        <h2 id="close-title">See it run.</h2>
+        <p>The live app plays a simulated Mars mission where one second is one hour: ten mission days pass in four minutes.</p>
+        <div class="actions">
+          <a class="button primary" href="https://allinkay.onrender.com">
+            Open the live app
+            <svg class="icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5 10h10M11 6l4 4-4 4" /></svg>
+          </a>
+          <a class="button" href="https://github.com/jarlh19/allinkay">View the code</a>
+        </div>
       </section>
     </main>
 
     <footer class="footer">
-      <p><strong>ALLINKAY</strong>: decision support, not a diagnosis or a medical device.</p>
-      <p>
-        Open source under the <a href="https://github.com/jarlh19/allinkay/blob/main/LICENSE">Apache 2.0 licence</a> ·
-        <a href="https://github.com/jarlh19/allinkay">Source code</a> · <a href="https://allinkay.onrender.com">Live app</a>
-      </p>
+      <p><strong>ALLINKAY</strong> · Team ALLINKAY, NASA Space Apps Challenge 2026. Decision support, not a diagnosis or a medical device.</p>
+      <p>Open source under the <a href="https://github.com/jarlh19/allinkay/blob/main/LICENSE">Apache 2.0 licence</a> · <a href="https://github.com/jarlh19/allinkay">Source code</a> · <a href="https://allinkay.onrender.com">Live app</a></p>
     </footer>
-    <script src="main.js" defer></script>
   </body>
 </html>
