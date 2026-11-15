@@ -44,7 +44,7 @@ Blood pressure, lab exams, mood and reaction time stay as manual entries or in-a
 ## Milestones
 
 1. **Bench prototype:** ESP32 with AD8232 and MAX30102 streaming to a sensor adapter on a laptop; the app shows real heart rate and oxygen saturation next to the simulated signals.
-   - *Started:* the team's biomedical engineer made a first bench recording of a heart signal with skin electrodes. It already gives beat-to-beat intervals (0.88 to 1.20 s), but it samples only about 4 points per beat and its heart-rate output was fixed at 72. Next: sample at 250 Hz and compute the heart rate from the intervals. Used with her consent; the raw recording stays off this repository.
+   - *Started:* the team's biomedical engineer made a first bench recording with an AD8232 electrocardiogram module. It already gives beat-to-beat intervals (0.88 to 1.20 s), but it samples only about 4 points per beat and its heart-rate output was fixed at 72. Next: sample at 250 Hz and compute the heart rate from the intervals. Used with her consent; the raw recording stays off this repository.
 2. **Cabin sensors:** SCD41 and BME280 feeding the ship environment system.
 3. **On board:** the full stack on the Jetson Orin Nano, with no network connection.
 4. **Validation:** compare every reading against a reference medical device before any use with people; tune the personal baselines on real data (see `backend/validate_model.py`).
