@@ -18,6 +18,8 @@ RUN pip install --no-cache-dir -r backend/requirements.lock
 COPY backend/app backend/app
 COPY data/osdr data/osdr
 COPY --from=web /web/dist web
+# The project website, served by the app at /site/ while the repository is private.
+COPY site web/site
 RUN useradd --create-home --uid 10001 allinkay
 USER allinkay
 EXPOSE 10000
