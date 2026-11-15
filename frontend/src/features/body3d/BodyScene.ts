@@ -72,7 +72,7 @@ interface ModelExtras {
 }
 
 /** The panel behind the canvas (`--panel`), so the bloom can work on an opaque picture. */
-const BACKGROUND = 0x141c25;
+export const PANEL_BACKGROUND = 0x141c25;
 /** Glow around bright parts: strength, spread and the brightness where it starts. */
 const BLOOM = { strength: 0.55, radius: 0.2, threshold: 0.3 };
 
@@ -132,9 +132,10 @@ export class BodyScene {
     onPick: (pick: BodyPick) => void,
     reducedMotion: boolean,
     onFrame?: (anchors: Anchors, canvas: HTMLCanvasElement) => void,
+    background: number = PANEL_BACKGROUND,
   ): Promise<BodyScene> {
     const gltf = await new GLTFLoader().loadAsync(modelUrl);
-    return new BodyScene(container, gltf.scene, onPick, reducedMotion, onFrame);
+    return new BodyScene(container, gltf.scene, onPick, reducedMotion, onFrame, background);
   }
 
   private constructor(
@@ -142,7 +143,8 @@ export class BodyScene {
     model: Group,
     onPick: (pick: BodyPick) => void,
     private readonly reducedMotion: boolean,
-    onFrame?: (anchors: Anchors, canvas: HTMLCanvasElement) => void,
+    onFrame: ((anchors: Anchors, canvas: HTMLCanvasElement) => void) | undefined,
+    background: number,
   ) {
     this.onFrame = onFrame;
     const skin = model.getObjectByName("skin");
@@ -169,7 +171,8 @@ export class BodyScene {
     this.renderer.toneMapping = NoToneMapping;
     this.renderer.domElement.className = "body-3d-canvas";
     container.appendChild(this.renderer.domElement);
-    this.scene.background = new Color(BACKGROUND);
+    // The colour right behind the canvas, so its edges do not show.
+    this.scene.background = new Color(background);
 
     // The base the body stands on stands for the ship environment around the person.
     this.pedestal = new Pedestal(height, this.glowMap, STATUS_COLOR.ok);

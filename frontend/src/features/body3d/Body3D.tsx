@@ -26,17 +26,21 @@ interface Props {
   onPick: (pick: BodyPick) => void;
   /** Called after every frame with where each ring points to on the canvas. */
   onAnchors?: (anchors: Anchors, canvas: HTMLCanvasElement) => void;
+  /** The colour behind the canvas (a hex number); the panel's own by default. */
+  background?: number;
   /** The 2D figure, shown while the 3D body loads or when the device cannot show it. */
   children: ReactNode;
 }
 
 /** The 3D glass body. three.js is loaded on demand, so the panel opens just as fast as before. */
-export function Body3D({ statuses, label, onPick, onAnchors, children }: Props) {
+export function Body3D({ statuses, label, onPick, onAnchors, background, children }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const scene = useRef<BodyScene | null>(null);
   const latest = useRef({ statuses, onPick, onAnchors });
   const [mode, setMode] = useState<"loading" | "3d" | "2d">(() => (supportsWebGL() ? "loading" : "2d"));
   const wants3d = useRef(mode === "loading");
+  // The canvas colour is fixed when the scene is built.
+  const backdrop = useRef(background);
 
   useEffect(() => {
     if (!wants3d.current || !container.current) return;
@@ -50,6 +54,7 @@ export function Body3D({ statuses, label, onPick, onAnchors, children }: Props) 
           (pick) => latest.current.onPick(pick),
           prefersReducedMotion(),
           (anchors, canvas) => latest.current.onAnchors?.(anchors, canvas),
+          backdrop.current,
         ),
       )
       .then((created) => {

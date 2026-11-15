@@ -265,3 +265,83 @@ button { font: inherit; color: inherit; }
   .leader .tip.halo { animation: none !important; }
   .leader.warn .tip.halo, .leader.crit .tip.halo { opacity: 0.6; }
 }
+
+/* Text for screen readers only. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* ---- Mission view: the team's "Mission Health" layout, fed by the same live data ---- */
+.mission-brand h1 { font-weight: 400; letter-spacing: 0.04em; font-size: 26px; }
+.mission-brand h1 b { color: var(--holo); font-style: italic; font-weight: 600; }
+.mission-brand p { font-size: 13px; color: var(--text-2); }
+.mission-day { font-weight: 600; letter-spacing: 0.05em; color: var(--text); }
+.mission-place { color: var(--text-2); padding-left: 12px; border-left: 1px solid var(--line-2); }
+.mission .panel {
+  background: linear-gradient(180deg, rgba(22, 36, 49, 0.92), rgba(14, 22, 30, 0.92));
+  border: 1px solid rgba(69, 212, 255, 0.24);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgba(69, 212, 255, 0.04), 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 24px rgba(69, 212, 255, 0.06);
+}
+.mission-grid { display: grid; grid-template-columns: 270px minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+.mission-side { display: flex; flex-direction: column; gap: 16px; }
+.mission-body .body-stage { grid-template-columns: minmax(0, 1fr) minmax(240px, 440px) minmax(0, 1fr); gap: 6px; }
+.mission-body .body-3d { max-width: 440px; }
+/* No panel behind the body here, so the glow fades out well before the canvas edge. */
+.mission-body .body-3d-canvas {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent), linear-gradient(180deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent), linear-gradient(180deg, transparent, #000 6%, #000 94%, transparent);
+}
+.mission-body .gauges { gap: 18px; }
+.mission-body .gauges.left { align-items: flex-end; }
+.mission-body .gauges.right { align-items: flex-start; }
+/* The middle bubbles sit further out, so the six draw an arc around the body. */
+.mission-body .gauges.left li:nth-child(2) { transform: translateX(-26px); }
+.mission-body .gauges.right li:nth-child(2) { transform: translateX(26px); }
+.gauge.bubble {
+  width: 166px; height: 166px; border-radius: 50%; flex-direction: column; justify-content: center; gap: 6px; padding: 12px;
+  text-align: center;
+  background: radial-gradient(circle at 50% 38%, rgba(69, 212, 255, 0.1), rgba(14, 22, 30, 0.94) 70%);
+  border: 1px solid rgba(69, 212, 255, 0.34);
+  box-shadow: inset 0 0 18px rgba(69, 212, 255, 0.12), 0 0 16px rgba(69, 212, 255, 0.1);
+}
+.gauge.bubble:hover { border-color: var(--holo); }
+.gauge.bubble::after { display: none; }
+.bubble-name { display: flex; align-items: center; justify-content: center; gap: 6px; max-width: 136px; font-size: 11px; font-weight: 600; line-height: 1.2; letter-spacing: 0.05em; text-transform: uppercase; }
+.bubble-name .system-icon { width: 20px; height: 20px; }
+.bubble .ring-label { font-size: 15px; }
+.bubble .ring-label small { font-size: 9px; font-weight: 500; color: var(--text-2); }
+.bubble .status { font-size: 10px; padding: 0 6px; }
+.trend-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.trend-list li {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; grid-template-areas: "icon text value" "line line line";
+  align-items: center; column-gap: 8px; row-gap: 4px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: rgba(14, 22, 30, 0.6);
+}
+.trend-list .system-icon { grid-area: icon; width: 20px; height: 20px; }
+.trend-text { grid-area: text; display: flex; flex-direction: column; min-width: 0; }
+.trend-name { font-size: 13px; font-weight: 600; }
+.trend-note { font-size: 11px; color: var(--text-3); }
+.trend-value { grid-area: value; font-family: var(--mono); font-size: 15px; font-weight: 500; }
+.trend-value small { font-size: 10px; color: var(--text-2); }
+.sparkline { grid-area: line; width: 100%; height: 34px; overflow: visible; }
+.sparkline polyline { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sparkline.pulse polyline { stroke: var(--holo); filter: drop-shadow(0 0 3px rgba(69, 212, 255, 0.6)); }
+.sparkline.pulse circle { fill: var(--holo); }
+.sparkline.sleep polyline { stroke: #9a83e6; filter: drop-shadow(0 0 3px rgba(154, 131, 230, 0.55)); }
+.sparkline.sleep circle { fill: #b9a8ff; }
+
+/* Below 1500 px the bubbles need the whole width: the body goes first, the cards in a row below. */
+@media (max-width: 1499px) {
+  .mission-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mission-grid > .mission-body { grid-column: 1 / -1; order: -1; }
+  .mission-side { display: contents; }
+}
+@media (max-width: 980px) {
+  .mission-body .gauges.left, .mission-body .gauges.right { align-items: center; }
+  .mission-body .gauges li:nth-child(2) { transform: none; }
+}
+@media (max-width: 760px) {
+  .mission-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .gauge.bubble { width: 150px; height: 150px; }
+}

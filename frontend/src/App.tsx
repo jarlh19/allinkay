@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { LiveState, SystemStatus } from "./api/liveState";
 import type { Mode } from "./api/types";
@@ -11,6 +11,7 @@ import { AlertCard, ModelPanel } from "./features/ModelPanel";
 import { RadiationPanel } from "./features/RadiationPanel";
 import { ReportDialog, type Screen } from "./features/ReportDialog";
 import { SYSTEM_SIGNALS, systemKey } from "./features/signals";
+import { MissionView } from "./features/MissionView";
 import { ModelAnalysis } from "./features/ModelAnalysis";
 import { StatusColumn } from "./features/StatusColumn";
 import { targetStatus, type Target } from "./features/statusSummary";
@@ -23,6 +24,12 @@ const MARS_MAX_DELAY_MIN = 22;
 export const DEFAULT_CREW_ID = "commander";
 
 type Detail = Target | "actions";
+type View = "panel" | "mission";
+
+/** The mission view has its own address (#mission), so it can be opened or shared directly. */
+function viewFromAddress(): View {
+  return window.location.hash === "#mission" ? "mission" : "panel";
+}
 
 /** Order of the detail column: the model first, then each system, then what to do. */
 const DETAILS: Detail[] = ["model", "cardiovascular", "neurological", "immune", "environment", "radiation", "actions"];
@@ -51,6 +58,16 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
   const [focused, setFocused] = useState<Target | null>(null);
   const [opened, setOpened] = useState<Partial<Record<Detail, boolean>>>({});
   const [reporting, setReporting] = useState(false);
+  const [view, setView] = useState<View>(viewFromAddress);
+  useEffect(() => {
+    const follow = () => setView(viewFromAddress());
+    window.addEventListener("hashchange", follow);
+    return () => window.removeEventListener("hashchange", follow);
+  }, []);
+  const show = (next: View) => {
+    setView(next);
+    window.history.replaceState(null, "", next === "mission" ? "#mission" : window.location.pathname + window.location.search);
+  };
   const { evaluation, radiation, readings, clock } = state;
   const emergencies = (evaluation?.alerts ?? []).filter((a) => a.level === "emergency");
   const time = clock?.at ? new Date(clock.at).toISOString().slice(11, 16) : null;
@@ -99,6 +116,31 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
     );
   };
 
+  const notices = (
+    <>
+      {!state.connected && <div className="offline">{t("offline")}</div>}
+      {emergencies.map((alert, i) => (
+        <AlertCard key={`emergency-${i}`} alert={alert} />
+      ))}
+    </>
+  );
+
+  if (view === "mission") {
+    return (
+      <MissionView
+        state={state}
+        crewId={crewId}
+        onCrew={onCrew}
+        notices={notices}
+        onPanel={() => show("panel")}
+        onDetail={(target) => {
+          show("panel");
+          focus(target);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="app">
       <header className="top">
@@ -112,6 +154,9 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
         <div className="top-right">
           <span className="pill">{t("pill.earth", { delay: MARS_MAX_DELAY_MIN })}</span>
           <span className="pill">{t("pill.simulated")}</span>
+          <button type="button" className="lang" onClick={() => show("mission")}>
+            {t("view.mission")}
+          </button>
           <button type="button" className="lang" onClick={() => setReporting(true)}>
             {t("report.open")}
           </button>
@@ -121,7 +166,6 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
         </div>
       </header>
       <CrewStrip members={state.crew} selected={crewId} onSelect={onCrew} />
-      {!state.connected && <div className="offline">{t("offline")}</div>}
       <ReportDialog
         key={reporting ? "open" : "closed"}
         open={reporting}
@@ -131,9 +175,7 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
         mode={evaluation?.mode ?? "ship"}
         crewId={crewId}
       />
-      {emergencies.map((alert, i) => (
-        <AlertCard key={`emergency-${i}`} alert={alert} />
-      ))}
+      {notices}
       <div className="layout">
         <StatusColumn
           evaluation={evaluation}
