@@ -4,3 +4,6 @@ Copyright 2026 Jorge Laban
 This product includes data from the NASA Open Science Data Repository
 (OSD-569, SpaceX Inspiration4 complete blood count), available at
 https://osdr.nasa.gov/bio/repo/data/studies/OSD-569
+
+The 3D body uses a male base mesh dedicated to the public domain (CC0 1.0) by
+orange-juice-games, from https://github.com/BoQsc/Godot-Male-Base-Mesh
