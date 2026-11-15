@@ -1,6 +1,7 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import type { Evaluation } from "../api/types";
 import { I18nProvider } from "../i18n/i18n";
 import { BodyPanel } from "./BodyPanel";
 
@@ -22,5 +23,30 @@ describe("BodyPanel leader lines", () => {
     const rings = [...container.querySelectorAll<HTMLElement>(".gauge[data-target]")].map((ring) => ring.dataset.target);
     expect(targets.sort()).toEqual(rings.sort());
     expect(rings).toHaveLength(6);
+  });
+});
+
+describe("BodyPanel outline legend", () => {
+  const evaluation = (mode: "ship" | "field"): Evaluation => ({
+    type: "evaluation",
+    mode,
+    mitigation: "mitigation.ship_routines",
+    deviations: [],
+    alerts: [],
+  });
+  const legend = (mode: "ship" | "field") => {
+    const { container, unmount } = render(
+      <I18nProvider>
+        <BodyPanel evaluation={evaluation(mode)} radiation={null} focused={null} onFocus={() => undefined} onMode={() => undefined} />
+      </I18nProvider>,
+    );
+    const text = container.querySelector("p.legend")?.textContent ?? "";
+    unmount();
+    return text;
+  };
+
+  it("says the outline is the skin in the ship and NASA's spacesuit in the field", () => {
+    expect(legend("ship")).toContain("the skin");
+    expect(legend("field")).toContain("NASA's spacesuit (EMU)");
   });
 });

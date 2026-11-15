@@ -12,3 +12,16 @@ The 3D body on the panel: the skin of the BodyParts3D atlas body and, inside it,
   - Bakes on each skin vertex how much it belongs to the head, an arm, a leg or the torso (vertex colour `COLOR_0`), from the nearest bone.
   - Stores the spots the rings point to, and the height where the chest ends, in the scene's `extras`.
 - **Rebuild:** download and unzip the file above, then run `python scripts/build_anatomy.py <unzipped folder>` (needs numpy, scipy, trimesh and fast-simplification). The atlas itself is not stored here.
+
+# suit.glb
+
+The spacesuit the hologram wears when a crew member works in the field: its outline takes the place of the skin, and the brain, heart and airways stay visible inside it.
+
+- **Source:** NASA's 3D model of the Extravehicular Mobility Unit, `Extravehicular Mobility Unit.glb` from <https://science.nasa.gov/3d-resources/extravehicular-mobility-unit/>.
+- **Credit:** NASA/Michael D. Carbajal. NASA offers its 3D Resources free to download and use under the [NASA images and media usage guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/); using the model does not imply NASA endorsement.
+- **Changes:** made by `scripts/build_suit.py`, which explains each step:
+  - Drops six parts that lie exactly on top of other parts.
+  - Turns the suit to face +z, scales it so the helmet sits around the body's head, lines it up with the head and the lower legs, and puts the boot soles at y = 0.
+  - Merges and simplifies it to 36 000 triangles (about 0.7 MB).
+  - Bakes on each vertex the head, arm, leg and torso shares of the nearest skin vertex (vertex colour `COLOR_0`), and stores where the chest ends in the scene's `extras`.
+- **Rebuild:** download the file above, then run `python scripts/build_suit.py "<path to the .glb>"` (needs numpy, scipy, trimesh, fast-simplification and DracoPy). The NASA file itself is not stored here.

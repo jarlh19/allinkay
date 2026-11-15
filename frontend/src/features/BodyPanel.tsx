@@ -142,7 +142,8 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode, hea
       <div className="figure">
         <Body3D
           statuses={bodyStatuses}
-          label={t("body.legend")}
+          label={t(mode === "field" ? "body.legendSuit" : "body.legend")}
+          suit={mode === "field"}
           onPick={onPick}
           onAnchors={onAnchors}
           background={PAGE_BACKGROUND}
@@ -203,7 +204,7 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode, hea
       </div>
       <p className="legend">
         <i />
-        {t("body.legend")}
+        {t(mode === "field" ? "body.legendSuit" : "body.legend")}
       </p>
       <div className="modes" role="group">
         {(["ship", "field"] as Mode[]).map((m) => (

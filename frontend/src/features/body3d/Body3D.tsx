@@ -4,6 +4,8 @@ import type { Anchors, BodyPick, BodyScene, BodyStatuses } from "./BodyScene";
 
 /** The skin, skeleton and organs of the BodyParts3D atlas body (see NOTICE). */
 const MODEL_URL = "/models/anatomy.glb";
+/** NASA's Extravehicular Mobility Unit, worn in the field (credit NASA/Michael D. Carbajal, see NOTICE). */
+const SUIT_URL = "/models/suit.glb";
 
 /** WebGL is checked without touching a canvas when the browser has no WebGL at all. */
 export function supportsWebGL(): boolean {
@@ -23,6 +25,8 @@ function prefersReducedMotion(): boolean {
 interface Props {
   statuses: BodyStatuses;
   label: string;
+  /** In the field the hologram wears the spacesuit. */
+  suit?: boolean;
   onPick: (pick: BodyPick) => void;
   /** Called after every frame with where each ring points to on the canvas. */
   onAnchors?: (anchors: Anchors, canvas: HTMLCanvasElement) => void;
@@ -33,10 +37,10 @@ interface Props {
 }
 
 /** The 3D glass body. three.js is loaded on demand, so the panel opens just as fast as before. */
-export function Body3D({ statuses, label, onPick, onAnchors, background, children }: Props) {
+export function Body3D({ statuses, label, suit = false, onPick, onAnchors, background, children }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const scene = useRef<BodyScene | null>(null);
-  const latest = useRef({ statuses, onPick, onAnchors });
+  const latest = useRef({ statuses, suit, onPick, onAnchors });
   const [mode, setMode] = useState<"loading" | "3d" | "2d">(() => (supportsWebGL() ? "loading" : "2d"));
   const wants3d = useRef(mode === "loading");
   // The canvas colour is fixed when the scene is built.
@@ -64,6 +68,7 @@ export function Body3D({ statuses, label, onPick, onAnchors, background, childre
         }
         scene.current = created;
         created.setStatuses(latest.current.statuses);
+        created.setSuit(latest.current.suit ? SUIT_URL : null);
         setMode("3d");
       })
       .catch((error: unknown) => {
@@ -79,12 +84,16 @@ export function Body3D({ statuses, label, onPick, onAnchors, background, childre
   }, []);
 
   useEffect(() => {
-    latest.current = { statuses, onPick, onAnchors };
+    latest.current = { statuses, suit, onPick, onAnchors };
   });
 
   useEffect(() => {
     scene.current?.setStatuses(statuses);
   }, [statuses]);
+
+  useEffect(() => {
+    scene.current?.setSuit(suit ? SUIT_URL : null);
+  }, [suit]);
 
   return (
     <div className="body-3d" data-mode={mode}>
