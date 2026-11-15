@@ -92,7 +92,7 @@ html { scrollbar-color: var(--line-2) var(--bg-deep); scrollbar-width: thin; }
 ::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 10px; border: 2px solid var(--bg-deep); }
 
 a { color: var(--holo); text-underline-offset: 3px; text-decoration-thickness: 1px; }
-a:not(.button):not(.bar-cta):hover { color: #8fe6ff; }
+a:not(.button):not(.bar-cta):not(.skip):hover { color: #8fe6ff; }
 strong { color: var(--text); font-weight: 600; }
 img { max-width: 100%; height: auto; display: block; }
 .nowrap { white-space: nowrap; }
@@ -247,7 +247,8 @@ figcaption { color: var(--text-3); font-size: 0.85rem; margin-top: 12px; }
   .act-type { display: flex; flex-direction: column; }
   .act-type .type-act { position: relative; inset: auto; flex: 1; min-height: 0; padding: 14px 16px; }
   .act-type .caption { position: relative; top: auto; }
-  .type-big { font-size: 19px; }
+  /* At 19px the display leading of the wide stage packs the lines together; open it up. */
+  .type-big { font-size: 19px; line-height: 1.25; }
   .type-small { font-size: 13px; margin-top: 8px; }
 }
 
