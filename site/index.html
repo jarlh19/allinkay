@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ALLINKAY: an onboard health panel that compares each astronaut with their own normal and alerts only on confirmed changes. NASA Space Apps Challenge 2026." />
+    <title>ALLINKAY · Onboard health monitoring for astronauts</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <nav class="top">
+        <span class="brand">ALLINKAY</span>
+        <span class="event">NASA Space Apps Challenge 2026</span>
+      </nav>
+      <div class="hero-grid">
+        <div class="hero-text">
+          <p class="kicker">Create Health Monitoring Software for Astronauts on Space Missions</p>
+          <h1>Your normal, on board.</h1>
+          <p class="lead">
+            ALLINKAY is a health panel that a crew uses on board, without waiting for Earth. It shows each astronaut, in
+            time, when their body moves away from <strong>their own normal</strong>, and what to do about it.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="https://allinkay.onrender.com" id="open-app">Open the live app</a>
+            <a class="button" href="https://github.com/jarlh19/allinkay">View the code</a>
+          </div>
+          <p class="app-status" id="app-status" aria-live="polite">The live app runs a simulated Mars mission: one second is one hour.</p>
+        </div>
+        <figure class="hero-shot">
+          <img src="images/panel.png" alt="The ALLINKAY panel: the crew strip, the body with a ring for each system, the overall status and the model analysis." width="1440" height="900" />
+        </figure>
+      </div>
+    </header>
+
+    <main>
+      <section class="section" aria-labelledby="problem-title">
+        <h2 id="problem-title">The problem</h2>
+        <div class="cards three">
+          <article class="card">
+            <p class="figure-num">22 min</p>
+            <h3>Help from Earth arrives late</h3>
+            <p>
+              On a crewed Mars mission the one-way delay is 0 to 22 minutes, and blackouts can last days or months. Today,
+              health data from tools such as the CSA Bio-Monitor and Bio-Analyzer is interpreted by teams on Earth.
+            </p>
+            <p class="source"><a href="https://ntrs.nasa.gov/citations/20220013418">McBrayer et al., 2022</a></p>
+          </article>
+          <article class="card">
+            <p class="figure-num">14–27%</p>
+            <h3>General ranges hide personal changes</h3>
+            <p>
+              One day after landing, three of the four Inspiration4 crew members had 14% to 27% fewer white blood cells
+              than before flight. None of them left the general range of 3.8 to 10.8.
+            </p>
+            <p class="source"><a href="https://osdr.nasa.gov/bio/repo/data/studies/OSD-569">NASA OSDR, OSD-569</a></p>
+          </article>
+          <article class="card">
+            <p class="figure-num">660 mSv</p>
+            <h3>Radiation adds up</h3>
+            <p>
+              The round trip to Mars alone adds about 660 mSv (1.8 mSv per day in transit), more than NASA's career limit of
+              600 mSv.
+            </p>
+            <p class="source">
+              <a href="https://doi.org/10.1126/science.1235989">Zeitlin et al., 2013</a> ·
+              <a href="https://www.nasa.gov/sites/default/files/atoms/files/radiation_protection_technical_brief_ochmo.pdf">NASA-STD-3001</a>
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="what-title">
+        <h2 id="what-title">What ALLINKAY does</h2>
+        <div class="split">
+          <ul class="features">
+            <li><strong>Your normal, not a general range.</strong> Every signal is compared with the person's own baseline from before flight.</li>
+            <li><strong>Confirmed, explained alerts.</strong> Each alert says which signal moved, how far, why it matters (with its NASA source) and what routine to follow.</li>
+            <li><strong>Combined patterns.</strong> When two or more systems move away at once, the alert says so.</li>
+            <li><strong>Forecast.</strong> The next three nights of sleep, and the days left before the radiation career limit.</li>
+            <li><strong>Radiation.</strong> Dose rate, accumulated dose, organs at risk, a solar storm guide, and an emergency at the 600 mSv career limit.</li>
+            <li><strong>In the ship or in the field.</strong> On a spacewalk, a lighter model watches only portable sensors.</li>
+            <li><strong>A whole crew.</strong> Each member has their own normal, alerts and place.</li>
+            <li><strong>Works without Earth.</strong> Everything runs on board.</li>
+          </ul>
+          <figure class="shot">
+            <img src="images/storm.png" alt="A solar storm emergency: the panel turns red and opens the step-by-step action guide." width="1440" height="900" loading="lazy" />
+            <figcaption>A solar storm on mission day 98 opens the emergency guide for the whole crew.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="validity-title">
+        <h2 id="validity-title">Few false alarms, few missed changes, and we measured both</h2>
+        <p class="intro">
+          No monitor can have zero false alarms and zero missed changes: lowering one raises the other. So ALLINKAY
+          confirms before it alerts, and we measured both errors with a script that runs the same loop as the app.
+        </p>
+        <ul class="rules">
+          <li>Live signals must stay outside the normal for 10 readings in a row, and daily signals on 3 of the last 4 days.</li>
+          <li>An unusual lab exam is <strong>repeated the next day</strong>, and alerts only if the repeat agrees.</li>
+          <li>Exam thresholds use the published within-subject variation from the <a href="https://biologicalvariation.eu/">EFLM Biological Variation Database</a>.</li>
+          <li>Personal normals are judged with a prediction interval, because they come from a limited reference.</li>
+        </ul>
+        <div class="table-wrap">
+          <table>
+            <caption>200 synthetic people over 90 days, plus 200 people per crew script</caption>
+            <thead>
+              <tr><th scope="col">Measure</th><th scope="col">Result</th><th scope="col">Target</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">False alarms, in the ship</th><td>1 every 10 astronaut-years</td><td>at most 1 every 10 years</td></tr>
+              <tr><th scope="row">False alarms, in the field</th><td>none in 55 astronaut-years</td><td>at most 1 every 10 years</td></tr>
+              <tr><th scope="row">Changes detected within 10 days</th><td>1195 of 1200</td><td>at least 99%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">The numbers come from synthetic data. The model must be validated on real data before it is used with people.</p>
+      </section>
+
+      <section class="section" aria-labelledby="how-title">
+        <h2 id="how-title">How it is built</h2>
+        <div class="cards three">
+          <article class="card">
+            <h3>On board, offline</h3>
+            <p>A modular monolith with a hexagonal design: the model is plain Python with no input or output, so it can run on any onboard computer.</p>
+          </article>
+          <article class="card">
+            <h3>Live panel</h3>
+            <p>FastAPI streams each crew member over a WebSocket to a React panel, in English and Spanish, on desktop and phone.</p>
+          </article>
+          <article class="card">
+            <h3>Checked on every change</h3>
+            <p>128 backend tests, 24 frontend tests, a secret scan and the model validation run in GitHub Actions on each pull request.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="data-title">
+        <h2 id="data-title">Data and sources</h2>
+        <ul class="sources">
+          <li><a href="https://osdr.nasa.gov/bio/repo/data/studies/OSD-569">NASA OSDR, OSD-569</a>: the commander's white blood cell baseline (Inspiration4 crew member C001, pre-flight).</li>
+          <li><a href="https://www.nasa.gov/sites/default/files/atoms/files/radiation_protection_technical_brief_ochmo.pdf">NASA-STD-3001, OCHMO-TB-020</a>: the 600 mSv career limit, the 250 mSv solar event limit and the ALARA principle.</li>
+          <li>NASA Human Research Program risk pages: the evidence cited in each alert.</li>
+          <li><a href="https://doi.org/10.1126/science.1235989">Zeitlin et al., 2013</a> and <a href="https://ntrs.nasa.gov/citations/20220013418">McBrayer et al., 2022</a>: the dose rate in transit and the communication delay.</li>
+          <li>Canadian Space Agency, <a href="https://www.asc-csa.gc.ca/eng/iss/bio-analyzer.asp">Bio-Analyzer</a> and <a href="https://www.asc-csa.gc.ca/eng/sciences/astroskin.asp">Bio-Monitor</a>: what can already be measured on board.</li>
+          <li><a href="https://biologicalvariation.eu/">EFLM Biological Variation Database</a> and Fraser (2001): how much a lab result varies in the same healthy person.</li>
+        </ul>
+        <p class="note">Every other reading in the demo is synthetic. No real person's data is used, apart from the open, anonymised OSD-569 dataset.</p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p><strong>ALLINKAY</strong>: decision support, not a diagnosis or a medical device.</p>
+      <p>
+        Open source under the <a href="https://github.com/jarlh19/allinkay/blob/main/LICENSE">Apache 2.0 licence</a> ·
+        <a href="https://github.com/jarlh19/allinkay">Source code</a> · <a href="https://allinkay.onrender.com">Live app</a>
+      </p>
+    </footer>
+    <script src="main.js" defer></script>
+  </body>
+</html>
