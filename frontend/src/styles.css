@@ -311,13 +311,21 @@ button { font: inherit; color: inherit; }
   /* A selected system's detail takes two of the three columns below the body. */
   .mission-detail { grid-column: span 2; }
 }
+/* Below 981 px the body goes on top and the bubbles below it, in two columns. The mission rule
+   above is more specific than the generic one, so it is repeated here. */
 @media (max-width: 980px) {
+  .mission-body .body-stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .mission-body .gauges.left, .mission-body .gauges.right { align-items: center; }
-  .mission-body .gauges li:nth-child(2) { transform: none; }
+  .mission-body .gauges.left li:nth-child(2), .mission-body .gauges.right li:nth-child(2) { transform: none; }
 }
 @media (max-width: 760px) {
   .mission-grid { grid-template-columns: minmax(0, 1fr); }
 }
+/* On a phone the two columns stay, with bubbles that shrink to fit the narrowest screens, and the
+   header labels may wrap. */
 @media (max-width: 560px) {
-  .gauge.bubble { width: 150px; height: 150px; }
+  .top-right .pill { white-space: normal; max-width: 100%; }
+  .gauge.bubble { width: min(150px, 42vw); height: min(150px, 42vw); padding: 8px; gap: 4px; }
+  .bubble-name { font-size: 10px; max-width: 100%; }
+  .bubble-name .system-icon { width: 16px; height: 16px; }
 }
