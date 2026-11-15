@@ -74,7 +74,7 @@ interface ModelExtras {
 /** The panel behind the canvas (`--panel`), so the bloom can work on an opaque picture. */
 export const PANEL_BACKGROUND = 0x141c25;
 /** Glow around bright parts: strength, spread and the brightness where it starts. */
-const BLOOM = { strength: 0.55, radius: 0.2, threshold: 0.3 };
+const BLOOM = { strength: 0.55, radius: 0, threshold: 0.3, levels: [1, 0.75, 0.4, 0.1, 0] };
 
 /** A white radial glow that fades to nothing at the edge, tinted by the material colour. */
 function radialGlow(): CanvasTexture {
@@ -208,6 +208,9 @@ export class BodyScene {
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     this.bloom = new UnrealBloomPass(new Vector2(256, 256), BLOOM.strength, BLOOM.radius, BLOOM.threshold);
+    // Keep the glow close to the light: the widest blur levels lit the whole canvas into a box.
+    const levels = this.bloom.compositeMaterial.uniforms.bloomFactors;
+    if (levels) levels.value = BLOOM.levels;
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
 

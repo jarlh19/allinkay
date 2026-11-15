@@ -95,6 +95,8 @@ const en = {
   "trend.readings": "last {n} readings",
   "trend.nights": "last {n} nights",
   "unit.bpm": "bpm",
+  "mission.openPanel": "Open in the full panel",
+  "mission.closeDetail": "Close the detail",
 
   "model.title": "Model: your normal",
   "model.deviation": "Deviation from your normal",
@@ -274,6 +276,8 @@ const es: Record<MessageKey, string> = {
   "trend.readings": "últimas {n} lecturas",
   "trend.nights": "últimas {n} noches",
   "unit.bpm": "lpm",
+  "mission.openPanel": "Abrir en el panel completo",
+  "mission.closeDetail": "Cerrar el detalle",
 
   "model.title": "Modelo: tu normal",
   "model.deviation": "Desviación respecto a tu normal",

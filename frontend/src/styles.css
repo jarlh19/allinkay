@@ -283,6 +283,11 @@ button { font: inherit; color: inherit; }
 }
 .mission-grid { display: grid; grid-template-columns: 270px minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
 .mission-side { display: flex; flex-direction: column; gap: 16px; }
+.mission-detail h2 { gap: 10px; }
+.mission-detail-head { display: inline-flex; align-items: center; gap: 8px; }
+.mission-detail .close { background: none; border: 1px solid var(--line-2); border-radius: 50%; width: 26px; height: 26px; color: var(--text-2); cursor: pointer; line-height: 1; }
+.mission-detail .close:hover { border-color: var(--holo); color: var(--text); }
+.mission-detail > .link { margin-top: 12px; }
 .mission-body .body-stage { grid-template-columns: minmax(0, 1fr) minmax(240px, 440px) minmax(0, 1fr); gap: 6px; }
 .mission-body .body-3d { max-width: 440px; }
 /* No panel behind the body here, so the glow fades out well before the canvas edge. */
@@ -334,6 +339,8 @@ button { font: inherit; color: inherit; }
   .mission-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .mission-grid > .mission-body { grid-column: 1 / -1; order: -1; }
   .mission-side { display: contents; }
+  /* A selected system's detail takes two of the three columns below the body. */
+  .mission-detail { grid-column: span 2; }
 }
 @media (max-width: 980px) {
   .mission-body .gauges.left, .mission-body .gauges.right { align-items: center; }

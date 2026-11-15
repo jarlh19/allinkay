@@ -178,7 +178,7 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - The trend card shows only the series the app keeps: the last heart rate readings and the last nights of sleep. Its labels say how many values each has.
   - The analysis is the model's own reading of confirmed changes, under its real name.
   - The body is the 3D hologram (D-013), and the crew member is shown by the initial of their role.
-  - Clicking a bubble or the body opens that system's detail in the panel view.
+  - Selecting a bubble or a part of the body keeps the view and shows that system's detail beside the hologram, the same detail as the panel's section. A link opens it in the full panel.
 - **Set aside:**
   - Inventing values or formulas for what is not measured.
   - Using the design's photo and background: their origin is unknown, and the repository will be public.

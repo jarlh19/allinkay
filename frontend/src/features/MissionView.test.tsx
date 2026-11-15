@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { initialState, type LiveState } from "../api/liveState";
@@ -24,10 +24,20 @@ const state: LiveState = {
   },
 };
 
+const detailOf = (target: string) => ({ title: `Detail of ${target}`, status: null, content: <p>{`${target} readings`}</p> });
+
 function renderView(onDetail = vi.fn()) {
   render(
     <I18nProvider initial="en">
-      <MissionView state={state} crewId="commander" onCrew={() => undefined} onDetail={onDetail} onPanel={() => undefined} notices={null} />
+      <MissionView
+        state={state}
+        crewId="commander"
+        onCrew={() => undefined}
+        detailOf={detailOf}
+        onDetail={onDetail}
+        onPanel={() => undefined}
+        notices={null}
+      />
     </I18nProvider>,
   );
   return onDetail;
@@ -54,11 +64,32 @@ describe("MissionView", () => {
     expect(screen.queryByText(/nights/)).not.toBeInTheDocument();
   });
 
-  it("opens a system's detail from its bubble", () => {
+  it("keeps the view and shows a system's detail beside the hologram when its bubble is selected", () => {
     const onDetail = renderView();
+    const bubble = document.querySelector<HTMLElement>('.gauge.bubble[data-target="immune"]') as HTMLElement;
 
-    document.querySelector<HTMLElement>('.gauge.bubble[data-target="immune"]')?.click();
+    fireEvent.click(bubble);
 
-    expect(onDetail).toHaveBeenCalledWith("immune");
+    expect(document.querySelectorAll(".gauge.bubble")).toHaveLength(6);
+    expect(bubble).toHaveAttribute("aria-current", "true");
+    expect(screen.getByText("Detail of immune")).toBeInTheDocument();
+    expect(screen.getByText("immune readings")).toBeInTheDocument();
+    // The trend makes room for the detail and comes back when it closes.
+    expect(screen.queryByText("last 3 readings")).not.toBeInTheDocument();
+    expect(onDetail).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Close the detail" }));
+
+    expect(screen.queryByText("Detail of immune")).not.toBeInTheDocument();
+    expect(screen.getByText("last 3 readings")).toBeInTheDocument();
+  });
+
+  it("opens the selected system in the full panel from its link", () => {
+    const onDetail = renderView();
+    fireEvent.click(document.querySelector<HTMLElement>('.gauge.bubble[data-target="radiation"]') as HTMLElement);
+
+    fireEvent.click(screen.getByRole("button", { name: "Open in the full panel" }));
+
+    expect(onDetail).toHaveBeenCalledWith("radiation");
   });
 });

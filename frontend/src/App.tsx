@@ -132,6 +132,7 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
         crewId={crewId}
         onCrew={onCrew}
         notices={notices}
+        detailOf={(target) => ({ title: titleOf(target), status: chipOf(target), content: contentOf(target) })}
         onPanel={() => show("panel")}
         onDetail={(target) => {
           show("panel");
