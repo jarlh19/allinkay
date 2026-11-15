@@ -84,7 +84,7 @@ const en = {
   "gauge.model": "Your normal",
   "summary.waiting": "Waiting for readings",
   "summary.dose": "{percent}% of the career limit",
-  "body.legend": "Radiation: skin (outline), nervous system, eyes, heart and bone marrow",
+  "body.legend": "Radiation lights up the skin, along the outline of the body. The organs at risk are listed under Radiation.",
   "mode.ship": "In the ship",
   "mode.field": "In the field",
 
@@ -255,7 +255,7 @@ const es: Record<MessageKey, string> = {
   "gauge.model": "Tu normal",
   "summary.waiting": "Esperando lecturas",
   "summary.dose": "{percent} % del límite de carrera",
-  "body.legend": "Radiación: piel (contorno), sistema nervioso, ojos, corazón y médula ósea",
+  "body.legend": "La radiación ilumina la piel, en el contorno del cuerpo. Los órganos en riesgo están en Radiación.",
   "mode.ship": "En la nave",
   "mode.field": "En campo",
 

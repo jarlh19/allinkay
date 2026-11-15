@@ -1,9 +1,14 @@
+import { useCallback, useMemo } from "react";
+
 import type { SystemStatus } from "../api/liveState";
 import type { Evaluation, Mode, Radiation, System } from "../api/types";
 import { useI18n } from "../i18n/i18n";
 import { Ring } from "./Ring";
 import { systemKey } from "./signals";
 import { StatusChip } from "./StatusChip";
+import { Body3D } from "./body3d/Body3D";
+import type { BodyPick, BodyStatuses } from "./body3d/BodyScene";
+import { ZONE_SYSTEM } from "./body3d/zones";
 import { inNormal, targetShare, targetStatus, type Target } from "./statusSummary";
 
 /** Rings on each side of the figure, top to bottom in the order of the zone they point to. */
@@ -23,6 +28,19 @@ interface Props {
 export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: Props) {
   const { t } = useI18n();
   const status = (system: System): SystemStatus => targetStatus(system, evaluation, radiation);
+  const head = status("neurological");
+  const chest = status("cardiovascular");
+  const abdomen = status("immune");
+  const skin = status("radiation");
+  const environment = status("environment");
+  const bodyStatuses = useMemo<BodyStatuses>(
+    () => ({ head, chest, abdomen, radiation: skin, environment }),
+    [head, chest, abdomen, skin, environment],
+  );
+  const onPick = useCallback(
+    (pick: BodyPick) => onFocus(pick === "environment" ? "environment" : ZONE_SYSTEM[pick]),
+    [onFocus],
+  );
 
   const gauge = (target: Target, side: "left" | "right") => {
     const share = targetShare(target, evaluation, radiation);
@@ -63,6 +81,7 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
       <div className="body-stage">
       <ul className="gauges left">{LEFT.map((target) => gauge(target, "left"))}</ul>
       <div className="figure">
+        <Body3D statuses={bodyStatuses} label={t("body.legend")} onPick={onPick}>
         <svg viewBox="0 0 300 330" role="img" aria-label={t("body.legend")}>
           <circle cx="150" cy="165" r="146" fill="none" stroke="#233041" strokeWidth="2" strokeDasharray="2 9" />
           <g
@@ -100,6 +119,7 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
             <circle cx="166" cy="252" r={radFocus ? 7 : 5} />
           </g>
         </svg>
+        </Body3D>
       </div>
       <ul className="gauges right">{RIGHT.map((target) => gauge(target, "right"))}</ul>
       </div>

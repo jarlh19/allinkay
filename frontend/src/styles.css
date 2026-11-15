@@ -166,6 +166,11 @@ button { font: inherit; color: inherit; }
 }
 .figure { flex: 1; display: flex; justify-content: center; align-items: center; margin: 4px 0 16px; }
 .figure svg { width: 100%; max-width: 260px; height: auto; }
+.body-3d { position: relative; width: 100%; max-width: 280px; aspect-ratio: 4 / 5; margin: 0 auto; }
+.body-3d-stage, .body-3d-fallback { position: absolute; inset: 0; display: grid; place-items: center; }
+.body-3d-canvas { width: 100%; height: 100%; display: block; }
+.body-3d[data-mode="2d"] { aspect-ratio: auto; }
+.body-3d[data-mode="2d"] .body-3d-fallback { position: static; }
 .legend { display: flex; gap: 8px; font-size: 12px; color: var(--text-2); margin-bottom: 14px; }
 .legend i { width: 10px; height: 10px; border-radius: 50%; background: var(--rad); flex: none; margin-top: 3px; }
 .modes { padding-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
