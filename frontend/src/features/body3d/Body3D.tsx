@@ -4,7 +4,7 @@ import type { Anchors, BodyPick, BodyScene, BodyStatuses } from "./BodyScene";
 
 /** The skin, skeleton and organs of the BodyParts3D atlas body (see NOTICE). */
 const MODEL_URL = "/models/anatomy.glb";
-/** NASA's Extravehicular Mobility Unit, worn in the field (credit NASA/Michael D. Carbajal, see NOTICE). */
+/** NASA's Z2 Spacesuit, its prototype for planetary surfaces, worn in the field (see NOTICE). */
 const SUIT_URL = "/models/suit.glb";
 
 /** WebGL is checked without touching a canvas when the browser has no WebGL at all. */

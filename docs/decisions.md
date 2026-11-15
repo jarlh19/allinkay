@@ -224,3 +224,12 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - Calling DONKI live: the app must work without a connection, and the demo key of api.nasa.gov runs out quickly on a shared network.
   - Glucose after the flight: at R+45, three of the four crew members are below the lab's range (36 to 44 mg/dL) for a reason the data does not explain.
   - In-flight vital signs (heart rate, sleep, cognition): NASA keeps them restricted (LSDA, TRISH EXPAND), so they cannot be used here.
+
+## D-018 · The field suit is the Z2, NASA's prototype for planetary surfaces
+
+- **Problem:** D-016 dressed the field mode in the Extravehicular Mobility Unit, the suit for spacewalks from the International Space Station. ALLINKAY's field is the surface of Mars.
+- **Chosen:** NASA's 3D model of the Z2 Spacesuit (NASA 3D Resources, credit NASA/LaRC/Advanced Concepts Lab), NASA's prototype suit for planetary surfaces such as Mars. It replaces the EMU in `suit.glb`; everything else in D-016 holds.
+  - It already faces the body's way and needs no copies removed; `scripts/build_suit.py` keeps a `--turn` option for other models.
+  - Its legs and helmet line up with the body; its arms reach forward, which is fine because the skin and skeleton are hidden in the field.
+- **Set aside:** keeping the EMU (a spacewalk suit, not a surface suit).
+

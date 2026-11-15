@@ -17,11 +17,11 @@ The 3D body on the panel: the skin of the BodyParts3D atlas body and, inside it,
 
 The spacesuit the hologram wears when a crew member works in the field: its outline takes the place of the skin, and the brain, heart and airways stay visible inside it.
 
-- **Source:** NASA's 3D model of the Extravehicular Mobility Unit, `Extravehicular Mobility Unit.glb` from <https://science.nasa.gov/3d-resources/extravehicular-mobility-unit/>.
-- **Credit:** NASA/Michael D. Carbajal. NASA offers its 3D Resources free to download and use under the [NASA images and media usage guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/); using the model does not imply NASA endorsement.
+- **Source:** NASA's 3D model of the Z2 Spacesuit, its prototype suit for planetary surfaces, `Z2 Spacesuit.glb` from <https://science.nasa.gov/3d-resources/z2-spacesuit/>.
+- **Credit:** NASA/LaRC/Advanced Concepts Lab. NASA offers its 3D Resources free to download and use under the [NASA images and media usage guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/); using the model does not imply NASA endorsement.
 - **Changes:** made by `scripts/build_suit.py`, which explains each step:
-  - Drops six parts that lie exactly on top of other parts.
-  - Turns the suit to face +z, scales it so the helmet sits around the body's head, lines it up with the head and the lower legs, and puts the boot soles at y = 0.
-  - Merges and simplifies it to 36 000 triangles (about 0.7 MB).
+  - Drops any part that lies exactly on top of another part (the Z2 file has none).
+  - Keeps the suit facing +z (`--turn` turns other models), scales it so the helmet sits around the body's head, lines it up with the head and the lower legs, and puts the boot soles at y = 0.
+  - Merges it and keeps it at about 31 000 triangles (about 0.6 MB).
   - Bakes on each vertex the head, arm, leg and torso shares of the nearest skin vertex (vertex colour `COLOR_0`), and stores where the chest ends in the scene's `extras`.
-- **Rebuild:** download the file above, then run `python scripts/build_suit.py "<path to the .glb>"` (needs numpy, scipy, trimesh, fast-simplification and DracoPy). The NASA file itself is not stored here.
+- **Rebuild:** download the file above, then run `python scripts/build_suit.py "<path to Z2 Spacesuit.glb>"` (needs numpy, scipy, trimesh, fast-simplification and DracoPy). The NASA file itself is not stored here.
