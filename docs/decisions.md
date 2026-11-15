@@ -292,3 +292,13 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - The Pygame app, because it does not run in a browser.
 - **Trade-off:** the results do not reach the model's neurological system yet. That needs an endpoint and the handling of personal data (D-021).
 
+## D-023 · ALLINKAY MIND 3.0: speed and accuracy read together
+
+- **Problem:** her version 3.0 of ALLINKAY MIND changed how a result is judged. One number against a single baseline could call a faster but sloppier session an improvement.
+- **Chosen:** her 3.0 rules are ported, and the app sessions are marked 3.0.0.
+  - Every trial is kept with its time, level and outcome. In Memory Matrix the clock starts when the sequence ends.
+  - A session is compared only within the same task type and difficulty (the same sequence length or level, and for Spatial Navigator the same subtask), and only when three earlier sessions exist at that level.
+  - Speed uses correct answers only, so fast guessing never looks better; the times of wrong answers stay stored and visible. Accuracy is compared on its own, and a false start counts as an error.
+  - The two are then read together: "faster, but more errors" is never an improvement. A reading of slower, more errors or an accuracy drop asks for a repeat. The thresholds (20% in speed, 20 points in accuracy) are her exploratory software rules, not clinical cutoffs.
+- **Fixed in the port:** her browser report's trend chart filtered on an undefined variable (`value` instead of `x.value`) and failed once a baseline existed. The app draws that trend correctly.
+

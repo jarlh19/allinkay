@@ -10,8 +10,10 @@ import {
   reportFor,
   saveSession,
   targetTurns,
+  REVIEW,
   type PatternKind,
   type SessionRecord,
+  type Trial,
 } from "./engine";
 
 const KINDS: [PatternKind, 1 | 2 | 3][] = [
@@ -73,37 +75,76 @@ describe("Spatial Navigator", () => {
   });
 });
 
-const session = (test: SessionRecord["test_id"], value: number, day: number, user = "commander"): SessionRecord => ({
+const session = (test: SessionRecord["test_id"], trials: Trial[], day: number, user = "commander"): SessionRecord => ({
   schema_version: "1.0",
   module: "allinkay_mind",
-  app_version: "2.0.0",
+  app_version: "3.0.0",
   mode: "adaptive",
   source: "allinkay-app",
   user_id: user,
   test_id: test,
   timestamp_utc: `2026-11-${String(day).padStart(2, "0")}T10:00:00Z`,
-  metrics: test === "reaction" ? { median_reaction_ms: value } : { accuracy_pct: value },
+  metrics: {},
+  trials,
 });
+const right = (ms: number, level = 1): Trial => ({ correct: true, response_ms: ms, level });
+const wrong = (ms: number, level = 1): Trial => ({ correct: false, response_ms: ms, level });
+const reaction = (ms: number[]) => ms.map((m) => ({ ...right(m), level: 1 }));
 
-describe("Personal comparison", () => {
-  it("waits for three earlier sessions before it compares", () => {
-    const report = reportFor("reaction", "commander", [session("reaction", 300, 1), session("reaction", 310, 2), session("reaction", 305, 3)]);
-    expect(report?.status).toBe("pending");
+describe("Personal comparison (speed and accuracy, read together)", () => {
+  it("waits for three earlier sessions at the same level before it reads anything", () => {
+    const sessions = [1, 2, 3].map((day) => session("reaction", reaction([300, 310, 305]), day));
+    const report = reportFor("reaction", "commander", sessions);
+    expect(report?.joint).toBe("pending");
     expect(report?.sessions).toBe(3);
   });
 
-  it("asks for a review when reaction time is 20% slower than the person's own median", () => {
-    const sessions = [300, 310, 305, 380].map((ms, i) => session("reaction", ms, i + 1));
+  it("flags correct answers 20% slower than the person's own baseline", () => {
+    const sessions = [
+      ...[1, 2, 3].map((day) => session("reaction", reaction([300, 310, 305]), day)),
+      session("reaction", reaction([380, 385, 390]), 4),
+    ];
     const report = reportFor("reaction", "commander", sessions);
-    expect(report?.baseline).toBe(305);
-    expect(report?.status).toBe("review");
-    expect(reportFor("reaction", "commander", [...sessions.slice(0, 3), session("reaction", 290, 4)])?.status).toBe("steady");
+    expect(report?.speed.status).toBe("slower");
+    expect(report?.accuracy.status).toBe("within");
+    expect(report?.joint).toBe("slower");
+    expect(REVIEW).toContain(report?.joint);
   });
 
-  it("asks for a review when accuracy drops by 20% or more, and only counts that person", () => {
-    const sessions = [90, 80, 85, 60].map((pct, i) => session("memory", pct, i + 1));
-    expect(reportFor("memory", "commander", sessions)?.status).toBe("review");
+  it("never calls faster answers an improvement when errors went up", () => {
+    const sessions = [
+      ...[1, 2, 3].map((day) => session("pattern", [right(2000), right(2100), right(1900), right(2000)], day)),
+      session("pattern", [right(1400), right(1500), wrong(900), right(1450)], 4),
+    ];
+    const report = reportFor("pattern", "commander", sessions);
+    expect(report?.speed.status).toBe("faster");
+    expect(report?.joint).toBe("fasterMoreErrors");
+    expect(report?.profile).toMatchObject({ attempts: 4, errors: 1, medianIncorrectMs: 900 });
+  });
+
+  it("reads an accuracy drop of 20 points or more, and compares only the same level", () => {
+    const steady = [right(3000, 3), right(3100, 3), right(2900, 3), right(3000, 3)];
+    const memory = (trials: Trial[]) => trials.map((t) => ({ ...t, sequence_length: t.level }));
+    const sessions = [
+      ...[1, 2, 3].map((day) => session("memory", memory(steady), day)),
+      session("memory", memory([right(3000, 3), wrong(1200, 3), wrong(1500, 3), right(3050, 3), right(5000, 7)]), 4),
+    ];
+    const report = reportFor("memory", "commander", sessions);
+    expect(report?.accuracy.status).toBe("accuracyDown");
+    expect(report?.accuracy.matchedKeys).toEqual(["length:3"]);
+    expect(report?.joint).toBe("accuracyDecrease");
     expect(reportFor("memory", "engineer", sessions)).toBeNull();
+  });
+
+  it("counts a false start as an error in accuracy, never as a time", () => {
+    const sessions = [
+      ...[1, 2, 3].map((day) => session("reaction", reaction([300, 300, 300]), day)),
+      session("reaction", [...reaction([300, 300]), { false_start: true }], 4),
+    ];
+    const report = reportFor("reaction", "commander", sessions);
+    expect(report?.profile).toMatchObject({ attempts: 3, errors: 1, falseStarts: 1 });
+    expect(report?.speed.latest).toBe(300);
+    expect(report?.accuracy.change).toBeCloseTo(-33.3, 1);
     expect(median([1, 5, 3])).toBe(3);
   });
 
@@ -113,7 +154,7 @@ describe("Personal comparison", () => {
       getItem: (k: string) => data.get(k) ?? null,
       setItem: (k: string, v: string) => void data.set(k, v),
     } as unknown as Storage;
-    expect(saveSession(session("pattern", 70, 1), storage)).toBe(true);
+    expect(saveSession(session("pattern", [right(1000)], 1), storage)).toBe(true);
     expect(loadSessions(storage)).toHaveLength(1);
 
     const broken = {
@@ -121,6 +162,6 @@ describe("Personal comparison", () => {
       setItem: () => { throw new Error("blocked"); },
     } as unknown as Storage;
     expect(loadSessions(broken)).toEqual([]);
-    expect(saveSession(session("pattern", 70, 1), broken)).toBe(false);
+    expect(saveSession(session("pattern", [right(1000)], 1), broken)).toBe(false);
   });
 });
