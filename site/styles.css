@@ -345,6 +345,12 @@ td.num { font-family: var(--mono); color: var(--ok); font-variant-numeric: tabul
 .record main { padding: 0; max-width: none; }
 .record .story { padding: 0; }
 .record .stage { width: 100vw; height: 100vh; aspect-ratio: auto; border: 0; border-radius: 0; }
+/* The video is watched small (an embed or a phone), so its text is sized to the frame, not capped for the page. */
+.record .caption { padding: 4.4vh 4.2vw 5vh; }
+.record .caption p { font-size: 4vh; max-width: 60ch; }
+.record .type-act { padding: 9vh 7vw 24vh; }
+.record .type-big { font-size: 8.4vh; max-width: 17ch; }
+.record .type-small { font-size: 3.3vh; max-width: 48ch; margin-top: 3.4vh; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
