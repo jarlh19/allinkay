@@ -267,3 +267,13 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - Scaling the storm for the engineer outside: no measured basis.
   - Replaying the whole 253-day cruise: about 5.7 GB of downloads for a 10-day demo lap.
 - **Limits:** RAD sat inside the cruise stage, not in a human body or a crewed ship, and its storm factor is fitted to a single published total.
+
+## D-021 · Cognitive tests open from the overall status, as tests in development
+
+- **Problem:** the team's biomedical engineer is building tests of reaction time, memory, patterns and spatial orientation, as Python prototypes. The screen had no place for them, and the reaction time the model watches is still synthetic.
+- **Chosen:** a "Cognitive tests" button under the overall status opens a window with the four tests.
+  - Each test says what it measures and which test of NASA's Cognition battery it resembles: the Psychomotor Vigilance Test; the Visual Object Learning Test and Fractal 2-Back; the Matrix Reasoning Test; and the Line Orientation Test (Basner et al., 2015, *Aerospace Medicine and Human Performance* 86, 942–952).
+  - All four are labelled "In development" until her prototypes are ported to the browser. Python does not run in the app, whose security policy only allows its own scripts.
+  - When a test runs, its results will stay on the device. Feeding them to the model needs a new endpoint and the handling of personal data, so it stays out of the hackathon.
+- **Set aside:** linking to the Python prototypes. They run on a computer, not in a browser, and nothing outside the app may run inside it.
+

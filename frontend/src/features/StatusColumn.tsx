@@ -1,8 +1,11 @@
+import { useCallback, useRef, useState } from "react";
+
 import type { CrewMemberSummary, Evaluation, Radiation } from "../api/types";
 import { useI18n } from "../i18n/i18n";
 import { useRoleLabel } from "./CrewStrip";
 import { Ring } from "./Ring";
 import { StatusChip } from "./StatusChip";
+import { TestsDialog } from "./TestsDialog";
 import { inNormal, targetShare, targetStatus } from "./statusSummary";
 
 interface Props {
@@ -22,7 +25,10 @@ function initials(label: string): string {
     .join("");
 }
 
-/** Left column: who is being watched and how many of their signals are in their normal. */
+/**
+ * Left column: who is being watched, how many of their signals are in their normal, and the
+ * cognitive tests that would feed the neurological system.
+ */
 export function StatusColumn({ evaluation, radiation, member, memberNumber, connected }: Props) {
   const { t } = useI18n();
   const roleLabel = useRoleLabel();
@@ -30,6 +36,12 @@ export function StatusColumn({ evaluation, radiation, member, memberNumber, conn
   const status = targetStatus("model", evaluation, radiation);
   const { n, total } = inNormal(evaluation);
   const percent = total === 0 ? null : Math.round((n / total) * 100);
+  const [testsOpen, setTestsOpen] = useState(false);
+  const opener = useRef<HTMLButtonElement>(null);
+  const closeTests = useCallback(() => {
+    setTestsOpen(false);
+    opener.current?.focus();
+  }, [setTestsOpen]);
 
   return (
     <div className="status-column">
@@ -62,7 +74,11 @@ export function StatusColumn({ evaluation, radiation, member, memberNumber, conn
         <p className="note overall-note">
           {total === 0 ? t("summary.waiting") : t("overall.signals", { n, total })}
         </p>
+        <button ref={opener} type="button" className="tests-open" aria-haspopup="dialog" onClick={() => setTestsOpen(true)}>
+          {t("tests.open")}
+        </button>
       </section>
+      <TestsDialog open={testsOpen} onClose={closeTests} />
     </div>
   );
 }
