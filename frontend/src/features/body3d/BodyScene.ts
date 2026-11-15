@@ -3,6 +3,7 @@ import {
   Box3,
   BufferAttribute,
   BufferGeometry,
+  CanvasTexture,
   CircleGeometry,
   Color,
   DirectionalLight,
@@ -17,6 +18,10 @@ import {
   Raycaster,
   RingGeometry,
   Scene,
+  type Texture,
+  SphereGeometry,
+  Sprite,
+  SpriteMaterial,
   SRGBColorSpace,
   NeutralToneMapping,
   Vector2,
@@ -39,6 +44,34 @@ export interface BodyStatuses {
 }
 
 export type BodyPick = Zone | "environment";
+
+/** The systems a ring around the body stands for; each one points to a spot on the body. */
+export type AnchorTarget = "neurological" | "cardiovascular" | "model" | "immune" | "radiation" | "environment";
+
+/** Where each ring points to, in canvas pixels, refreshed on every frame as the body sways. */
+export type Anchors = Partial<Record<AnchorTarget, { x: number; y: number }>>;
+
+/** Anchor spots as fractions of the body height: x to the viewer's right, y up, z towards them. */
+const ANCHOR_SPOTS: Record<AnchorTarget, [number, number, number]> = {
+  neurological: [0, 0.94, 0.02],
+  cardiovascular: [0.03, 0.735, 0.04],
+  model: [0, 0.665, 0.065],
+  immune: [0, 0.575, 0.07],
+  radiation: [0.19, 0.64, 0],
+  environment: [0.215, 0, 0.07],
+};
+const ANCHOR_TARGETS = Object.keys(ANCHOR_SPOTS) as AnchorTarget[];
+
+/**
+ * The heart and the brain glow inside the glass with the colour of their system's status:
+ * a pale blue light when usual (the "ok" family), amber or red with an alert.
+ */
+const ORGAN_OK = 0xcfe6ff;
+/** Organ shapes as scale factors of a sphere: the heart a little taller, the brain wider than tall. */
+const HEART_SHAPE: [number, number, number] = [1, 1.2, 0.9];
+const BRAIN_SHAPE: [number, number, number] = [1.15, 0.8, 1.1];
+/** About 66 beats a minute. */
+const HEART_BEAT_HZ = 1.1;
 
 /** Glass tints per zone, close to the team's reference: lavender head, blue chest, teal abdomen. */
 const ZONE_COLOR: Record<Zone, number> = {
@@ -176,6 +209,72 @@ function glassBody(rim: Rim, pulse: { value: number }): MeshPhysicalMaterial {
   return material;
 }
 
+/** A white radial glow that fades to nothing at the edge, tinted by the material colour. */
+function radialGlow(): CanvasTexture {
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+  if (context) {
+    const gradient = context.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    gradient.addColorStop(0, "rgba(255,255,255,0.55)");
+    gradient.addColorStop(0.55, "rgba(255,255,255,0.18)");
+    gradient.addColorStop(1, "rgba(255,255,255,0)");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, size, size);
+  }
+  return new CanvasTexture(canvas);
+}
+
+/** A glowing organ: a small bright core and a soft halo that always faces the camera. */
+class Organ {
+  private readonly core: Mesh;
+  private readonly coreMaterial: MeshBasicMaterial;
+  private readonly halo: Sprite;
+  private readonly haloMaterial: SpriteMaterial;
+
+  constructor(
+    parent: Group,
+    glowMap: Texture,
+    [x, y, z]: [number, number, number],
+    radius: number,
+    private readonly shape: [number, number, number],
+  ) {
+    // Drawn over the glass, without depth, so the light shows through the body.
+    const light = { transparent: true, blending: AdditiveBlending, depthTest: false, depthWrite: false };
+    this.coreMaterial = new MeshBasicMaterial({ color: ORGAN_OK, ...light });
+    this.core = new Mesh(new SphereGeometry(radius, 24, 16), this.coreMaterial);
+    this.haloMaterial = new SpriteMaterial({ color: ORGAN_OK, map: glowMap, ...light });
+    this.halo = new Sprite(this.haloMaterial);
+    this.halo.scale.setScalar(radius * 5);
+    for (const part of [this.core, this.halo]) {
+      part.position.set(x, y, z);
+      part.renderOrder = 2;
+      parent.add(part);
+    }
+    this.update(1, 0.6, 0.4);
+  }
+
+  setColor(color: number): void {
+    this.coreMaterial.color.set(color);
+    this.haloMaterial.color.set(color);
+  }
+
+  update(swell: number, core: number, halo: number): void {
+    const [sx, sy, sz] = this.shape;
+    this.core.scale.set(sx * swell, sy * swell, sz * swell);
+    this.coreMaterial.opacity = core;
+    this.haloMaterial.opacity = halo;
+  }
+
+  dispose(): void {
+    this.core.geometry.dispose();
+    this.coreMaterial.dispose();
+    this.haloMaterial.dispose();
+  }
+}
+
 export class BodyScene {
   private readonly renderer: WebGLRenderer;
   private readonly scene = new Scene();
@@ -191,6 +290,15 @@ export class BodyScene {
   /** The whole floor inside the ring: a thin ring seen almost edge-on is too hard to click. */
   private readonly floor: Mesh;
   private readonly body: Mesh;
+  private readonly height: number;
+  private readonly glowMap = radialGlow();
+  private readonly heart: Organ;
+  private readonly brain: Organ;
+  private readonly dashes = new Group();
+  private readonly baseGlow: MeshBasicMaterial;
+  private readonly disposables: { dispose(): void }[] = [];
+  private readonly spot = new Vector3();
+  private readonly onFrame?: (anchors: Anchors, canvas: HTMLCanvasElement) => void;
   private readonly weights: Float32Array;
   private readonly dominant: Zone[];
   private statuses: BodyStatuses = { head: "ok", chest: "ok", abdomen: "ok", radiation: "ok", environment: "ok" };
@@ -207,6 +315,7 @@ export class BodyScene {
     modelUrl: string,
     onPick: (pick: BodyPick) => void,
     reducedMotion: boolean,
+    onFrame?: (anchors: Anchors, canvas: HTMLCanvasElement) => void,
   ): Promise<BodyScene> {
     const gltf = await new GLTFLoader().loadAsync(modelUrl);
     gltf.scene.updateMatrixWorld(true);
@@ -217,7 +326,7 @@ export class BodyScene {
     const mesh = meshes[0];
     if (!mesh) throw new Error("The body model has no mesh");
     const geometry = prepareGeometry(mesh.geometry as BufferGeometry, mesh.matrixWorld);
-    return new BodyScene(container, geometry, onPick, reducedMotion);
+    return new BodyScene(container, geometry, onPick, reducedMotion, onFrame);
   }
 
   private constructor(
@@ -225,7 +334,9 @@ export class BodyScene {
     geometry: BufferGeometry,
     onPick: (pick: BodyPick) => void,
     private readonly reducedMotion: boolean,
+    onFrame?: (anchors: Anchors, canvas: HTMLCanvasElement) => void,
   ) {
+    this.onFrame = onFrame;
     const { weights, dominant } = zoneData(geometry);
     this.weights = weights;
     this.dominant = dominant;
@@ -233,6 +344,7 @@ export class BodyScene {
     geometry.setAttribute("color", new BufferAttribute(new Float32Array(count * 3), 3));
     geometry.setAttribute("alert", new BufferAttribute(new Float32Array(count), 1));
     const height = (geometry.boundingBox?.max.y ?? 1) - (geometry.boundingBox?.min.y ?? 0);
+    this.height = height;
 
     this.renderer = new WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -245,6 +357,9 @@ export class BodyScene {
     this.material = glassBody(this.rim, this.pulse);
     this.body = new Mesh(geometry, this.material);
     this.figure.add(this.body);
+
+    this.heart = new Organ(this.figure, this.glowMap, this.at(ANCHOR_SPOTS.cardiovascular), height * 0.02, HEART_SHAPE);
+    this.brain = new Organ(this.figure, this.glowMap, this.at(ANCHOR_SPOTS.neurological), height * 0.024, BRAIN_SHAPE);
 
     // The ring at the feet stands for the ship environment around the person.
     this.platform = new MeshBasicMaterial({
@@ -259,6 +374,27 @@ export class BodyScene {
     this.platformMesh.rotation.x = -Math.PI / 2;
     this.platformMesh.position.y = 0.002;
     this.scene.add(this.platformMesh);
+    this.baseGlow = new MeshBasicMaterial({
+      color: STATUS_COLOR.ok,
+      map: this.glowMap,
+      transparent: true,
+      opacity: 0.5,
+      blending: AdditiveBlending,
+      depthWrite: false,
+    });
+    this.flat(new CircleGeometry(height * 0.3, 64), this.baseGlow, 0.001);
+    this.flat(new RingGeometry(height * 0.12, height * 0.127, 80), this.platform, 0.003);
+    const dashCount = 28;
+    const dashGeometry = new RingGeometry(height * 0.252, height * 0.26, 4, 1, 0, (Math.PI * 2) / dashCount / 2);
+    this.disposables.push(dashGeometry);
+    for (let i = 0; i < dashCount; i++) {
+      const dash = new Mesh(dashGeometry, this.platform);
+      dash.rotation.z = (i * Math.PI * 2) / dashCount;
+      this.dashes.add(dash);
+    }
+    this.dashes.rotation.x = -Math.PI / 2;
+    this.dashes.position.y = 0.003;
+    this.scene.add(this.dashes);
     this.floor = new Mesh(
       new CircleGeometry(height * 0.26, 48),
       new MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
@@ -320,6 +456,11 @@ export class BodyScene {
     (this.floor.material as MeshBasicMaterial).dispose();
     this.material.dispose();
     this.platform.dispose();
+    this.glowMap.dispose();
+    this.baseGlow.dispose();
+    this.heart.dispose();
+    this.brain.dispose();
+    for (const item of this.disposables) item.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
@@ -364,7 +505,42 @@ export class BodyScene {
     // The skin's glow shows radiation: violet when usual, amber or red with an alert.
     this.rim.color.value.set(this.statuses.radiation === "ok" ? RADIATION_GLOW : STATUS_COLOR[this.statuses.radiation]);
     this.platform.color.set(STATUS_COLOR[this.statuses.environment]);
+    this.baseGlow.color.set(STATUS_COLOR[this.statuses.environment]);
+    this.heart.setColor(this.statuses.chest === "ok" ? ORGAN_OK : STATUS_COLOR[this.statuses.chest]);
+    this.brain.setColor(this.statuses.head === "ok" ? ORGAN_OK : STATUS_COLOR[this.statuses.head]);
     this.render(this.elapsed());
+  }
+
+  /** A spot given as fractions of the body height, in scene units. */
+  private at([x, y, z]: [number, number, number]): [number, number, number] {
+    return [x * this.height, y * this.height, z * this.height];
+  }
+
+  /** A flat piece of the base, lying on the floor. */
+  private flat(geometry: BufferGeometry, material: MeshBasicMaterial, lift: number): void {
+    const piece = new Mesh(geometry, material);
+    piece.rotation.x = -Math.PI / 2;
+    piece.position.y = lift;
+    this.disposables.push(geometry);
+    this.scene.add(piece);
+  }
+
+  /** Projects every anchor spot onto the canvas, after the frame is drawn. */
+  private reportAnchors(): void {
+    if (!this.onFrame) return;
+    const canvas = this.renderer.domElement;
+    const anchors: Anchors = {};
+    for (const target of ANCHOR_TARGETS) {
+      this.spot.set(...this.at(ANCHOR_SPOTS[target]));
+      // The ring on the floor stays still; everything else sways with the body.
+      if (target !== "environment") this.spot.applyMatrix4(this.figure.matrixWorld);
+      this.spot.project(this.camera);
+      anchors[target] = {
+        x: ((this.spot.x + 1) / 2) * canvas.clientWidth,
+        y: ((1 - this.spot.y) / 2) * canvas.clientHeight,
+      };
+    }
+    this.onFrame(anchors, canvas);
   }
 
   private pick(event: MouseEvent): BodyPick | null {
@@ -404,6 +580,15 @@ export class BodyScene {
     const wave = moving ? 0.5 + 0.5 * Math.sin(seconds * 3) : 0.5;
     this.pulse.value = 0.35 + 0.65 * wave;
     this.rim.strength.value = this.statuses.radiation === "ok" ? 1.4 : 1.8 + 1.6 * wave;
+    // A calm beat as a sign of life, the same with or without an alert: it is not the measured heart
+    // rate, which may be high or low when the heart is out of its normal. An alert only makes it brighter.
+    const beat = moving ? Math.pow(Math.max(0, Math.sin(seconds * Math.PI * 2 * HEART_BEAT_HZ)), 6) : 0;
+    const heartAlert = this.statuses.chest !== "ok";
+    this.heart.update(1 + 0.15 * beat, (heartAlert ? 0.85 : 0.55) + 0.15 * beat, (heartAlert ? 0.45 + 0.35 * wave : 0.3) + 0.25 * beat);
+    const brainAlert = this.statuses.head !== "ok";
+    this.brain.update(1, brainAlert ? 0.8 : 0.45, brainAlert ? 0.35 + 0.4 * wave : 0.22 + 0.08 * wave);
+    this.dashes.rotation.z = moving ? seconds * 0.15 : 0;
     this.renderer.render(this.scene, this.camera);
+    this.reportAnchors();
   }
 }

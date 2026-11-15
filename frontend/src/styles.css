@@ -118,7 +118,7 @@ button { font: inherit; color: inherit; }
 .ring circle { fill: none; stroke-width: 3.5; }
 .ring-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; font-weight: 600; line-height: 1.15; color: var(--text); text-align: center; }
 
-.body-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, 260px) minmax(0, 1fr); align-items: center; gap: 10px; }
+.body-stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, 260px) minmax(0, 1fr); align-items: center; gap: 10px; }
 .gauges { list-style: none; display: flex; flex-direction: column; gap: 22px; }
 .gauge { position: relative; width: 100%; display: flex; align-items: center; gap: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 30px; padding: 6px 12px 6px 6px; cursor: pointer; color: var(--text); text-align: left; }
 .gauge:hover, .gauge[aria-current="true"] { border-color: var(--accent); }
@@ -129,6 +129,20 @@ button { font: inherit; color: inherit; }
 .gauge-name { font-size: 13px; font-weight: 600; }
 .gauge-summary { font-size: 11px; color: var(--text-3); }
 .gauge .status { font-size: 11px; padding: 1px 7px; }
+/* Leader lines from each ring to its spot on the 3D body; drawn over the canvas, never over a ring. */
+.leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 1; display: none; }
+.body-stage[data-leaders] .leaders { display: block; }
+.body-stage[data-leaders] .gauge::after { display: none; }
+.leader { --leader: var(--accent); }
+.leader.warn { --leader: var(--warn); }
+.leader.crit { --leader: var(--crit); }
+.leader polyline { fill: none; stroke: var(--leader); stroke-width: 1; stroke-opacity: 0.55; stroke-dasharray: 3 3; }
+.leader .tip { fill: var(--leader); stroke: var(--bg); stroke-width: 1.5; }
+.leader .tip.halo { fill: none; stroke: var(--leader); stroke-width: 1; opacity: 0; }
+.leader.focused .tip.halo { opacity: 0.6; }
+.leader.focused polyline, .leader.warn polyline, .leader.crit polyline { stroke-opacity: 0.95; stroke-width: 1.5; stroke-dasharray: none; }
+.leader.warn .tip.halo, .leader.crit .tip.halo { animation: leader-pulse 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes leader-pulse { from { opacity: 0.8; transform: scale(0.6); } to { opacity: 0; transform: scale(1.8); } }
 
 .analysis-card h2 { margin-bottom: 10px; }
 .analysis-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
@@ -227,6 +241,7 @@ button { font: inherit; color: inherit; }
   .body-stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .body-stage .figure { grid-column: 1 / -1; order: -1; }
   .gauge::after { display: none; }
+  .body-stage[data-leaders] .leaders { display: none; }
 }
 
 @media (max-width: 760px) {
@@ -239,4 +254,6 @@ button { font: inherit; color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
+  .leader .tip.halo { animation: none !important; }
+  .leader.warn .tip.halo, .leader.crit .tip.halo { opacity: 0.6; }
 }

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { SystemStatus } from "../api/liveState";
 import type { Evaluation, Mode, Radiation, System } from "../api/types";
@@ -7,8 +7,9 @@ import { Ring } from "./Ring";
 import { systemKey } from "./signals";
 import { StatusChip } from "./StatusChip";
 import { Body3D } from "./body3d/Body3D";
-import type { BodyPick, BodyStatuses } from "./body3d/BodyScene";
+import type { Anchors, BodyPick, BodyStatuses } from "./body3d/BodyScene";
 import { ZONE_SYSTEM } from "./body3d/zones";
+import { leaderPath } from "./leaders";
 import { inNormal, targetShare, targetStatus, type Target } from "./statusSummary";
 
 /** Rings on each side of the figure, top to bottom in the order of the zone they point to. */
@@ -42,6 +43,39 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
     [onFocus],
   );
 
+  // Leader lines join each ring to its spot on the 3D body. They follow the body as it sways,
+  // so they are moved straight in the DOM on every frame instead of through React state.
+  const stage = useRef<HTMLDivElement>(null);
+  const leaders = useRef<SVGSVGElement>(null);
+  const [withLeaders, setWithLeaders] = useState(false);
+  const leadersShown = useRef(false);
+  const onAnchors = useCallback((anchors: Anchors, canvas: HTMLCanvasElement) => {
+    const box = stage.current;
+    const svg = leaders.current;
+    if (!box || !svg) return;
+    if (!leadersShown.current) {
+      leadersShown.current = true;
+      setWithLeaders(true);
+    }
+    // Hidden on narrow screens, where the rings sit below the body.
+    if (svg.clientWidth === 0) return;
+    const origin = box.getBoundingClientRect();
+    const view = canvas.getBoundingClientRect();
+    for (const leader of svg.querySelectorAll<SVGGElement>("g[data-target]")) {
+      const target = leader.dataset.target as Target;
+      const spot = anchors[target];
+      const ring = box.querySelector<HTMLElement>(`.gauge[data-target="${target}"]`);
+      if (!spot || !ring) continue;
+      const side = ring.classList.contains("left") ? "left" : "right";
+      const { points, tip } = leaderPath(ring.getBoundingClientRect(), side, origin, view, spot);
+      leader.querySelector("polyline")?.setAttribute("points", points);
+      for (const circle of leader.querySelectorAll("circle.tip")) {
+        circle.setAttribute("cx", String(tip.x));
+        circle.setAttribute("cy", String(tip.y));
+      }
+    }
+  }, []);
+
   const gauge = (target: Target, side: "left" | "right") => {
     const share = targetShare(target, evaluation, radiation);
     const { n, total } = inNormal(evaluation, target);
@@ -56,6 +90,7 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
         <button
           type="button"
           className={`gauge ${side}`}
+          data-target={target}
           aria-current={focused === target ? "true" : undefined}
           aria-controls={`panel-${target}`}
           onClick={() => onFocus(target)}
@@ -78,10 +113,10 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
   return (
     <section className="panel body-panel" aria-labelledby="body-title">
       <h2 id="body-title">{t("body.figureTitle")}</h2>
-      <div className="body-stage">
+      <div className="body-stage" ref={stage} data-leaders={withLeaders ? "" : undefined}>
       <ul className="gauges left">{LEFT.map((target) => gauge(target, "left"))}</ul>
       <div className="figure">
-        <Body3D statuses={bodyStatuses} label={t("body.legend")} onPick={onPick}>
+        <Body3D statuses={bodyStatuses} label={t("body.legend")} onPick={onPick} onAnchors={onAnchors}>
         <svg viewBox="0 0 300 330" role="img" aria-label={t("body.legend")}>
           <circle cx="150" cy="165" r="146" fill="none" stroke="#233041" strokeWidth="2" strokeDasharray="2 9" />
           <g
@@ -122,6 +157,19 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
         </Body3D>
       </div>
       <ul className="gauges right">{RIGHT.map((target) => gauge(target, "right"))}</ul>
+      <svg className="leaders" ref={leaders} aria-hidden="true">
+        {[...LEFT, ...RIGHT].map((target) => (
+          <g
+            key={target}
+            data-target={target}
+            className={`leader ${targetStatus(target, evaluation, radiation)}${focused === target ? " focused" : ""}`}
+          >
+            <polyline />
+            <circle className="tip halo" r="7" />
+            <circle className="tip" r="3" />
+          </g>
+        ))}
+      </svg>
       </div>
       <p className="legend">
         <i />
