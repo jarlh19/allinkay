@@ -40,6 +40,21 @@ ORGANS_AT_RISK: tuple[OrganRisk, ...] = (
 )
 
 
+@dataclass(frozen=True)
+class StormReference:
+    """A real solar particle event that the demo storm refers to, as NASA recorded it.
+
+    Only the event's facts are real: the size and timing of the demo storm are synthetic."""
+
+    sep_id: str
+    particles_at: datetime
+    instrument: str
+    flare_class: str
+    flare_peak_at: datetime
+    alert_at: datetime | None
+    source: str = "NASA DONKI"
+
+
 def days_to_limit(accumulated_msv: float, daily_rate_msv: float) -> int | None:
     """Whole days left before reaching the career limit at the current rate."""
     if daily_rate_msv <= 0:

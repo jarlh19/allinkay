@@ -11,6 +11,7 @@ from app.domain.radiation import (
     EVENT_LIMIT_MSV,
     ORGANS_AT_RISK,
     DoseLedger,
+    StormReference,
 )
 from app.domain.readings import SPECS, Reading, Signal, System
 from app.domain.references import Ref
@@ -18,10 +19,13 @@ from app.domain.rules import Alert, AlertKind, Evidence, Level
 
 
 class TrackRadiation:
-    def __init__(self, ledger: DoseLedger, bus: EventBus) -> None:
+    def __init__(
+        self, ledger: DoseLedger, bus: EventBus, reference: StormReference | None = None
+    ) -> None:
         self._start = replace(ledger)
         self._ledger = ledger
         self._bus = bus
+        self._reference = reference
 
     def restart(self) -> None:
         """Back to the dose the mission started with, for a demo script that starts again."""
@@ -104,4 +108,19 @@ class TrackRadiation:
             "organs_at_risk": [
                 {"organ": o.organ, "timeframe": o.timeframe.value} for o in ORGANS_AT_RISK
             ],
+            "storm_reference": _reference_view(self._reference),
         }
+
+
+def _reference_view(reference: StormReference | None) -> dict[str, Any] | None:
+    if reference is None:
+        return None
+    return {
+        "source": reference.source,
+        "sep_id": reference.sep_id,
+        "particles_at": reference.particles_at.isoformat(),
+        "instrument": reference.instrument,
+        "flare_class": reference.flare_class,
+        "flare_peak_at": reference.flare_peak_at.isoformat(),
+        "alert_at": reference.alert_at.isoformat() if reference.alert_at else None,
+    }

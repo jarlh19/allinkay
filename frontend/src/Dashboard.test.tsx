@@ -144,6 +144,7 @@ describe("Dashboard", () => {
         storm_active: false,
         storm_dose_msv: 0,
         organs_at_risk: [],
+        storm_reference: null,
       },
       evaluation: {
         type: "evaluation",

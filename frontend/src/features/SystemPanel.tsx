@@ -2,8 +2,14 @@ import type { Deviation, Evaluation, Reading } from "../api/types";
 import { useI18n } from "../i18n/i18n";
 import { formatUnit, formatValue, signalKey } from "./signals";
 
-/** Baselines built from open NASA data say so in their source. */
+/** Baselines built from open NASA data say so in their source, with the study. */
 const OSDR_SOURCE = "NASA OSDR";
+const OSDR_STUDY = /OSD-\d+/;
+
+function nasaStudy(source: string | undefined): string | null {
+  if (!source?.startsWith(OSDR_SOURCE)) return null;
+  return OSDR_STUDY.exec(source)?.[0] ?? null;
+}
 
 interface Props {
   signals: string[];
@@ -39,6 +45,7 @@ export function SystemPanel({ signals, readings, evaluation, heartRateHistory }:
         const reading = readings[signal];
         const deviation = deviations.get(signal);
         const flagged = deviation?.confirmed ?? false;
+        const study = nasaStudy(deviation?.baseline_source);
         return (
           <div className="row" key={signal}>
             <span className="name">
@@ -62,9 +69,7 @@ export function SystemPanel({ signals, readings, evaluation, heartRateHistory }:
               </span>
             )}
             {deviation?.repeat_requested && <span className="note warn">{t("row.repeat")}</span>}
-            {deviation?.baseline_source.startsWith(OSDR_SOURCE) && (
-              <span className="note">{t("row.wbcSource")}</span>
-            )}
+            {study && <span className="note">{t("row.nasaSource", { study })}</span>}
             {signal === "heart_rate" && heartRateHistory.length > 1 && (
               <div className="trend">
                 <Sparkline values={heartRateHistory} />

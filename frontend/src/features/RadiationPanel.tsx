@@ -2,6 +2,7 @@ import type { Radiation } from "../api/types";
 import { useI18n } from "../i18n/i18n";
 import type { MessageKey } from "../i18n/messages";
 import { StatusChip } from "./StatusChip";
+import { referenceParams } from "./stormReference";
 
 export function RadiationPanel({ radiation }: { radiation: Radiation | null }) {
   const { t } = useI18n();
@@ -54,6 +55,9 @@ export function RadiationPanel({ radiation }: { radiation: Radiation | null }) {
             />
           </p>
           <p className="note">{t("radiation.eventLimit", { limit: radiation.event_limit_msv })}</p>
+          {radiation.storm_reference && (
+            <p className="note">{t("radiation.reference", referenceParams(radiation.storm_reference))}</p>
+          )}
         </div>
         <div>
           <p className="name" style={{ marginBottom: 10 }}>

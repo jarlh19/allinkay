@@ -8,7 +8,11 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_DB = BACKEND_DIR / "data" / "local" / "allinkay.db"
-OSDR_CBC_CSV = BACKEND_DIR.parent / "data" / "osdr" / "OSD-569_LSDS-7_complete_blood_count.csv"
+DATA_DIR = BACKEND_DIR.parent / "data"
+OSDR_CBC_CSV = DATA_DIR / "osdr" / "OSD-569_LSDS-7_complete_blood_count.csv"
+OSDR_CMP_CSV = DATA_DIR / "osdr" / "OSD-575_LSDS-8_comprehensive_metabolic_panel.csv"
+DONKI_SEP_JSON = DATA_DIR / "donki" / "DONKI_SEP_2012-03-01_2012-04-29.json"
+DONKI_FLR_JSON = DATA_DIR / "donki" / "DONKI_FLR_2012-03-07.json"
 
 
 @dataclass(frozen=True)

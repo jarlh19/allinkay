@@ -66,6 +66,18 @@ export interface Radiation {
   storm_active: boolean;
   storm_dose_msv: number;
   organs_at_risk: { organ: string; timeframe: string }[];
+  storm_reference: StormReference | null;
+}
+
+/** The real solar particle event the demo storm refers to, as NASA DONKI recorded it. */
+export interface StormReference {
+  source: string;
+  sep_id: string;
+  particles_at: string;
+  instrument: string;
+  flare_class: string;
+  flare_peak_at: string;
+  alert_at: string | null;
 }
 
 export interface Clock {

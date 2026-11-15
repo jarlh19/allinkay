@@ -33,7 +33,7 @@ An application the astronaut uses on board, without depending on Earth, to under
 |---|---|---|
 | `domain` | Pure core with no input or output: readings, personal baselines and their prediction intervals, published lab variation, alert rules with their explanation, combined patterns, the sleep forecast, the radiation ledger, crew members and the ship and field models | — |
 | `storage` | Readings per crew member in SQLite (Repository pattern) | `domain` |
-| `ingestion` | Input adapters: the seeded simulator with the demo scripts and the OSD-569 blood count loader. Real sensors come next | `domain` |
+| `ingestion` | Input adapters: the seeded simulator with the demo scripts, the OSD-569 blood count and OSD-575 metabolic panel loaders, and the NASA DONKI event reader. Real sensors come next | `domain` |
 | `feedback` | Testers' reports from inside the app, with their context, sent as GitHub issues or kept locally | `domain` |
 | `api` | FastAPI: REST to query, and one WebSocket per crew member for live data; wires the use cases | all of the above |
 | `web` | React: the crew strip, the body with a ring per system, the model analysis, folding details per system, radiation and actions, in English and Spanish | `api` |
@@ -81,14 +81,15 @@ On Windows, use `.venv\Scripts\` instead of `.venv/bin/`.
 backend/app/domain/        → pure logic: readings, baseline, variation, stats, rules, forecast, radiation, crew, modes, references, reports
 backend/app/application/   → use cases: ingest, evaluate, forecast, track radiation, mission, crew, reports, event bus
 backend/app/ports/         → interfaces (Protocol): ReadingSource, ExamScheduler, ReadingRepository
-backend/app/adapters/      → simulator, demo scenarios and clock, SQLite repository, OSD-569 loader, report sinks
+backend/app/adapters/      → simulator, demo scenarios and clock, SQLite repository, OSDR and DONKI loaders, report sinks
 backend/app/api/           → FastAPI routes and WebSocket, Pydantic schemas
 backend/tests/             → domain, application and API tests, plus a small validation sample
 backend/validate_model.py  → measures false alarms and missed changes on synthetic people
 frontend/src/features/     → crew strip, body and rings, model, radiation, actions, folding details, report form
 frontend/src/i18n/         → English and Spanish texts
 frontend/src/api/          → live state, WebSocket client and types
-data/osdr/                 → the OSD-569 CSV, with its source and licence in a README
+data/osdr/                 → the OSD-569 and OSD-575 CSV files, with their source and licence in a README
+data/donki/                → the NASA DONKI answers for the March 2012 storm, with their source in a README
 docs/decisions.md          → architecture and model decisions (D-001 to D-012)
 scripts/                   → verify.py and demo.py
 LICENSE, NOTICE            → Apache 2.0 and credits, including the NASA data citation
@@ -152,7 +153,7 @@ def beyond(self, z: float) -> str | None:
 6. Earth's feedback arrives with the configured delay and the screen shows how long is left. *Not met: not built in this version.*
 7. The demo scenario (seeded, accelerated mission) is repeatable: it shows the early warning first and the emergency after.
 8. The interface opens in the browser's language (English or Spanish) and can switch between them.
-9. The commander's white blood cell set point comes from the OSD-569 CSV, with the citation visible on screen.
+9. The commander's white blood cell and glucose set points come from OSD-569 and OSD-575, with the study visible on screen, and the demo storm names its real reference event from NASA DONKI (D-017).
 10. The app is published at a Render URL and updates itself on every change to `main` (D-009).
 11. Testers using the app as astronauts from their own browser can send a report with "Report a problem". It arrives as a GitHub issue with its context.
 12. `python validate_model.py` (in `backend/`), with 200 synthetic people over 90 days in the ship and in the field, gives at most one false alarm every 10 astronaut-years and at most 1% of the scripted changes missed within 10 days (D-011).
@@ -162,7 +163,7 @@ def beyond(self, z: float) -> str | None:
 - **Real medical diagnosis:** this is decision support.
 - **Login and accounts.**
 - **A mobile app.** The published web works in a phone browser.
-- **Real people's data.** Apart from the open, anonymised OSD-569 dataset, every reading is synthetic.
+- **Real people's data.** Apart from the open, anonymised OSD-569 and OSD-575 datasets, every reading is synthetic.
 - **Real sensors** in this version: the data is synthetic (D-005). The ingestion port is ready for them.
 - **An app for the Earth side,** the real DTN protocol and orbital mechanics.
 

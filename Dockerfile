@@ -17,6 +17,7 @@ COPY backend/requirements.lock backend/requirements.lock
 RUN pip install --no-cache-dir -r backend/requirements.lock
 COPY backend/app backend/app
 COPY data/osdr data/osdr
+COPY data/donki data/donki
 COPY --from=web /web/dist web
 # The project website, served by the app at /site/ while the repository is private.
 COPY site web/site

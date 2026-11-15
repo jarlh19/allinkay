@@ -1,9 +1,15 @@
 ALLINKAY
 Copyright 2026 Jorge Laban
 
-This product includes data from the NASA Open Science Data Repository
-(OSD-569, SpaceX Inspiration4 complete blood count), available at
-https://osdr.nasa.gov/bio/repo/data/studies/OSD-569
+This product includes data from the NASA Open Science Data Repository:
+- OSD-569, SpaceX Inspiration4 complete blood count,
+  https://osdr.nasa.gov/bio/repo/data/studies/OSD-569
+- OSD-575, SpaceX Inspiration4 comprehensive metabolic panel,
+  https://osdr.nasa.gov/bio/repo/data/studies/OSD-575
+
+We acknowledge the Community Coordinated Modeling Center (CCMC) at Goddard Space
+Flight Center for the use of the Space Weather Database Of Notifications, Knowledge,
+Information (DONKI), https://ccmc.gsfc.nasa.gov/tools/DONKI/ (files in data/donki).
 
 The 3D body (frontend/public/models/anatomy.glb) is adapted from BodyParts3D:
 "BodyParts3D, © The Database Center for Life Science licensed under CC Attribution

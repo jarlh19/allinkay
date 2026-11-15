@@ -43,7 +43,7 @@ const en = {
 
   "row.outside": "Outside your normal ({low}–{high})",
   "row.normal": "Your normal: {low}–{high}",
-  "row.wbcSource": "Your normal: real NASA data (OSD-569)",
+  "row.nasaSource": "Your normal: real NASA data ({study})",
   "row.repeat": "Unusual result: repeat this exam tomorrow to confirm it",
   "row.last24": "last 24 readings",
 
@@ -119,6 +119,8 @@ const en = {
   "radiation.stormNone": "✓ No alert",
   "radiation.stormActive": "✕ Active · {dose} mSv in this event",
   "radiation.eventLimit": "Event limit: {limit} mSv. If an alert comes, open the action guide.",
+  "radiation.reference":
+    "Reference event ({source}): solar flare {flare} on {date} at {time} UTC; protons reached Earth orbit {hours} h later ({instrument}). The demo storm is synthetic in size.",
   "radiation.organs": "Organs at risk",
   "radiation.footer": "NASA-STD-3001 limits: {career} mSv for a whole career and {event} mSv per solar event. Estimated risk from the dose, not a diagnosis.",
   "organ.central_nervous_system": "Central nervous system",
@@ -219,7 +221,7 @@ const es: Record<MessageKey, string> = {
 
   "row.outside": "Fuera de tu normal ({low}–{high})",
   "row.normal": "Tu normal: {low}–{high}",
-  "row.wbcSource": "Tu normal: datos reales de la NASA (OSD-569)",
+  "row.nasaSource": "Tu normal: datos reales de la NASA ({study})",
   "row.repeat": "Resultado inusual: repite este examen mañana para confirmarlo",
   "row.last24": "últimas 24 lecturas",
 
@@ -295,6 +297,8 @@ const es: Record<MessageKey, string> = {
   "radiation.stormNone": "✓ Sin alerta",
   "radiation.stormActive": "✕ Activa · {dose} mSv en este evento",
   "radiation.eventLimit": "Límite por evento: {limit} mSv. Si llega una alerta, abre la guía de acción.",
+  "radiation.reference":
+    "Evento de referencia ({source}): erupción solar {flare} el {date} a las {time} UTC; los protones llegaron a la órbita de la Tierra {hours} h después ({instrument}). El tamaño de la tormenta de la demo es simulado.",
   "radiation.organs": "Órganos en riesgo",
   "radiation.footer": "Límites del estándar NASA-STD-3001: {career} mSv en toda la carrera y {event} mSv por evento solar. Riesgo estimado según la dosis, no es un diagnóstico.",
   "organ.central_nervous_system": "Sistema nervioso central",

@@ -210,3 +210,17 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - The suit as a translucent shell over the skin: the suit's arms are bent outwards and the body's hang straight, so the two never line up.
   - The Advanced Crew Escape Suit from the same collection: it is worn for launch and landing, not for work outside.
 - **Trade-off:** the EMU is the suit used for spacewalks from the International Space Station, not a Mars surface suit; it is the closest suit NASA publishes as a 3D model.
+
+## D-017 · Two more open NASA sources: the commander's glucose and the storm's real reference event
+
+- **Problem:** the judging asks for NASA data at the centre of the project. Apart from the white blood cells (OSD-569), the commander's lab normals and the solar storm were synthetic, and the storm had no link to anything that really happened.
+- **Chosen:**
+  - **Glucose from OSD-575.** The commander's glucose normal is the mean of the same three pre-flight draws of Inspiration4 crew member C001 (83, 80 and 69 mg/dL), with the published variation as its spread, exactly as for white blood cells. The simulator centres glucose on that mean (77.33 mg/dL instead of 92), as it already did for white blood cells. The screen names the study behind each normal.
+  - **The storm's reference event from NASA DONKI.** The demo storm names the real event it refers to: the X5.4 flare of 7 March 2012 and the protons above 100 MeV that reached GOES-13 3.7 hours later (`2012-03-07T04:05:00-SEP-001`). Curiosity's RAD recorded 19.5 mSv over that storm on its way to Mars (Guo et al., 2015). The screen says that the size of the demo storm is synthetic.
+  - Both sources are files in the repository (`data/osdr`, `data/donki`), read from disk, so the app needs no internet on board.
+  - Measured again with `validate_model.py` after the change: in the ship 5 false alarms in 60 astronaut-years (it was 6), in the field 0, and 5 of 1200 scripted changes missed. The targets of D-011 are still met.
+- **Set aside:**
+  - The dose that RAD measured hour by hour during the cruise (NASA PDS): about 230 MB for the 10 days of that storm and a reader for its format. It is the next step to replace the synthetic dose.
+  - Calling DONKI live: the app must work without a connection, and the demo key of api.nasa.gov runs out quickly on a shared network.
+  - Glucose after the flight: at R+45, three of the four crew members are below the lab's range (36 to 44 mg/dL) for a reason the data does not explain.
+  - In-flight vital signs (heart rate, sleep, cognition): NASA keeps them restricted (LSDA, TRISH EXPAND), so they cannot be used here.

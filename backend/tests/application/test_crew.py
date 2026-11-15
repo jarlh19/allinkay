@@ -8,6 +8,7 @@ from app.config import Settings
 from app.container import Container
 from app.domain.crew import CrewMember, UnknownCrewMemberError
 from app.domain.modes import Mode
+from app.domain.readings import Reading
 from app.main import create_app
 
 NOW = datetime(2026, 11, 14, 12, 0, tzinfo=UTC)
@@ -164,3 +165,39 @@ def test_the_deployed_demo_advances_exactly_one_step_per_tick() -> None:
     ticks = [container.clock() for _ in range(3)]
 
     assert ticks == [DEMO.start + timedelta(hours=n) for n in range(3)]
+
+
+def lab_sources(container: Container, crew_id: str) -> dict[str, str]:
+    """The source of each lab normal, as the screen receives it after one exam of each."""
+    evaluate = container.crew.get(crew_id).mission.evaluate
+    evaluate.on_readings(
+        [
+            Reading.create("white_blood_cells", 6.0, NOW, "test"),
+            Reading.create("glucose", 78, NOW, "test"),
+        ]
+    )
+    return {d["signal"]: d["baseline_source"] for d in evaluate.view()["deviations"]}
+
+
+def test_the_commander_lab_normals_come_from_open_nasa_data() -> None:
+    container = quiet_container()
+
+    commander = lab_sources(container, "commander")
+    assert commander["white_blood_cells"].startswith("NASA OSDR OSD-569 (C001")
+    assert commander["glucose"].startswith("NASA OSDR OSD-575 (C001")
+    engineer = lab_sources(container, "engineer")
+    assert not engineer["glucose"].startswith("NASA OSDR")
+
+
+def test_only_the_demo_storm_names_its_real_reference_event() -> None:
+    demo = Container.build(
+        Settings(db_path=":memory:", run_live_loop=False), clock=lambda: NOW, scenario=DEMO
+    )
+    for slot in demo.crew:
+        reference = slot.mission.radiation.view()["storm_reference"]
+        assert reference["sep_id"] == "2012-03-07T04:05:00-SEP-001"
+        assert reference["flare_class"] == "X5.4"
+
+    assert (
+        quiet_container().crew.get("commander").mission.radiation.view()["storm_reference"] is None
+    )
