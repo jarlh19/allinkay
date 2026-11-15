@@ -74,4 +74,6 @@ jobs:
           done
           curl --silent --fail http://localhost:10000/health
           curl --silent --fail http://localhost:10000/ | grep -q '<div id="root">'
+          curl --silent --fail http://localhost:10000/site/ | grep -q 'Your normal, on'
+          curl --silent --fail --output /dev/null http://localhost:10000/site/images/screen.jpg
           docker logs allinkay
