@@ -87,6 +87,16 @@ export function MissionView({ state, crewId, onCrew, onMode }: Props) {
           <span className="mission-place">{t(mode === "field" ? "mode.field" : "mode.ship")}</span>
           <span className="pill">{t("pill.earth", { delay: MARS_MAX_DELAY_MIN })}</span>
           <span className="pill">{t("pill.simulated")}</span>
+          <a
+            className="lang site-link"
+            href="/site/"
+            target="_blank"
+            rel="noopener"
+            aria-label={`${t("site.open")} ${t("site.newTab")}`}
+          >
+            {t("site.open")}
+            <span aria-hidden="true">&nbsp;↗</span>
+          </a>
           <button type="button" className="lang" onClick={() => setReporting(true)}>
             {t("report.open")}
           </button>
