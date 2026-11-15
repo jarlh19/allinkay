@@ -43,6 +43,7 @@
   --warn: #e3a33b;
   --crit: #ef5b5b;
   --rad: #b392f0;
+  --holo: #45d4ff;
   --sans: "IBM Plex Sans", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
 }
@@ -66,11 +67,9 @@ button { font: inherit; color: inherit; }
 .crew-name { font-weight: 600; font-size: 14px; }
 .crew-place { font-family: var(--mono); font-size: 12px; color: var(--text-3); }
 
-.layout { display: grid; grid-template-columns: 260px minmax(0, 1fr) minmax(0, 420px); gap: 16px; align-items: start; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; }
-.panel.focus { border-color: var(--accent); }
 .panel h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 14px; }
-.body-panel { display: flex; flex-direction: column; position: sticky; top: 16px; }
+.body-panel { display: flex; flex-direction: column; }
 
 .status { font-family: var(--mono); font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; white-space: nowrap; letter-spacing: 0; text-transform: none; }
 .status.ok { color: var(--ok); background: rgba(63, 182, 139, 0.12); }
@@ -99,7 +98,7 @@ button { font: inherit; color: inherit; }
 .alert p { font-size: 12px; color: var(--text-2); line-height: 1.5; }
 .alert a { color: var(--accent); }
 
-.status-column { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 16px; }
+.status-column { display: flex; flex-direction: column; gap: 16px; }
 .crew-card { display: flex; gap: 14px; align-items: center; }
 .crew-card h2 { margin: 0 0 2px; font-size: 16px; letter-spacing: 0; text-transform: none; color: var(--text); }
 .avatar { width: 52px; height: 52px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--panel-2); border: 1px solid var(--accent); color: var(--accent); font-family: var(--mono); font-weight: 600; }
@@ -114,21 +113,29 @@ button { font: inherit; color: inherit; }
 .overall-note { text-align: center; }
 
 .ring { position: relative; display: inline-grid; place-items: center; flex: none; }
-.ring svg { width: 100%; height: 100%; }
-.ring circle { fill: none; stroke-width: 3.5; }
+.ring > svg { width: 100%; height: 100%; }
+.ring > svg circle { fill: none; stroke-width: 3.5; }
 .ring-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; font-weight: 600; line-height: 1.15; color: var(--text); text-align: center; }
 
-.body-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, 260px) minmax(0, 1fr); align-items: center; gap: 10px; }
+.body-stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, 260px) minmax(0, 1fr); align-items: center; gap: 10px; }
 .gauges { list-style: none; display: flex; flex-direction: column; gap: 22px; }
 .gauge { position: relative; width: 100%; display: flex; align-items: center; gap: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 30px; padding: 6px 12px 6px 6px; cursor: pointer; color: var(--text); text-align: left; }
-.gauge:hover, .gauge[aria-current="true"] { border-color: var(--accent); }
-.gauge::after { content: ""; position: absolute; top: 50%; width: 14px; border-top: 1px dashed var(--accent); opacity: 0.7; }
-.gauge.left::after { left: 100%; }
-.gauge.right::after { right: 100%; }
-.gauge-text { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
-.gauge-name { font-size: 13px; font-weight: 600; }
-.gauge-summary { font-size: 11px; color: var(--text-3); }
+/* The system's icon sits in the ring, over the percentage. */
+.system-icon { width: 14px; height: 14px; flex: none; margin-bottom: 1px; fill: none; stroke: var(--holo); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .gauge .status { font-size: 11px; padding: 1px 7px; }
+/* Leader lines from each ring to its spot on the 3D body; drawn over the canvas, never over a ring. */
+.leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 1; display: none; }
+.body-stage[data-leaders] .leaders { display: block; }
+.leader { --leader: var(--holo); }
+.leader.warn { --leader: var(--warn); }
+.leader.crit { --leader: var(--crit); }
+.leader polyline { fill: none; stroke: var(--leader); stroke-width: 1; stroke-opacity: 0.55; stroke-dasharray: 3 3; }
+.leader .tip { fill: var(--leader); stroke: var(--bg); stroke-width: 1.5; }
+.leader .tip.halo { fill: none; stroke: var(--leader); stroke-width: 1; opacity: 0; }
+.leader.focused .tip.halo { opacity: 0.6; }
+.leader.focused polyline, .leader.warn polyline, .leader.crit polyline { stroke-opacity: 0.95; stroke-width: 1.5; stroke-dasharray: none; }
+.leader.warn .tip.halo, .leader.crit .tip.halo { animation: leader-pulse 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes leader-pulse { from { opacity: 0.8; transform: scale(0.6); } to { opacity: 0; transform: scale(1.8); } }
 
 .analysis-card h2 { margin-bottom: 10px; }
 .analysis-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
@@ -144,21 +151,32 @@ button { font: inherit; color: inherit; }
 .ring-arc.warn { stroke: var(--warn); }
 .ring-arc.crit { stroke: var(--crit); }
 
-.details { display: flex; flex-direction: column; gap: 8px; }
-.detail-section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
-.detail-section h2 { margin: 0; }
-.detail-section h2 button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: transparent; border: 0; border-radius: 8px; color: var(--text-2); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 14px 16px; cursor: pointer; text-align: left; }
-.detail-section h2 button:hover { color: var(--text); }
-.detail-head-right { display: inline-flex; align-items: center; gap: 12px; }
-.chevron { width: 8px; height: 8px; border-right: 2px solid var(--text-3); border-bottom: 2px solid var(--text-3); transform: rotate(45deg); margin-top: -4px; transition: transform 0.15s ease-out; }
-.detail-section.open .chevron { transform: rotate(-135deg); margin-top: 4px; }
-.detail-body { padding: 0 16px 16px; }
-.details .model-grid, .details .cols3 { grid-template-columns: 1fr; gap: 16px; }
-.details .cols3 > div { padding: 0; border-left: 0; }
+/* A system's detail adapts to its own width: one column beside the hologram or on a phone, the
+   model and radiation side by side when the detail spans two columns under the body. */
+.mission-detail { container: detail / inline-size; }
+.mission-detail .model-grid, .mission-detail .cols3 { grid-template-columns: 1fr; gap: 16px; }
+.mission-detail .cols3 > div { padding: 0; border-left: 0; }
+.mission-detail .model-grid svg { max-width: 560px; }
+@container detail (min-width: 720px) {
+  .mission-detail .model-grid { grid-template-columns: 1.15fr 1fr; gap: 28px; }
+  .mission-detail .cols3 { grid-template-columns: 1.2fr 0.85fr 1.3fr; gap: 0; }
+  .mission-detail .cols3 > div { padding: 0 20px; border-left: 1px solid var(--line); }
+  .mission-detail .cols3 > div:first-child { padding-left: 0; border-left: 0; }
+}
 .figure { flex: 1; display: flex; justify-content: center; align-items: center; margin: 4px 0 16px; }
 .figure svg { width: 100%; max-width: 260px; height: auto; }
+.body-3d { position: relative; width: 100%; max-width: 280px; aspect-ratio: 4 / 5; margin: 0 auto; }
+.body-3d-stage, .body-3d-fallback { position: absolute; inset: 0; display: grid; place-items: center; }
+.body-3d-canvas { width: 100%; height: 100%; display: block;
+  /* The glow fades out before the canvas edge, so the picture has no visible border. */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent), linear-gradient(180deg, transparent, #000 4%, #000 96%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent), linear-gradient(180deg, transparent, #000 4%, #000 96%, transparent);
+  mask-composite: intersect; }
+.body-3d[data-mode="2d"] { aspect-ratio: auto; }
+.body-3d[data-mode="2d"] .body-3d-fallback { position: static; }
 .legend { display: flex; gap: 8px; font-size: 12px; color: var(--text-2); margin-bottom: 14px; }
-.legend i { width: 10px; height: 10px; border-radius: 50%; background: var(--rad); flex: none; margin-top: 3px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--holo); box-shadow: 0 0 6px var(--holo); flex: none; margin-top: 3px; }
 .modes { padding-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .modes button { background: transparent; border: 1px solid var(--line-2); color: var(--text-2); border-radius: 6px; padding: 10px; font-weight: 500; cursor: pointer; }
 .modes button[aria-pressed="true"] { background: var(--panel-2); color: var(--text); border-color: var(--accent); }
@@ -198,31 +216,116 @@ button { font: inherit; color: inherit; }
 .primary:disabled { opacity: 0.6; cursor: wait; }
 .offline { background: rgba(239, 91, 91, 0.12); color: var(--crit); border: 1px solid rgba(239, 91, 91, 0.4); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
 
-@media (max-width: 1360px) {
-  .layout { grid-template-columns: 260px minmax(0, 1fr); }
-  .details { grid-column: 1 / -1; }
-}
-
 @media (max-width: 980px) {
   .body-stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .body-stage .figure { grid-column: 1 / -1; order: -1; }
-  .gauge::after { display: none; }
-}
-
-@media (max-width: 760px) {
-  .layout { grid-template-columns: minmax(0, 1fr); }
-  .body-panel, .status-column { position: static; }
+  .body-stage[data-leaders] .leaders { display: none; }
 }
 
 @media (max-width: 560px) {
   .body-stage { grid-template-columns: minmax(0, 1fr); row-gap: 22px; }
 }
 
-@media (max-width: 1000px) {
-  .cols3, .model-grid { grid-template-columns: 1fr; gap: 16px; }
-  .cols3 > div { padding: 0; border-left: 0; }
-}
-
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
+  .leader .tip.halo { animation: none !important; }
+  .leader.warn .tip.halo, .leader.crit .tip.halo { opacity: 0.6; }
+}
+
+/* Text for screen readers only. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* ---- Mission view: the team's "Mission Health" layout, fed by the same live data ---- */
+.mission-brand h1 { font-weight: 400; letter-spacing: 0.04em; font-size: 26px; }
+.mission-brand h1 b { color: var(--holo); font-style: italic; font-weight: 600; }
+.mission-brand p { font-size: 13px; color: var(--text-2); }
+.mission-day { font-weight: 600; letter-spacing: 0.05em; color: var(--text); }
+.mission-place { color: var(--text-2); padding-left: 12px; border-left: 1px solid var(--line-2); }
+.mission .panel {
+  background: linear-gradient(180deg, rgba(22, 36, 49, 0.92), rgba(14, 22, 30, 0.92));
+  border: 1px solid rgba(69, 212, 255, 0.24);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgba(69, 212, 255, 0.04), 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 24px rgba(69, 212, 255, 0.06);
+}
+.mission-grid { display: grid; grid-template-columns: 270px minmax(0, 1fr) 400px; gap: 18px; align-items: start; }
+.mission-side { display: flex; flex-direction: column; gap: 16px; }
+.mission-detail h2 { gap: 10px; }
+.mission-detail-head { display: inline-flex; align-items: center; gap: 8px; }
+.mission-detail .close { background: none; border: 1px solid var(--line-2); border-radius: 50%; width: 26px; height: 26px; color: var(--text-2); cursor: pointer; line-height: 1; }
+.mission-detail .close:hover { border-color: var(--holo); color: var(--text); }
+.mission-detail > .link { margin-top: 12px; }
+.mission-body .body-stage { grid-template-columns: minmax(0, 1fr) minmax(240px, 440px) minmax(0, 1fr); gap: 6px; }
+.mission-body .body-3d { max-width: 440px; }
+/* No panel behind the body here, so the glow fades out well before the canvas edge. */
+.mission-body .body-3d-canvas {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent), linear-gradient(180deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent), linear-gradient(180deg, transparent, #000 6%, #000 94%, transparent);
+}
+.mission-body .gauges { gap: 18px; }
+.mission-body .legend { justify-content: center; margin: 4px auto 10px; max-width: 640px; }
+.mission-body .modes { max-width: 420px; width: 100%; margin: 0 auto; }
+.mission-body .gauges.left { align-items: flex-end; }
+.mission-body .gauges.right { align-items: flex-start; }
+/* The middle bubbles sit further out, so the six draw an arc around the body. */
+.mission-body .gauges.left li:nth-child(2) { transform: translateX(-26px); }
+.mission-body .gauges.right li:nth-child(2) { transform: translateX(26px); }
+.gauge.bubble {
+  width: 166px; height: 166px; border-radius: 50%; flex-direction: column; justify-content: center; gap: 6px; padding: 12px;
+  text-align: center;
+  background: radial-gradient(circle at 50% 38%, rgba(69, 212, 255, 0.1), rgba(14, 22, 30, 0.94) 70%);
+  border: 1px solid rgba(69, 212, 255, 0.34);
+  box-shadow: inset 0 0 18px rgba(69, 212, 255, 0.12), 0 0 16px rgba(69, 212, 255, 0.1);
+}
+.gauge.bubble:hover { border-color: var(--holo); }
+.gauge.bubble[aria-current="true"] { border-color: var(--holo); box-shadow: inset 0 0 22px rgba(69, 212, 255, 0.22), 0 0 22px rgba(69, 212, 255, 0.3); }
+.gauge.bubble::after { display: none; }
+.bubble-name { display: flex; align-items: center; justify-content: center; gap: 6px; max-width: 136px; font-size: 11px; font-weight: 600; line-height: 1.2; letter-spacing: 0.05em; text-transform: uppercase; }
+.bubble-name .system-icon { width: 20px; height: 20px; }
+.bubble .ring-label { font-size: 15px; }
+.bubble .ring-label small { font-size: 9px; font-weight: 500; color: var(--text-2); }
+.bubble .status { font-size: 10px; padding: 0 6px; }
+.trend-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.trend-list li {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; grid-template-areas: "icon text value" "line line line";
+  align-items: center; column-gap: 8px; row-gap: 4px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: rgba(14, 22, 30, 0.6);
+}
+.trend-list .system-icon { grid-area: icon; width: 20px; height: 20px; }
+.trend-text { grid-area: text; display: flex; flex-direction: column; min-width: 0; }
+.trend-name { font-size: 13px; font-weight: 600; }
+.trend-note { font-size: 11px; color: var(--text-3); }
+.trend-value { grid-area: value; font-family: var(--mono); font-size: 15px; font-weight: 500; }
+.trend-value small { font-size: 10px; color: var(--text-2); }
+.sparkline { grid-area: line; width: 100%; height: 34px; overflow: visible; }
+.sparkline polyline { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sparkline.pulse polyline { stroke: var(--holo); filter: drop-shadow(0 0 3px rgba(69, 212, 255, 0.6)); }
+.sparkline.pulse circle { fill: var(--holo); }
+.sparkline.sleep polyline { stroke: #9a83e6; filter: drop-shadow(0 0 3px rgba(154, 131, 230, 0.55)); }
+.sparkline.sleep circle { fill: #b9a8ff; }
+
+/* Below 1500 px the bubbles need the whole width: the body goes first, the cards in a row below. */
+@media (max-width: 1499px) {
+  .mission-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mission-grid > .mission-body { grid-column: 1 / -1; order: -1; }
+  .mission-side { display: contents; }
+  /* A selected system's detail takes two of the three columns below the body. */
+  .mission-detail { grid-column: span 2; }
+}
+/* Below 981 px the body goes on top and the bubbles below it, in two columns. The mission rule
+   above is more specific than the generic one, so it is repeated here. */
+@media (max-width: 980px) {
+  .mission-body .body-stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .mission-body .gauges.left, .mission-body .gauges.right { align-items: center; }
+  .mission-body .gauges.left li:nth-child(2), .mission-body .gauges.right li:nth-child(2) { transform: none; }
+}
+@media (max-width: 760px) {
+  .mission-grid { grid-template-columns: minmax(0, 1fr); }
+}
+/* On a phone the two columns stay, with bubbles that shrink to fit the narrowest screens, and the
+   header labels may wrap. */
+@media (max-width: 560px) {
+  .top-right .pill { white-space: normal; max-width: 100%; }
+  .gauge.bubble { width: min(150px, 42vw); height: min(150px, 42vw); padding: 8px; gap: 4px; }
+  .bubble-name { font-size: 10px; max-width: 100%; }
+  .bubble-name .system-icon { width: 16px; height: 16px; }
 }

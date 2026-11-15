@@ -1,16 +1,25 @@
+import { useCallback, useMemo, useRef, useState } from "react";
+
 import type { SystemStatus } from "../api/liveState";
 import type { Evaluation, Mode, Radiation, System } from "../api/types";
 import { useI18n } from "../i18n/i18n";
 import { Ring } from "./Ring";
 import { systemKey } from "./signals";
 import { StatusChip } from "./StatusChip";
+import { SystemIcon } from "./SystemIcon";
+import { Body3D } from "./body3d/Body3D";
+import type { Anchors, BodyPick, BodyStatuses } from "./body3d/BodyScene";
+import { ZONE_SYSTEM } from "./body3d/zones";
+import { leaderPath } from "./leaders";
 import { inNormal, targetShare, targetStatus, type Target } from "./statusSummary";
 
-/** Rings on each side of the figure, top to bottom in the order of the zone they point to. */
+/** Bubbles on each side of the figure, top to bottom in the order of the zone they point to. */
 const LEFT: Target[] = ["neurological", "model", "immune"];
 const RIGHT: Target[] = ["cardiovascular", "radiation", "environment"];
 
 const COLOR: Record<SystemStatus, string> = { ok: "#6fa3d8", warn: "#e3a33b", crit: "#ef5b5b" };
+/** The page colour (`--bg`): there is no panel behind the body. */
+const PAGE_BACKGROUND = 0x0e141b;
 
 interface Props {
   evaluation: Evaluation | null;
@@ -18,13 +27,65 @@ interface Props {
   focused: Target | null;
   onFocus: (target: Target) => void;
   onMode: (mode: Mode) => void;
+  /** Latest heart rate, shown in the cardiovascular bubble. */
+  heartRate?: number | null;
 }
 
-export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: Props) {
+/**
+ * The hologram with the six systems as bubbles around it, joined to their spot on the body by
+ * leader lines, with the legend and the ship / field switch below.
+ */
+export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode, heartRate = null }: Props) {
   const { t } = useI18n();
   const status = (system: System): SystemStatus => targetStatus(system, evaluation, radiation);
+  const head = status("neurological");
+  const chest = status("cardiovascular");
+  const abdomen = status("immune");
+  const skin = status("radiation");
+  const environment = status("environment");
+  const bodyStatuses = useMemo<BodyStatuses>(
+    () => ({ head, chest, abdomen, radiation: skin, environment }),
+    [head, chest, abdomen, skin, environment],
+  );
+  const onPick = useCallback(
+    (pick: BodyPick) => onFocus(pick === "environment" ? "environment" : ZONE_SYSTEM[pick]),
+    [onFocus],
+  );
 
-  const gauge = (target: Target, side: "left" | "right") => {
+  // Leader lines join each bubble to its spot on the 3D body. They follow the body as it sways,
+  // so they are moved straight in the DOM on every frame instead of through React state.
+  const stage = useRef<HTMLDivElement>(null);
+  const leaders = useRef<SVGSVGElement>(null);
+  const [withLeaders, setWithLeaders] = useState(false);
+  const leadersShown = useRef(false);
+  const onAnchors = useCallback((anchors: Anchors, canvas: HTMLCanvasElement) => {
+    const box = stage.current;
+    const svg = leaders.current;
+    if (!box || !svg) return;
+    if (!leadersShown.current) {
+      leadersShown.current = true;
+      setWithLeaders(true);
+    }
+    // Hidden on narrow screens, where the bubbles sit below the body.
+    if (svg.clientWidth === 0) return;
+    const origin = box.getBoundingClientRect();
+    const view = canvas.getBoundingClientRect();
+    for (const leader of svg.querySelectorAll<SVGGElement>("g[data-target]")) {
+      const target = leader.dataset.target as Target;
+      const spot = anchors[target];
+      const ring = box.querySelector<HTMLElement>(`.gauge[data-target="${target}"]`);
+      if (!spot || !ring) continue;
+      const side = ring.classList.contains("left") ? "left" : "right";
+      const { points, tip } = leaderPath(ring.getBoundingClientRect(), side, origin, view, spot);
+      leader.querySelector("polyline")?.setAttribute("points", points);
+      for (const circle of leader.querySelectorAll("circle.tip")) {
+        circle.setAttribute("cx", String(tip.x));
+        circle.setAttribute("cy", String(tip.y));
+      }
+    }
+  }, []);
+
+  const bubble = (target: Target, side: "left" | "right") => {
     const share = targetShare(target, evaluation, radiation);
     const { n, total } = inNormal(evaluation, target);
     const summary =
@@ -33,23 +94,37 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
         : total === 0
           ? t("summary.waiting")
           : t("summary.inNormal", { n, total });
+    const name = t(target === "model" ? "gauge.model" : systemKey(target));
+    const targetState = targetStatus(target, evaluation, radiation);
+    const beats = target === "cardiovascular" && heartRate !== null ? Math.round(heartRate) : null;
     return (
       <li key={target}>
         <button
           type="button"
-          className={`gauge ${side}`}
+          className={`gauge bubble ${side}`}
+          data-target={target}
           aria-current={focused === target ? "true" : undefined}
-          aria-controls={`panel-${target}`}
           onClick={() => onFocus(target)}
         >
-          <Ring share={share} status={targetStatus(target, evaluation, radiation)} size={52}>
-            {Math.round(share * 100)}%
-          </Ring>
-          <span className="gauge-text">
-            <span className="gauge-name">{t(target === "model" ? "gauge.model" : systemKey(target))}</span>
-            <span className="gauge-summary">{summary}</span>
-            <StatusChip status={targetStatus(target, evaluation, radiation)} />
+          <span className="bubble-name">
+            <SystemIcon target={target} />
+            {name}
           </span>
+          <Ring share={share} status={targetState} size={66}>
+            {beats !== null ? (
+              <>
+                {beats}
+                <small>{t("unit.bpm")}</small>
+              </>
+            ) : (
+              `${Math.round(share * 100)}%`
+            )}
+          </Ring>
+          <span className="sr-only">
+            {beats !== null ? `${beats} ${t("unit.bpm")}. ` : ""}
+            {summary}
+          </span>
+          <StatusChip status={targetState} />
         </button>
       </li>
     );
@@ -58,11 +133,20 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
   const radFocus = focused === "radiation";
 
   return (
-    <section className="panel body-panel" aria-labelledby="body-title">
-      <h2 id="body-title">{t("body.figureTitle")}</h2>
-      <div className="body-stage">
-      <ul className="gauges left">{LEFT.map((target) => gauge(target, "left"))}</ul>
+    <section className="body-panel mission-body" aria-labelledby="body-title">
+      <h2 id="body-title" className="sr-only">
+        {t("body.figureTitle")}
+      </h2>
+      <div className="body-stage" ref={stage} data-leaders={withLeaders ? "" : undefined}>
+      <ul className="gauges left">{LEFT.map((target) => bubble(target, "left"))}</ul>
       <div className="figure">
+        <Body3D
+          statuses={bodyStatuses}
+          label={t("body.legend")}
+          onPick={onPick}
+          onAnchors={onAnchors}
+          background={PAGE_BACKGROUND}
+        >
         <svg viewBox="0 0 300 330" role="img" aria-label={t("body.legend")}>
           <circle cx="150" cy="165" r="146" fill="none" stroke="#233041" strokeWidth="2" strokeDasharray="2 9" />
           <g
@@ -100,8 +184,22 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
             <circle cx="166" cy="252" r={radFocus ? 7 : 5} />
           </g>
         </svg>
+        </Body3D>
       </div>
-      <ul className="gauges right">{RIGHT.map((target) => gauge(target, "right"))}</ul>
+      <ul className="gauges right">{RIGHT.map((target) => bubble(target, "right"))}</ul>
+      <svg className="leaders" ref={leaders} aria-hidden="true">
+        {[...LEFT, ...RIGHT].map((target) => (
+          <g
+            key={target}
+            data-target={target}
+            className={`leader ${targetStatus(target, evaluation, radiation)}${focused === target ? " focused" : ""}`}
+          >
+            <polyline />
+            <circle className="tip halo" r="7" />
+            <circle className="tip" r="3" />
+          </g>
+        ))}
+      </svg>
       </div>
       <p className="legend">
         <i />

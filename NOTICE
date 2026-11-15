@@ -4,3 +4,12 @@ Copyright 2026 Jorge Laban
 This product includes data from the NASA Open Science Data Repository
 (OSD-569, SpaceX Inspiration4 complete blood count), available at
 https://osdr.nasa.gov/bio/repo/data/studies/OSD-569
+
+The 3D body (frontend/public/models/anatomy.glb) is adapted from BodyParts3D:
+"BodyParts3D, © The Database Center for Life Science licensed under CC Attribution
+4.0 International" (https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html).
+Changes: parts merged into skin, skeleton, brain, heart and airways; meshes
+simplified; moved to the panel's frame; the front of the pelvis flattened; body
+zones and pointer spots added. The OBJ headers of the source files still quote the
+database's earlier licence (CC BY-SA 2.1 Japan); the database's licence page now
+states CC BY 4.0. Built by scripts/build_anatomy.py.

@@ -151,3 +151,49 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - The guiding principle is ALARA ("as low as reasonably achievable", [V1 4029]).
 - **Set aside:** an "approaching the limit" alert at, for example, 90%. The standard gives no such threshold, and the panel already projects the days left at the current rate.
 - **Why:** a broken requirement deserves the emergency path, and every number in an alert should come from a source.
+
+## D-013 · The 3D body is a hologram of a real anatomy atlas
+
+- **Problem:** the team's reference for the central figure is a see-through "medical hologram" with the skeleton and organs inside. The first 3D body was a smooth mannequin with coloured blocks on it: it read as clothing, not as health.
+- **Chosen:**
+  - One model for the skin, skeleton, brain, heart and airways, all from the same body in the BodyParts3D atlas (CC BY 4.0, see NOTICE). Every part sits exactly inside the skin, and the pose (arms at the sides) is the one of the reference.
+  - A hologram look: cyan, see-through faces, a bright outline, scan lines, a rising sweep, a glow (bloom) and a lit pedestal.
+  - Status colour only where there is an alert: a zone, the brain or the heart turns amber or red; the outline of the skin shows radiation, and the pedestal shows the environment.
+  - The healthy heart stays pale, not red, because red means critical everywhere else on the panel.
+  - Body zones come from the nearest bone, baked into the model, so clicks and colours follow the real arms and legs.
+  - `scripts/build_anatomy.py` rebuilds the model from the official download.
+- **Set aside:**
+  - Keeping the mannequin and drawing organs as spheres: it stayed far from the reference.
+  - Anatomy models from 3D marketplaces: most are paid or have no open licence.
+  - Fitting an atlas skeleton inside the old mannequin: its arms were in a different pose.
+  - Unity: a second engine a day before the deadline. It remains an idea for a later VR or AR version.
+- **Cost:** the model is about 2 MB, loaded only when the 3D body is shown. Devices without WebGL keep the 2D figure.
+
+## D-014 · A mission view with the team's "Mission Health" layout, and only real values
+
+- **Problem:** the team's "Mission Health" design shows indicators the app does not measure (mental health, bone health, muscle mass, an "integral health" score, a 7-day trend for every signal) and an AI analysis text, with a photo of a person and a painted background.
+- **Chosen:** a second view inside the app (`#mission`), fed by the same live data as the panel.
+  - The six bubbles are the panel's six systems, with real values. The cardiovascular one shows the latest heart rate in beats per minute.
+  - "Estado general" is the share of signals inside the person's normal, as on the panel.
+  - The trend card shows only the series the app keeps: the last heart rate readings and the last nights of sleep. Its labels say how many values each has.
+  - The analysis is the model's own reading of confirmed changes, under its real name.
+  - The body is the 3D hologram (D-013), and the crew member is shown by the initial of their role.
+  - Selecting a bubble or a part of the body keeps the view and shows that system's detail beside the hologram, the same detail as the panel's section. A link opens it in the full panel.
+- **Set aside:**
+  - Inventing values or formulas for what is not measured.
+  - Using the design's photo and background: their origin is unknown, and the repository will be public.
+  - Replacing the panel: the detail of each system lives there.
+
+## D-015 · One screen: the mission view replaces the panel
+
+- **Problem:** two views showed the same live data. Once the mission view could show a system's detail beside the hologram, the panel only added the same detail laid out differently, and a judge or tester could land on either.
+- **Chosen:** the mission view (D-014) is the app's only screen, at the main address.
+  - Moved into it from the panel:
+    - the ship / field switch and the legend, under the hologram;
+    - "Report a problem" and the "Earth link: up to 22 min delay" label, in the header;
+    - the actions (action guide and mitigation routine), in their own card.
+  - Emergency and connection notices stay at the top.
+  - A system's detail opens beside the hologram when its bubble or its part of the body is selected; it is the same detail the panel's section had.
+  - The side column is 400 px wide, so the model's detail fits.
+- **Set aside:** keeping both views. Both would need maintaining and testing, and the video, the judges and the testers should all see the same screen.
+- **Trade-off:** the panel opened by itself every section with an alert. Here the alerting bubbles and the model's analysis show what needs attention, emergencies show at the top, and the detail opens on demand.
