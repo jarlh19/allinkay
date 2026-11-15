@@ -1,39 +1,34 @@
 import {
-  AdditiveBlending,
-  Box3,
   BufferAttribute,
-  BufferGeometry,
+  type BufferGeometry,
   CanvasTexture,
-  CircleGeometry,
   Color,
   DirectionalLight,
-  DoubleSide,
   Group,
   HemisphereLight,
-  Matrix4,
   Mesh,
-  MeshBasicMaterial,
-  MeshPhysicalMaterial,
+  NoToneMapping,
   PerspectiveCamera,
   Raycaster,
-  RingGeometry,
   Scene,
-  type Texture,
-  SphereGeometry,
-  Sprite,
-  SpriteMaterial,
+  type ShaderMaterial,
   SRGBColorSpace,
-  NeutralToneMapping,
   Vector2,
   Vector3,
   WebGLRenderer,
 } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
 import type { SystemStatus } from "../../api/liveState";
-import { loopSubdivide, type TriangleMesh } from "./subdivide";
-import { ZONES, zoneWeights, type Zone } from "./zones";
+import { Anatomy } from "./anatomy";
+import { skinGeometry, zoneData } from "./bodyGeometry";
+import { HOLO_CYAN, STATUS_COLOR, hologramMaterial, setHoloColor } from "./hologram";
+import { Pedestal } from "./pedestal";
+import { ZONES, type Zone } from "./zones";
 
 export interface BodyStatuses {
   head: SystemStatus;
@@ -51,163 +46,35 @@ export type AnchorTarget = "neurological" | "cardiovascular" | "model" | "immune
 /** Where each ring points to, in canvas pixels, refreshed on every frame as the body sways. */
 export type Anchors = Partial<Record<AnchorTarget, { x: number; y: number }>>;
 
-/** Anchor spots as fractions of the body height: x to the viewer's right, y up, z towards them. */
-const ANCHOR_SPOTS: Record<AnchorTarget, [number, number, number]> = {
-  neurological: [0, 0.94, 0.02],
-  cardiovascular: [0.03, 0.735, 0.04],
-  model: [0, 0.665, 0.065],
-  immune: [0, 0.575, 0.07],
-  radiation: [0.19, 0.64, 0],
-  environment: [0.215, 0, 0.07],
-};
-const ANCHOR_TARGETS = Object.keys(ANCHOR_SPOTS) as AnchorTarget[];
+type BodyTarget = Exclude<AnchorTarget, "environment">;
+type Spot = [number, number, number];
 
 /**
- * The heart and the brain glow inside the glass with the colour of their system's status:
- * a pale blue light when usual (the "ok" family), amber or red with an alert.
+ * Anchor spots on the body as fractions of its height: x to the viewer's right, y up from the soles,
+ * z towards the viewer. The anatomy model brings its own, measured on its organs and bones; these
+ * are the same values, in case a model comes without them.
  */
-const ORGAN_OK = 0xcfe6ff;
-/** Organ shapes as scale factors of a sphere: the heart a little taller, the brain wider than tall. */
-const HEART_SHAPE: [number, number, number] = [1, 1.2, 0.9];
-const BRAIN_SHAPE: [number, number, number] = [1.15, 0.8, 1.1];
-/** About 66 beats a minute. */
-const HEART_BEAT_HZ = 1.1;
-
-/** Glass tints per zone, close to the team's reference: lavender head, blue chest, teal abdomen. */
-const ZONE_COLOR: Record<Zone, number> = {
-  head: 0xa9a3f2,
-  chest: 0x6fa3e8,
-  abdomen: 0x5cc9b6,
-  arms: 0x9488e0,
-  legs: 0x8f84dc,
+const BODY_SPOTS: Record<BodyTarget, Spot> = {
+  neurological: [0.0001, 0.9455, -0.0122],
+  cardiovascular: [0.0129, 0.7631, 0.0132],
+  model: [-0.015, 0.7174, 0.0501],
+  immune: [-0.015, 0.6126, 0.0426],
+  radiation: [0.1166, 0.644, -0.0174],
 };
-const STATUS_COLOR: Record<SystemStatus, number> = { ok: 0x6fa3d8, warn: 0xe3a33b, crit: 0xef5b5b };
-const RADIATION_GLOW = 0xb392f0;
-/** Two Loop passes turn the 1.8k-triangle base mesh into a smooth 29k-triangle body. */
-const SUBDIVISIONS = 2;
+const BODY_TARGETS = Object.keys(BODY_SPOTS) as BodyTarget[];
+/** Height where the chest turns into the abdomen, if the model does not say. */
+const CHEST_FROM = 0.7224;
 
-/** Light at the silhouette, shared by every zone: the skin glow that shows radiation. */
-interface Rim {
-  color: { value: Color };
-  strength: { value: number };
+/** What the anatomy model stores in its scene extras. */
+interface ModelExtras {
+  chestFrom?: number;
+  anchors?: Partial<Record<BodyTarget, Spot>>;
 }
 
-/** Turns the raw mesh into a smooth, upright body facing the camera, feet at y = 0. */
-function prepareGeometry(source: BufferGeometry, world: Matrix4): BufferGeometry {
-  let geometry = new BufferGeometry();
-  geometry.setAttribute("position", source.getAttribute("position").clone());
-  if (source.index) geometry.setIndex(source.index.clone());
-  geometry.applyMatrix4(world);
-
-  geometry.computeBoundingBox();
-  const size = new Vector3();
-  geometry.boundingBox?.getSize(size);
-  // The width (arms apart) goes along x, so the body faces the camera on +z.
-  if (size.z > size.x) geometry.rotateY(-Math.PI / 2);
-
-  // The feet point forward: make sure that is towards the camera.
-  geometry.computeBoundingBox();
-  const box = geometry.boundingBox ?? new Box3();
-  const positions = geometry.getAttribute("position");
-  const footLevel = box.min.y + (box.max.y - box.min.y) * 0.04;
-  let footZ = 0;
-  let feet = 0;
-  for (let i = 0; i < positions.count; i++) {
-    if (positions.getY(i) <= footLevel) {
-      footZ += positions.getZ(i);
-      feet++;
-    }
-  }
-  const centerZ = (box.min.z + box.max.z) / 2;
-  if (feet > 0 && footZ / feet < centerZ) geometry.rotateY(Math.PI);
-
-  // UV seams split vertices; welding them lets subdivision and normals run across the surface.
-  geometry = mergeVertices(geometry, 1e-4);
-  const index = geometry.getIndex();
-  if (!index) throw new Error("The body model has no indexed geometry");
-  let mesh: TriangleMesh = {
-    positions: Float32Array.from(geometry.getAttribute("position").array),
-    indices: Uint32Array.from(index.array),
-  };
-  for (let pass = 0; pass < SUBDIVISIONS; pass++) mesh = loopSubdivide(mesh);
-  const smooth = new BufferGeometry();
-  smooth.setAttribute("position", new BufferAttribute(mesh.positions, 3));
-  smooth.setIndex(new BufferAttribute(mesh.indices, 1));
-
-  smooth.computeBoundingBox();
-  const fitted = smooth.boundingBox ?? new Box3();
-  const center = new Vector3();
-  fitted.getCenter(center);
-  smooth.translate(-center.x, -fitted.min.y, -center.z);
-  smooth.computeVertexNormals();
-  smooth.computeBoundingBox();
-  return smooth;
-}
-
-/** Each vertex's share of every zone (ZONES order) and the zone it mostly belongs to. */
-function zoneData(geometry: BufferGeometry): { weights: Float32Array; dominant: Zone[] } {
-  const positions = geometry.getAttribute("position");
-  const box = geometry.boundingBox ?? new Box3();
-  const height = box.max.y - box.min.y;
-  const weights = new Float32Array(positions.count * ZONES.length);
-  const dominant: Zone[] = [];
-  for (let v = 0; v < positions.count; v++) {
-    const shares = zoneWeights((positions.getY(v) - box.min.y) / height, Math.abs(positions.getX(v)) / height);
-    weights.set(shares, v * ZONES.length);
-    let best = 0;
-    shares.forEach((share, i) => {
-      if (share > (shares[best] ?? 0)) best = i;
-    });
-    dominant.push(ZONES[best] ?? "legs");
-  }
-  return { weights, dominant };
-}
-
-/**
- * One glass material for the whole body. Zone tints come per vertex, so borders fade smoothly;
- * an `alert` value per vertex makes alerting zones glow with a shared pulse; and a Fresnel rim
- * lights the silhouette (the skin) in the radiation colour.
- */
-function glassBody(rim: Rim, pulse: { value: number }): MeshPhysicalMaterial {
-  const material = new MeshPhysicalMaterial({
-    vertexColors: true,
-    emissive: 0x000000,
-    roughness: 0.18,
-    metalness: 0,
-    clearcoat: 1,
-    clearcoatRoughness: 0.08,
-    transparent: true,
-    opacity: 0.9,
-  });
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.rimColor = rim.color;
-    shader.uniforms.rimStrength = rim.strength;
-    shader.uniforms.pulse = pulse;
-    shader.vertexShader = shader.vertexShader
-      .replace("#include <common>", "#include <common>\nattribute float alert;\nvarying float vAlert;")
-      .replace("#include <color_vertex>", "#include <color_vertex>\nvAlert = alert;");
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        "#include <common>",
-        "#include <common>\nuniform vec3 rimColor;\nuniform float rimStrength;\nuniform float pulse;\nvarying float vAlert;",
-      )
-      .replace(
-        "#include <emissivemap_fragment>",
-        "#include <emissivemap_fragment>\ntotalEmissiveRadiance += vColor.rgb * (0.28 + vAlert * pulse * 1.5);",
-      )
-      .replace(
-        "#include <opaque_fragment>",
-        [
-          "float facing = clamp(abs(dot(normalize(vViewPosition), normal)), 0.0, 1.0);",
-          "float rim = pow(1.0 - facing, 2.4);",
-          "outgoingLight += rimColor * rim * rimStrength;",
-          "diffuseColor.a = max(mix(diffuseColor.a * 0.62, 1.0, rim), vAlert * 0.9);",
-          "#include <opaque_fragment>",
-        ].join("\n"),
-      );
-  };
-  return material;
-}
+/** The panel behind the canvas (`--panel`), so the bloom can work on an opaque picture. */
+const BACKGROUND = 0x141c25;
+/** Glow around bright parts: strength, spread and the brightness where it starts. */
+const BLOOM = { strength: 0.55, radius: 0.2, threshold: 0.3 };
 
 /** A white radial glow that fades to nothing at the edge, tinted by the material colour. */
 function radialGlow(): CanvasTexture {
@@ -227,80 +94,28 @@ function radialGlow(): CanvasTexture {
   return new CanvasTexture(canvas);
 }
 
-/** A glowing organ: a small bright core and a soft halo that always faces the camera. */
-class Organ {
-  private readonly core: Mesh;
-  private readonly coreMaterial: MeshBasicMaterial;
-  private readonly halo: Sprite;
-  private readonly haloMaterial: SpriteMaterial;
-
-  constructor(
-    parent: Group,
-    glowMap: Texture,
-    [x, y, z]: [number, number, number],
-    radius: number,
-    private readonly shape: [number, number, number],
-  ) {
-    // Drawn over the glass, without depth, so the light shows through the body.
-    const light = { transparent: true, blending: AdditiveBlending, depthTest: false, depthWrite: false };
-    this.coreMaterial = new MeshBasicMaterial({ color: ORGAN_OK, ...light });
-    this.core = new Mesh(new SphereGeometry(radius, 24, 16), this.coreMaterial);
-    this.haloMaterial = new SpriteMaterial({ color: ORGAN_OK, map: glowMap, ...light });
-    this.halo = new Sprite(this.haloMaterial);
-    this.halo.scale.setScalar(radius * 5);
-    for (const part of [this.core, this.halo]) {
-      part.position.set(x, y, z);
-      part.renderOrder = 2;
-      parent.add(part);
-    }
-    this.update(1, 0.6, 0.4);
-  }
-
-  setColor(color: number): void {
-    this.coreMaterial.color.set(color);
-    this.haloMaterial.color.set(color);
-  }
-
-  update(swell: number, core: number, halo: number): void {
-    const [sx, sy, sz] = this.shape;
-    this.core.scale.set(sx * swell, sy * swell, sz * swell);
-    this.coreMaterial.opacity = core;
-    this.haloMaterial.opacity = halo;
-  }
-
-  dispose(): void {
-    this.core.geometry.dispose();
-    this.coreMaterial.dispose();
-    this.haloMaterial.dispose();
-  }
-}
-
 export class BodyScene {
   private readonly renderer: WebGLRenderer;
+  private readonly composer: EffectComposer;
+  private readonly bloom: UnrealBloomPass;
   private readonly scene = new Scene();
-  private readonly camera = new PerspectiveCamera(26, 1, 0.1, 50);
+  private readonly camera = new PerspectiveCamera(30, 1, 0.1, 50);
   private readonly figure = new Group();
   private readonly raycaster = new Raycaster();
   private readonly pointer = new Vector2();
-  private readonly rim: Rim = { color: { value: new Color(RADIATION_GLOW) }, strength: { value: 1.4 } };
-  private readonly pulse = { value: 0 };
-  private readonly material: MeshPhysicalMaterial;
-  private readonly platform: MeshBasicMaterial;
-  private readonly platformMesh: Mesh;
-  /** The whole floor inside the ring: a thin ring seen almost edge-on is too hard to click. */
-  private readonly floor: Mesh;
+  private readonly clock = { time: { value: 0 }, pulse: { value: 0 } };
+  private readonly shell: ShaderMaterial;
   private readonly body: Mesh;
-  private readonly height: number;
+  private readonly pedestal: Pedestal;
   private readonly glowMap = radialGlow();
-  private readonly heart: Organ;
-  private readonly brain: Organ;
-  private readonly dashes = new Group();
-  private readonly baseGlow: MeshBasicMaterial;
-  private readonly disposables: { dispose(): void }[] = [];
+  private readonly height: number;
+  private readonly spots: Record<BodyTarget, Spot>;
+  private readonly environmentSpot: [number, number, number];
   private readonly spot = new Vector3();
   private readonly onFrame?: (anchors: Anchors, canvas: HTMLCanvasElement) => void;
   private readonly weights: Float32Array;
   private readonly dominant: Zone[];
+  private readonly anatomy: Anatomy;
   private statuses: BodyStatuses = { head: "ok", chest: "ok", abdomen: "ok", radiation: "ok", environment: "ok" };
   private readonly resizeObserver: ResizeObserver;
   private readonly visibilityObserver: IntersectionObserver;
@@ -310,6 +125,7 @@ export class BodyScene {
   private readonly onClick: (event: MouseEvent) => void;
   private readonly onMove: (event: PointerEvent) => void;
 
+  /** Loads the anatomy model (skin, skeleton and organs of the atlas body) and builds the scene. */
   static async create(
     container: HTMLElement,
     modelUrl: string,
@@ -318,26 +134,26 @@ export class BodyScene {
     onFrame?: (anchors: Anchors, canvas: HTMLCanvasElement) => void,
   ): Promise<BodyScene> {
     const gltf = await new GLTFLoader().loadAsync(modelUrl);
-    gltf.scene.updateMatrixWorld(true);
-    const meshes: Mesh[] = [];
-    gltf.scene.traverse((node) => {
-      if (node instanceof Mesh) meshes.push(node);
-    });
-    const mesh = meshes[0];
-    if (!mesh) throw new Error("The body model has no mesh");
-    const geometry = prepareGeometry(mesh.geometry as BufferGeometry, mesh.matrixWorld);
-    return new BodyScene(container, geometry, onPick, reducedMotion, onFrame);
+    return new BodyScene(container, gltf.scene, onPick, reducedMotion, onFrame);
   }
 
   private constructor(
     private readonly container: HTMLElement,
-    geometry: BufferGeometry,
+    model: Group,
     onPick: (pick: BodyPick) => void,
     private readonly reducedMotion: boolean,
     onFrame?: (anchors: Anchors, canvas: HTMLCanvasElement) => void,
   ) {
     this.onFrame = onFrame;
-    const { weights, dominant } = zoneData(geometry);
+    const skin = model.getObjectByName("skin");
+    if (!(skin instanceof Mesh)) throw new Error("The anatomy model has no skin");
+    const source = skin.geometry as BufferGeometry;
+    const baked = source.getAttribute("color");
+    if (!(baked instanceof BufferAttribute) || baked.itemSize !== 4) throw new Error("The skin has no body zones");
+    const extras = model.userData as ModelExtras;
+    this.spots = { ...BODY_SPOTS, ...extras.anchors };
+    const geometry = skinGeometry(source);
+    const { weights, dominant } = zoneData(geometry, baked, extras.chestFrom ?? CHEST_FROM);
     this.weights = weights;
     this.dominant = dominant;
     const count = geometry.getAttribute("position").count;
@@ -346,77 +162,51 @@ export class BodyScene {
     const height = (geometry.boundingBox?.max.y ?? 1) - (geometry.boundingBox?.min.y ?? 0);
     this.height = height;
 
-    this.renderer = new WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
+    this.renderer = new WebGLRenderer({ antialias: true, powerPreference: "low-power" });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.setClearColor(0x000000, 0);
     this.renderer.outputColorSpace = SRGBColorSpace;
-    this.renderer.toneMapping = NeutralToneMapping;
+    // Bright light should stay the hologram's own colour instead of fading to grey.
+    this.renderer.toneMapping = NoToneMapping;
     this.renderer.domElement.className = "body-3d-canvas";
     container.appendChild(this.renderer.domElement);
+    this.scene.background = new Color(BACKGROUND);
 
-    this.material = glassBody(this.rim, this.pulse);
-    this.body = new Mesh(geometry, this.material);
-    this.figure.add(this.body);
+    // The base the body stands on stands for the ship environment around the person.
+    this.pedestal = new Pedestal(height, this.glowMap, STATUS_COLOR.ok);
+    this.scene.add(this.pedestal.group);
+    this.environmentSpot = [0.2 * height, this.pedestal.top, 0.14 * height];
 
-    this.heart = new Organ(this.figure, this.glowMap, this.at(ANCHOR_SPOTS.cardiovascular), height * 0.02, HEART_SHAPE);
-    this.brain = new Organ(this.figure, this.glowMap, this.at(ANCHOR_SPOTS.neurological), height * 0.024, BRAIN_SHAPE);
-
-    // The ring at the feet stands for the ship environment around the person.
-    this.platform = new MeshBasicMaterial({
-      color: STATUS_COLOR.ok,
-      side: DoubleSide,
-      transparent: true,
-      opacity: 0.45,
-      blending: AdditiveBlending,
-      depthWrite: false,
-    });
-    this.platformMesh = new Mesh(new RingGeometry(height * 0.2, height * 0.235, 96), this.platform);
-    this.platformMesh.rotation.x = -Math.PI / 2;
-    this.platformMesh.position.y = 0.002;
-    this.scene.add(this.platformMesh);
-    this.baseGlow = new MeshBasicMaterial({
-      color: STATUS_COLOR.ok,
-      map: this.glowMap,
-      transparent: true,
-      opacity: 0.5,
-      blending: AdditiveBlending,
-      depthWrite: false,
-    });
-    this.flat(new CircleGeometry(height * 0.3, 64), this.baseGlow, 0.001);
-    this.flat(new RingGeometry(height * 0.12, height * 0.127, 80), this.platform, 0.003);
-    const dashCount = 28;
-    const dashGeometry = new RingGeometry(height * 0.252, height * 0.26, 4, 1, 0, (Math.PI * 2) / dashCount / 2);
-    this.disposables.push(dashGeometry);
-    for (let i = 0; i < dashCount; i++) {
-      const dash = new Mesh(dashGeometry, this.platform);
-      dash.rotation.z = (i * Math.PI * 2) / dashCount;
-      this.dashes.add(dash);
-    }
-    this.dashes.rotation.x = -Math.PI / 2;
-    this.dashes.position.y = 0.003;
-    this.scene.add(this.dashes);
-    this.floor = new Mesh(
-      new CircleGeometry(height * 0.26, 48),
-      new MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+    this.shell = hologramMaterial(
+      { color: HOLO_CYAN, fill: 0.012, rim: 0.85, scan: 0.04, sweep: 0.12, height, base: this.pedestal.top, zones: true },
+      this.clock,
     );
-    this.floor.rotation.x = -Math.PI / 2;
-    this.scene.add(this.floor);
+    this.body = new Mesh(geometry, this.shell);
+    this.figure.add(this.body);
+    this.anatomy = new Anatomy(model, height, this.pedestal.top, this.clock);
+    this.figure.add(this.anatomy.group);
+    this.figure.position.y = this.pedestal.top;
     this.scene.add(this.figure);
 
-    this.scene.add(new HemisphereLight(0xd2e4ff, 0x0b1117, 1.1));
-    const key = new DirectionalLight(0xffffff, 1.6);
+    this.scene.add(new HemisphereLight(0xcfe8ff, 0x05090d, 0.9));
+    const key = new DirectionalLight(0xffffff, 1.4);
     key.position.set(2, 3, 4);
     this.scene.add(key);
-    const rimLight = new DirectionalLight(0x7fb2ff, 2.4);
-    rimLight.position.set(-3, 2.5, -4);
-    this.scene.add(rimLight);
-    const fill = new DirectionalLight(0xb9a8ff, 0.7);
-    fill.position.set(3, 1, -2);
-    this.scene.add(fill);
+    const back = new DirectionalLight(0x6fd4ff, 1.8);
+    back.position.set(-3, 2, -4);
+    this.scene.add(back);
 
-    const distance = (height * 1.18) / 2 / Math.tan((this.camera.fov * Math.PI) / 360);
-    this.camera.position.set(0, height * 0.52, distance);
-    this.camera.lookAt(0, height * 0.5, 0);
+    // A slightly high camera, so the rings on the pedestal read as rings.
+    const center = (this.pedestal.top + height) / 2;
+    const span = (height + this.pedestal.top) * 1.16;
+    const distance = span / 2 / Math.tan((this.camera.fov * Math.PI) / 360);
+    this.camera.position.set(0, center + height * 0.28, distance);
+    this.camera.lookAt(0, center - height * 0.02, 0);
+
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.bloom = new UnrealBloomPass(new Vector2(256, 256), BLOOM.strength, BLOOM.radius, BLOOM.threshold);
+    this.composer.addPass(this.bloom);
+    this.composer.addPass(new OutputPass());
 
     this.onClick = (event) => {
       const pick = this.pick(event);
@@ -451,16 +241,12 @@ export class BodyScene {
     this.renderer.domElement.removeEventListener("click", this.onClick);
     this.renderer.domElement.removeEventListener("pointermove", this.onMove);
     this.body.geometry.dispose();
-    this.platformMesh.geometry.dispose();
-    this.floor.geometry.dispose();
-    (this.floor.material as MeshBasicMaterial).dispose();
-    this.material.dispose();
-    this.platform.dispose();
+    this.shell.dispose();
+    this.pedestal.dispose();
+    this.anatomy.dispose();
     this.glowMap.dispose();
-    this.baseGlow.dispose();
-    this.heart.dispose();
-    this.brain.dispose();
-    for (const item of this.disposables) item.dispose();
+    this.bloom.dispose();
+    this.composer.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
@@ -470,16 +256,12 @@ export class BodyScene {
     return this.statuses.radiation;
   }
 
-  /** Per-vertex tints and alert levels from the statuses; the pulse itself runs in the loop. */
+  /** Only the zones with an alert take a colour; the rest stays the hologram's own cyan. */
   private applyStatuses(): void {
-    const tint = ZONES.map((zone) => {
-      const status = this.statusOf(zone);
-      const base = new Color(ZONE_COLOR[zone]);
-      return status === "ok" ? base : new Color(STATUS_COLOR[status]);
-    });
+    const tint = ZONES.map((zone) => new Color(STATUS_COLOR[this.statusOf(zone)]));
     const level = ZONES.map((zone) => {
       const status = this.statusOf(zone);
-      return status === "ok" ? 0 : status === "warn" ? 0.7 : 1;
+      return status === "ok" ? 0 : status === "warn" ? 0.75 : 1;
     });
     const colors = this.body.geometry.getAttribute("color") as BufferAttribute;
     const alerts = this.body.geometry.getAttribute("alert") as BufferAttribute;
@@ -502,27 +284,11 @@ export class BodyScene {
     }
     colors.needsUpdate = true;
     alerts.needsUpdate = true;
-    // The skin's glow shows radiation: violet when usual, amber or red with an alert.
-    this.rim.color.value.set(this.statuses.radiation === "ok" ? RADIATION_GLOW : STATUS_COLOR[this.statuses.radiation]);
-    this.platform.color.set(STATUS_COLOR[this.statuses.environment]);
-    this.baseGlow.color.set(STATUS_COLOR[this.statuses.environment]);
-    this.heart.setColor(this.statuses.chest === "ok" ? ORGAN_OK : STATUS_COLOR[this.statuses.chest]);
-    this.brain.setColor(this.statuses.head === "ok" ? ORGAN_OK : STATUS_COLOR[this.statuses.head]);
+    // The outline is the skin: it shows radiation, cyan when usual, amber or red with an alert.
+    setHoloColor(this.shell, "uRimColor", this.statuses.radiation === "ok" ? HOLO_CYAN : STATUS_COLOR[this.statuses.radiation]);
+    this.pedestal.setColor(this.statuses.environment === "ok" ? HOLO_CYAN : STATUS_COLOR[this.statuses.environment]);
+    this.anatomy.setStatuses(this.statuses.head, this.statuses.chest);
     this.render(this.elapsed());
-  }
-
-  /** A spot given as fractions of the body height, in scene units. */
-  private at([x, y, z]: [number, number, number]): [number, number, number] {
-    return [x * this.height, y * this.height, z * this.height];
-  }
-
-  /** A flat piece of the base, lying on the floor. */
-  private flat(geometry: BufferGeometry, material: MeshBasicMaterial, lift: number): void {
-    const piece = new Mesh(geometry, material);
-    piece.rotation.x = -Math.PI / 2;
-    piece.position.y = lift;
-    this.disposables.push(geometry);
-    this.scene.add(piece);
   }
 
   /** Projects every anchor spot onto the canvas, after the frame is drawn. */
@@ -530,16 +296,21 @@ export class BodyScene {
     if (!this.onFrame) return;
     const canvas = this.renderer.domElement;
     const anchors: Anchors = {};
-    for (const target of ANCHOR_TARGETS) {
-      this.spot.set(...this.at(ANCHOR_SPOTS[target]));
-      // The ring on the floor stays still; everything else sways with the body.
-      if (target !== "environment") this.spot.applyMatrix4(this.figure.matrixWorld);
+    const toCanvas = (target: AnchorTarget) => {
       this.spot.project(this.camera);
       anchors[target] = {
         x: ((this.spot.x + 1) / 2) * canvas.clientWidth,
         y: ((1 - this.spot.y) / 2) * canvas.clientHeight,
       };
+    };
+    for (const target of BODY_TARGETS) {
+      const [x, y, z] = this.spots[target];
+      // Spots on the body sway with it.
+      this.spot.set(x * this.height, y * this.height, z * this.height).applyMatrix4(this.figure.matrixWorld);
+      toCanvas(target);
     }
+    this.spot.set(...this.environmentSpot);
+    toCanvas("environment");
     this.onFrame(anchors, canvas);
   }
 
@@ -550,7 +321,7 @@ export class BodyScene {
     const face = this.raycaster.intersectObject(this.body, false)[0]?.face;
     const zone = face ? this.dominant[face.a] : undefined;
     if (zone) return zone;
-    return this.raycaster.intersectObject(this.floor, false).length > 0 ? "environment" : null;
+    return this.raycaster.intersectObject(this.pedestal.solid, true).length > 0 ? "environment" : null;
   }
 
   private resize(): void {
@@ -558,6 +329,8 @@ export class BodyScene {
     const height = this.container.clientHeight;
     if (width === 0 || height === 0) return;
     this.renderer.setSize(width, height, false);
+    this.composer.setPixelRatio(this.renderer.getPixelRatio());
+    this.composer.setSize(width, height);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.render(this.elapsed());
@@ -578,17 +351,14 @@ export class BodyScene {
     // A gentle sway keeps the body alive without turning its back on the viewer.
     this.figure.rotation.y = moving ? Math.sin(seconds * 0.35) * 0.35 : 0;
     const wave = moving ? 0.5 + 0.5 * Math.sin(seconds * 3) : 0.5;
-    this.pulse.value = 0.35 + 0.65 * wave;
-    this.rim.strength.value = this.statuses.radiation === "ok" ? 1.4 : 1.8 + 1.6 * wave;
-    // A calm beat as a sign of life, the same with or without an alert: it is not the measured heart
-    // rate, which may be high or low when the heart is out of its normal. An alert only makes it brighter.
-    const beat = moving ? Math.pow(Math.max(0, Math.sin(seconds * Math.PI * 2 * HEART_BEAT_HZ)), 6) : 0;
-    const heartAlert = this.statuses.chest !== "ok";
-    this.heart.update(1 + 0.15 * beat, (heartAlert ? 0.85 : 0.55) + 0.15 * beat, (heartAlert ? 0.45 + 0.35 * wave : 0.3) + 0.25 * beat);
-    const brainAlert = this.statuses.head !== "ok";
-    this.brain.update(1, brainAlert ? 0.8 : 0.45, brainAlert ? 0.35 + 0.4 * wave : 0.22 + 0.08 * wave);
-    this.dashes.rotation.z = moving ? seconds * 0.15 : 0;
-    this.renderer.render(this.scene, this.camera);
+    this.clock.pulse.value = wave;
+    // Without motion the sweep rests at chest height instead of climbing.
+    this.clock.time.value = moving ? seconds : 4.6;
+    const rim = this.shell.uniforms.uRim;
+    if (rim) rim.value = this.statuses.radiation === "ok" ? 0.85 : 1.05 + 0.8 * wave;
+    this.pedestal.update(seconds, moving, this.statuses.environment === "ok" ? 0 : 1);
+    this.anatomy.update(seconds, moving, wave);
+    this.composer.render();
     this.reportAnchors();
   }
 }

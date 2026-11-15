@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { Anchors, BodyPick, BodyScene, BodyStatuses } from "./BodyScene";
 
-const MODEL_URL = "/models/body.glb";
+/** The skin, skeleton and organs of the BodyParts3D atlas body (see NOTICE). */
+const MODEL_URL = "/models/anatomy.glb";
 
 /** WebGL is checked without touching a canvas when the browser has no WebGL at all. */
 export function supportsWebGL(): boolean {

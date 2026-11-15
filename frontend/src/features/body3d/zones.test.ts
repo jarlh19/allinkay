@@ -1,47 +1,43 @@
 import { describe, expect, it } from "vitest";
 
-import { ZONE_SYSTEM, ZONES, zoneOf, zoneWeights } from "./zones";
+import { ZONE_SYSTEM, ZONES, zoneShares } from "./zones";
 
-describe("zoneWeights", () => {
-  const share = (weights: number[], zone: (typeof ZONES)[number]) => weights[ZONES.indexOf(zone)] ?? 0;
+const CHEST_FROM = 0.72;
+const share = (shares: number[], zone: (typeof ZONES)[number]) => shares[ZONES.indexOf(zone)] ?? 0;
+const only = (part: "head" | "arms" | "legs" | "torso") => ({ head: 0, arms: 0, legs: 0, torso: 0, [part]: 1 });
 
-  it("is all one zone well inside it", () => {
-    expect(share(zoneWeights(0.95, 0), "head")).toBeCloseTo(1);
-    expect(share(zoneWeights(0.2, 0.05), "legs")).toBeCloseTo(1);
+describe("zoneShares", () => {
+  it("keeps the head, arms and legs that the anatomy model baked into the skin", () => {
+    expect(share(zoneShares(only("head"), 0.95, CHEST_FROM), "head")).toBeCloseTo(1);
+    expect(share(zoneShares(only("arms"), 0.6, CHEST_FROM), "arms")).toBeCloseTo(1);
+    expect(share(zoneShares(only("legs"), 0.3, CHEST_FROM), "legs")).toBeCloseTo(1);
   });
 
-  it("is shared half and half right on a border, so the colour fades across it", () => {
-    const hip = zoneWeights(0.5, 0.05);
-
-    expect(share(hip, "abdomen")).toBeCloseTo(0.5);
-    expect(share(hip, "legs")).toBeCloseTo(0.5);
+  it("splits the torso into chest above the breastbone's end and abdomen below it", () => {
+    expect(share(zoneShares(only("torso"), 0.8, CHEST_FROM), "chest")).toBeCloseTo(1);
+    expect(share(zoneShares(only("torso"), 0.6, CHEST_FROM), "abdomen")).toBeCloseTo(1);
+    const border = zoneShares(only("torso"), CHEST_FROM, CHEST_FROM);
+    expect(share(border, "chest")).toBeCloseTo(0.5);
+    expect(share(border, "abdomen")).toBeCloseTo(0.5);
   });
 
-  it("changes smoothly and always adds up to one", () => {
-    let previous = share(zoneWeights(0.48, 0.05), "abdomen");
-    for (let h = 0.481; h <= 0.52; h += 0.001) {
-      const weights = zoneWeights(h, 0.05);
-      expect(weights.reduce((sum, w) => sum + w, 0)).toBeCloseTo(1);
-      expect(share(weights, "abdomen")).toBeGreaterThanOrEqual(previous - 1e-9);
-      expect(share(weights, "abdomen") - previous).toBeLessThan(0.1);
-      previous = share(weights, "abdomen");
+  it("changes smoothly across the border and always adds up to one", () => {
+    const mixed = { head: 0, arms: 0.3, legs: 0, torso: 0.7 };
+    let previous = share(zoneShares(mixed, CHEST_FROM - 0.02, CHEST_FROM), "chest");
+    for (let h = CHEST_FROM - 0.02; h <= CHEST_FROM + 0.02; h += 0.001) {
+      const shares = zoneShares(mixed, h, CHEST_FROM);
+      expect(shares.reduce((sum, w) => sum + w, 0)).toBeCloseTo(1);
+      expect(share(shares, "arms")).toBeCloseTo(0.3);
+      expect(share(shares, "chest")).toBeGreaterThanOrEqual(previous - 1e-9);
+      expect(share(shares, "chest") - previous).toBeLessThan(0.1);
+      previous = share(shares, "chest");
     }
-    expect(share(zoneWeights(0.7, 0.18), "arms")).toBeCloseTo(1);
-  });
-});
-
-describe("zoneOf", () => {
-  it("places the head, chest, abdomen and legs along the midline", () => {
-    expect(zoneOf(0.95, 0)).toBe("head");
-    expect(zoneOf(0.75, 0.05)).toBe("chest");
-    expect(zoneOf(0.58, 0.05)).toBe("abdomen");
-    expect(zoneOf(0.2, 0.05)).toBe("legs");
   });
 
-  it("keeps the shoulders with the chest but the hanging arms apart", () => {
-    expect(zoneOf(0.82, 0.12)).toBe("chest");
-    expect(zoneOf(0.7, 0.18)).toBe("arms");
-    expect(zoneOf(0.48, 0.29)).toBe("arms");
+  it("still adds up to one when the baked shares do not", () => {
+    const shares = zoneShares({ head: 0, arms: 1, legs: 1, torso: 0 }, 0.5, CHEST_FROM);
+    expect(share(shares, "arms")).toBeCloseTo(0.5);
+    expect(shares.reduce((sum, w) => sum + w, 0)).toBeCloseTo(1);
   });
 
   it("gives every zone a system", () => {

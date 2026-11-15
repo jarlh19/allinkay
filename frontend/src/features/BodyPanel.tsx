@@ -6,6 +6,7 @@ import { useI18n } from "../i18n/i18n";
 import { Ring } from "./Ring";
 import { systemKey } from "./signals";
 import { StatusChip } from "./StatusChip";
+import { SystemIcon } from "./SystemIcon";
 import { Body3D } from "./body3d/Body3D";
 import type { Anchors, BodyPick, BodyStatuses } from "./body3d/BodyScene";
 import { ZONE_SYSTEM } from "./body3d/zones";
@@ -96,6 +97,7 @@ export function BodyPanel({ evaluation, radiation, focused, onFocus, onMode }: P
           onClick={() => onFocus(target)}
         >
           <Ring share={share} status={targetStatus(target, evaluation, radiation)} size={52}>
+            <SystemIcon target={target} />
             {Math.round(share * 100)}%
           </Ring>
           <span className="gauge-text">
