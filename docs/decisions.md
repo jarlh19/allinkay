@@ -1,128 +1,153 @@
-# Decisiones
+# Decisions
 
-Cada entrada dice el problema, lo elegido, las alternativas descartadas y por qué. Las decidió Jorge Laban el 14 de noviembre de 2026.
+Each entry gives the problem, what was chosen, the alternatives that were set aside and why. Decided by Jorge Laban for team ALLINKAY during NASA Space Apps 2026 (14 and 15 November 2026).
 
-## D-001 · Monolito modular con arquitectura hexagonal
+## D-001 · Modular monolith with a hexagonal architecture
 
-- **Problema:** la app recibe datos de varias fuentes (sensores de campo, sensores de la nave, análisis de sangre, dosímetro y feedback de la Tierra) y debe funcionar a bordo sin internet.
-- **Elegido:** un solo despliegue con un núcleo de dominio puro y un adaptador por fuente de datos (puertos y adaptadores), unidos por un bus de eventos interno.
-- **Descartado:** microservicios, uno por componente.
-- **Por qué:** recibir datos de varias fuentes es un problema de integración, no de despliegue. En 16 horas, con un solo desarrollador, los microservicios suman procesos, red, contratos y puntos de falla para la demo. Con los módulos separados por puertos, se pueden dividir más adelante si hace falta.
+- **Problem:** the app receives data from several sources (field sensors, ship sensors, blood tests, a dosimeter and feedback from Earth) and must work on board without the internet.
+- **Chosen:** a single deployment with a pure domain core and one adapter per data source (ports and adapters), joined by an in-process event bus.
+- **Set aside:** microservices, one per component.
+- **Why:** receiving data from several sources is an integration problem, not a deployment one. In a two-day hackathon with one developer, microservices add processes, networking, contracts and points of failure to the demo. With modules separated by ports, they can still be split later if needed.
 
-## D-002 · Python con FastAPI en el backend y React con Vite y TypeScript en el frontend
+## D-002 · Python with FastAPI for the backend, React with Vite and TypeScript for the frontend
 
-- **Problema:** el modelo (desviaciones, patrón combinado y pronóstico) es el centro del proyecto y la interfaz pesa en el juzgamiento.
-- **Elegido:** FastAPI con NumPy y scikit-learn en el backend; React 19, Vite, TypeScript estricto y ECharts en el frontend.
-- **Descartado:** todo en TypeScript, porque el machine learning es más limitado; y Python con Streamlit, porque da menos control del diseño del panel.
-- **Por qué:** Python tiene las mejores librerías para el modelo, y React permite reproducir la maqueta del panel aprobada por el equipo.
+- **Problem:** the model (deviations, combined patterns and forecast) is the core of the project, and the interface weighs in the judging.
+- **Chosen:** FastAPI with NumPy for the backend; React 19, Vite and strict TypeScript for the frontend.
+- **Set aside:** everything in TypeScript, since numerical work is more limited there; and Python with Streamlit, which gives less control over the panel design.
+- **Why:** Python has the best tools for the model, and React reproduces the panel mock-up the team approved.
+- **Update:** scikit-learn and ECharts were planned but not needed. The model turned out to be statistical (D-011), and the charts are plain SVG.
 
-## D-003 · Repositorio privado en la cuenta jarlh19 hasta la entrega
+## D-003 · Private repository until submission
 
-- **Problema:** la NASA exige un enlace público al proyecto al entregar, pero durante el desarrollo el repo puede exponer trabajo a medio hacer.
-- **Elegido:** privado en jarlh19 y público antes del envío del domingo 15 de noviembre.
-- **Descartado:** público desde el primer commit, y una organización del equipo.
-- **Por qué:** protege el trabajo mientras se desarrolla y no depende de crear una organización en pleno evento.
+- **Problem:** NASA requires a public link to the project at submission, but during development the repository can expose half-finished work.
+- **Chosen:** private during the event, public before submission on Sunday 15 November.
+- **Set aside:** public from the first commit, and a team organisation.
+- **Why:** it protects the work while it is being built and does not depend on creating an organisation in the middle of the event.
 
-## D-004 · Marte como escenario de la misión
+## D-004 · Mars as the mission scenario
 
-- **Problema:** las cifras de demora y de radiación cambian mucho entre la Luna y Marte.
-- **Elegido:** Marte. Demora de 0 a 22 minutos por trayecto (McBrayer et al., 2022), 1.8 mSv por día en el viaje (Zeitlin et al., 2013) y límite de carrera de 600 mSv (NASA-STD-3001).
-- **Descartado:** la Luna, con 1.3 segundos de demora.
-- **Por qué:** en Marte la autonomía a bordo es indispensable, y eso sostiene la problemática del equipo.
+- **Problem:** delay and radiation figures change a lot between the Moon and Mars.
+- **Chosen:** Mars, with these figures:
+  - a delay of 0 to 22 minutes one way (McBrayer et al., 2022);
+  - 1.8 mSv per day in transit (Zeitlin et al., 2013);
+  - a career limit of 600 mSv (NASA-STD-3001).
+- **Set aside:** the Moon, with a delay of 1.3 seconds.
+- **Why:** on Mars, autonomy on board is essential, and that is what the team's problem statement is about.
 
-## D-005 · Datos sintéticos; el sensor real queda fuera de esta versión
+## D-005 · Synthetic data; real sensors stay out of this version
 
-- **Problema:** todavía no se sabe qué sensores tiene Aranza ni cómo se conectan.
-- **Elegido:** un simulador con semilla fija, calibrado con rangos de referencia. El único dato real es el hemograma abierto de la NASA (OSD-569), usado como línea base. La interfaz del adaptador de sensores queda lista.
-- **Descartado:** esperar los sensores para empezar.
-- **Por qué:** el equipo confirmó que se puede trabajar con datos sintéticos, la demo no depende del hardware y no se tratan datos de personas reales.
+- **Problem:** at the start it was not known which sensors the team had or how they would connect.
+- **Chosen:** a seeded simulator calibrated with reference levels. The only real data is NASA's open blood count (OSD-569), used as a baseline. The sensor adapter interface is ready.
+- **Set aside:** waiting for the sensors to start.
+- **Why:** the team confirmed it could work with synthetic data, the demo does not depend on hardware, and no real people's data is handled.
 
-## D-006 · Las testers prueban como usuarias externas y reportan dentro de la app
+## D-006 · Testers act as outside users and report from inside the app
 
-- **Problema:** Geraldine y Aranza revisan la app y piden correcciones, pero lo hacen como si fueran astronautas, no como colaboradoras del repositorio.
-- **Elegido:** prueban la app en uso, sin acceso al repo, y reportan con un formulario «Reportar un problema» dentro de la app. El reporte guarda el contexto (pantalla, escenario y hora) en la base local. Jorge convierte cada reporte en un issue.
-- **Descartado:** agregarlas como colaboradoras de GitHub.
-- **Por qué:** así prueban como el usuario final, el repo sigue privado y cada reporte llega con el contexto necesario para reproducirlo.
+- **Problem:** two teammates review the app and ask for fixes, but they test it as astronauts would, not as developers.
+- **Chosen:** they use the app as end users and report with a "Report a problem" form inside it. Each report carries its context (screen, crew member, mode, mission day and time).
+- **Set aside:** reporting through chat messages without context.
+- **Why:** they test like the end user, and every report arrives with what is needed to reproduce it.
+- **Update (D-009 and 14 November):**
+  - The testers use the published URL instead of a laptop, and reports become GitHub issues.
+  - Later the same day, both testers also joined the repository as collaborators to help with development.
 
-## D-007 · Licencia Apache 2.0
+## D-007 · Apache 2.0 licence
 
-- **Problema:** en Hack the Andes el código quedó sin licencia y después hubo dudas sobre una «patente».
-- **Elegido:** Apache 2.0, con un archivo NOTICE que da el crédito y cita los datos de la NASA.
-- **Descartado:** MIT y dejarlo sin licencia.
-- **Por qué:** es abierta como MIT, pero además incluye una cesión explícita de patentes. Eso evita disputas sobre patentes como la de RoboLab.
+- **Problem:** a previous hackathon project was left without a licence, and doubts about patents came up later.
+- **Chosen:** Apache 2.0, with a NOTICE file that gives credit and cites the NASA data.
+- **Set aside:** MIT, and no licence.
+- **Why:** it is as open as MIT and also includes an explicit patent grant, which avoids patent disputes.
 
-## D-008 · Idioma
+## D-008 · Language
 
-- **Problema:** NASA Space Apps exige inglés en la página del proyecto y en todo lo enlazado, pero las testers prueban en español.
-- **Elegido:** el código, los identificadores, los commits y el README van en inglés. La interfaz carga en inglés y se puede cambiar a español. Los documentos de trabajo en español (SPEC y decisiones) pasan al inglés antes de hacer público el repo.
-- **Descartado:** todo en español, y traducir la interfaz solo al final.
-- **Por qué:** cumple la regla sin dejar a las testers sin una interfaz en su idioma.
+- **Problem:** NASA Space Apps requires English on the project page and in everything linked from it, but the testers test in Spanish.
+- **Chosen:**
+  - Code, identifiers, commits and documentation are in English.
+  - The interface opens in the browser's language and can switch between English and Spanish.
+  - The page asks browsers not to machine-translate it, since it has its own translation.
+- **Set aside:** everything in Spanish, and translating the interface only at the end.
+- **Why:** it meets the rule without leaving the testers without an interface in their language. Machine translation garbled terms ("live" became "to live").
 
-## D-009 · Publicar la app en Render como un solo servicio
+## D-009 · Publishing the app on Render as a single service
 
-- **Problema:** las testers prueban la app desde su propio navegador, no en la laptop de Jorge.
-- **Elegido:** un solo servicio web en Render (plan gratis) con una imagen Docker: el frontend compilado lo sirve el mismo FastAPI. Se despliega solo con cada cambio en `main`.
-- **Descartado:**
-  - Hugging Face Spaces: el código del Space queda público antes de tiempo.
-  - Frontend y backend en servicios separados: dos despliegues y CORS.
-  - Solo en la laptop: las testers no podrían usarla desde sus navegadores.
-- **Por qué:** cuesta USD 0 y admite WebSocket. Un solo servicio simplifica la demo y la seguridad (mismo origen, sin CORS).
-- **Límites del plan gratis:**
-  - Se duerme tras 15 minutos sin tráfico; la primera visita tarda unos 30 a 60 segundos.
-  - El disco no es persistente: los datos guardados se pierden al reiniciar. Por eso los reportes de las testers no pueden depender solo de SQLite.
-- **Cambio sobre D-006:** las testers usan la URL publicada en vez de la laptop.
+- **Problem:** the testers use the app from their own browsers, not on the developer's laptop.
+- **Chosen:** one web service on Render (free plan) built from one Docker image, where the same FastAPI serves the built frontend. It deploys itself on every change to `main`.
+- **Set aside:**
+  - Hugging Face Spaces: the Space's code would be public too early.
+  - Frontend and backend as separate services: two deployments and CORS.
+  - Vercel (reviewed on 14 November): its functions keep no shared state between instances and do not run a continuous process. ALLINKAY keeps each mission in memory and advances it every second, so moving would mean rebuilding the core.
+  - Only on the laptop: the testers could not use it from their browsers.
+- **Why:** it costs nothing and supports WebSockets. A single service keeps the demo and the security simple: same origin, no CORS.
+- **Limits of the free plan:**
+  - It sleeps after 15 minutes without traffic, and the first visit then takes 30 to 60 seconds.
+  - The disk is not persistent: stored data is lost on restart. For that reason tester reports go to GitHub issues and do not rely on SQLite alone.
 
-## D-010 · Varios tripulantes: una misión por persona
+## D-010 · Several crew members, one mission per person
 
-- **Problema:** con un solo tripulante, quien estaba en la nave y quien salía a campo compartían el mismo normal, las mismas alertas y el mismo modo. Además, todas las personas que abrían la web cambiaban el modo de todas.
-- **Elegido:**
-  - Un registro de la tripulación (`Crew`). Cada persona tiene su propia misión: sus lecturas, su normal, su modelo (nave o campo), su dosis acumulada y su canal en vivo.
-  - Las rutas llevan el id de la persona: `/api/crew/{id}/…` y `/ws/crew/{id}/live`. Además, `/api/crew` da el resumen de todas.
-  - La tabla de lecturas suma una columna `crew`, como cambio aditivo. Las filas anteriores pasan al comandante.
-  - En la demo, cada vuelta del guion repite exactamente la primera. Así, lo que ven las testers es lo mismo que se comprobó en las pruebas.
-  - El reloj de la demo avanza un paso exacto por tick, sin depender del tiempo real del servidor. Sin eso, una demora de milisegundos corría la secuencia simulada y aparecían alertas por ruido que las pruebas no veían.
-- **Descartado:**
-  - Un solo canal con eventos etiquetados por persona: cada navegador recibiría las lecturas de todos, el triple de datos por una conexión lenta.
-  - Varios procesos, uno por persona: complica Render (D-009) sin ganar nada en la demo.
-- **Por qué:** cada persona se evalúa contra su propio normal, que es la idea central del proyecto. Cambiar el modo de una no toca a las demás. El navegador solo recibe a quien está mirando.
+- **Problem:** with a single crew member, whoever was in the ship and whoever went out to the field shared the same normal, alerts and mode. Also, anyone opening the web changed the mode for everyone.
+- **Chosen:**
+  - A crew registry (`Crew`). Each person has their own mission: their readings, normal, model (ship or field), accumulated dose and live channel.
+  - Routes carry the person's id: `/api/crew/{id}/…` and `/ws/crew/{id}/live`. Also, `/api/crew` gives a summary of everyone.
+  - The readings table gains a `crew` column as an additive change; earlier rows belong to the commander.
+  - In the demo, every lap of the script repeats the first one exactly, including the dose, so what testers see is what the tests checked.
+  - The demo clock moves exactly one step per tick, independent of the server's real time. Without this, a few milliseconds of delay shifted the simulated sequence and noise alerts appeared that the tests did not see.
+- **Set aside:**
+  - A single channel with events tagged by person: every browser would receive everyone's readings, three times the data over a slow connection.
+  - Several processes, one per person: it complicates Render (D-009) with no gain for the demo.
+- **Why:** each person is judged against their own normal, which is the core idea of the project. Changing one person's mode does not affect the others, and the browser only receives the person being watched.
 
-## D-011 · Alertas confirmadas: cuántas falsas alarmas y cuántos cambios sin detectar
+## D-011 · Confirmed alerts: how many false alarms and how many missed changes
 
-- **Problema:** la medición del 14 de noviembre mostró que, en la nave, 40 de 40 personas sanas simuladas tenían al menos una falsa alarma en 30 días. Venían de los exámenes y de las señales diarias. Las causas fueron tres:
-  - Un solo examen fuera de rango bastaba para alertar, y el simulador usaba menos variación que la real.
-  - El normal salía de 14 días y 3 análisis, pero se usaba como si fuera exacto.
-  - El ánimo, una escala del 1 al 5, se trataba como una medida continua.
-- **Lo que no se puede:** con datos finitos no existen a la vez cero falsas alarmas y cero cambios sin detectar. Al bajar uno sube el otro, y lo único que baja los dos es más información. Se midió con 200 000 personas simuladas.
-- **Elegido por Jorge:** primero pidió priorizar que no se escaparan cambios reales. Con los números medidos en la app real eligió el umbral del 99.5 % para los exámenes, que da la mitad de falsas alarmas que el del 99 % a cambio de 1 baja de glóbulos blancos más cada 200 que tarda más de 10 días en detectarse. Las metas quedan así:
-  - Como máximo 1 falsa alarma cada 10 años-astronauta.
-  - Como máximo el 1 % de los cambios del guion sin detectar en los primeros 10 días. Un cambio que sigue se detecta en las lecturas siguientes.
-- **Cómo:**
-  - **Exámenes:**
-    - El punto de ajuste es la media de 6 tomas antes del vuelo.
-    - La dispersión es la variación biológica dentro de la persona más la variación analítica, ambas publicadas: EFLM Biological Variation Database, leucocitos CVI 11.1 % y glucosa CVI 4.9 %, con CVA = CVI / 2 (Fraser).
-    - Un resultado más allá del valor de cambio de referencia al 99.5 % (2.81) pide repetir el examen al día siguiente. Solo alerta si la repetición lo confirma, y nunca alerta por un solo resultado.
-    - El comandante usa las 3 tomas reales de OSD-569.
-  - **Normal personal:**
-    - Se juzga con un intervalo de predicción, que combina la t de Student con el factor 1 + 1/n.
-    - La referencia es de 60 días antes del vuelo.
-    - Con menos de 5 lecturas no hay alerta.
-  - **Señales diarias:** alertan cuando 3 de los últimos 4 días pasan de 2.2. Un día común en medio de un cambio real ya no reinicia la cuenta.
-  - **Señales continuas:** se mantiene la regla de 10 lecturas seguidas pasando de 1.5. Ya daba cero falsas alarmas.
-  - **Ánimo:** el valor habitual es la mediana y cuentan pasos enteros. Alerta cuando el ánimo está 2 pasos por debajo en 3 de los últimos 4 días.
-  - **Simulador y guion:**
-    - Los exámenes varían como indica la EFLM.
-    - Los cambios del guion del comandante son clínicamente significativos: glóbulos blancos −3.5 y ánimo −2.2.
-    - En la demo hay exámenes cada 2 días.
-- **Descartado:**
-  - Solo subir los umbrales: bajaba las falsas alarmas, pero dejaba escapar cambios reales (12 de 60 en reacción).
-  - CUSUM: no corregía un normal mal estimado.
-  - Exigir días seguidos: un solo día normal cortaba un cambio real.
-  - Dos repeticiones o el promedio del examen y su repetición: el error que comparten todas las tomas es el del normal, y repetir no lo quita.
-- **Verificación:** `backend/validate_model.py` simula 200 personas sanas durante 90 días, en la nave y en campo, y 200 personas por cada guion de la tripulación. Mide la tasa de falsas alarmas por año-astronauta y la de cambios sin detectar, y falla si no se cumplen las metas. Una muestra menor corre en cada cambio, en `tests/validation`.
-- **Resultado medido** (200 personas durante 90 días):
-  - En la nave: 6 falsas alarmas en 60 años-astronauta, es decir, 1 cada 10 años. Cuatro son de exámenes y dos de señales diarias.
-  - En campo: 0.
-  - Cambios del guion sin detectar en 10 días: 5 de 1200 (0.42 %). Tres son bajas de glóbulos blancos.
-  - Con el umbral del 99 % eran 11 falsas alarmas en la nave y 4 cambios sin detectar.
-  - Con 200 personas, los conteos chicos tienen un margen de error amplio.
-- **Límite:** los números salen de personas simuladas con ruido normal. Los datos reales traen valores atípicos y tendencias que esta prueba no cubre, así que antes de usarlo con personas hay que validarlo con datos reales.
+- **Problem:** a measurement on 14 November showed that, in the ship, 40 of 40 healthy synthetic people had at least one false alarm within 30 days. They came from lab exams and daily signals, for three reasons:
+  - A single exam out of range was enough to alert, and the simulator used less variation than real life.
+  - The normal came from 14 days and 3 blood draws but was used as if it were exact.
+  - Mood, a 1 to 5 scale, was treated as a continuous measure.
+- **What is not possible:** with finite data, zero false alarms and zero missed changes cannot both hold. Lowering one raises the other, and only more information lowers both. This was measured with 200,000 simulated people.
+- **Chosen by Jorge:**
+  - First, he asked to prioritise not missing real changes.
+  - Then, with the numbers measured in the app itself, he chose the 99.5% threshold for lab exams. It gives half the false alarms of the 99% threshold, at the cost of 1 more white blood cell drop in 200 taking longer than 10 days to detect.
+  - The targets are:
+    - At most 1 false alarm every 10 astronaut-years.
+    - At most 1% of scripted changes undetected in the first 10 days. A change that persists is caught by the following readings.
+- **How:**
+  - **Lab exams:**
+    - The set point is the mean of 6 pre-flight draws.
+    - The spread is the published within-subject biological variation plus the analytical variation. Both come from the EFLM Biological Variation Database: leukocytes CVI 11.1%, glucose CVI 4.9%, with CVA = CVI / 2 (Fraser, 2001).
+    - A result beyond the 99.5% reference change value (2.81) asks for a repeat the next day. It alerts only if the repeat agrees, and never on a single result.
+    - The commander uses the 3 real OSD-569 draws.
+  - **Personal normal:**
+    - Judged with a prediction interval that combines Student's t with the factor 1 + 1/n.
+    - The reference covers 60 days before flight.
+    - With fewer than 5 readings there is no alert.
+  - **Daily signals:** they alert when 3 of the last 4 days go beyond 2.2. One ordinary day inside a real change no longer resets the count.
+  - **Live signals:** the rule of 10 readings in a row beyond 1.5 stays; it already gave zero false alarms.
+  - **Mood:** the usual value is the median, and whole steps count. It alerts when mood is 2 steps below on 3 of the last 4 days.
+  - **Simulator and script:**
+    - Lab exams vary as the EFLM data says.
+    - The commander's scripted changes are clinically significant: white blood cells −3.5 and mood −2.2.
+    - The demo takes exams every 2 days.
+- **Set aside:**
+  - Only raising thresholds: fewer false alarms, but real changes slipped through (12 of 60 for reaction time).
+  - CUSUM: it did not correct a badly estimated normal.
+  - Requiring consecutive days: a single normal day broke a real change.
+  - Two repeats, or averaging an exam with its repeat: the error that all draws share is the error of the normal, and repeating does not remove it.
+- **Verification:**
+  - `backend/validate_model.py` simulates 200 healthy people over 90 days, in the ship and in the field, plus 200 people for each crew script.
+  - It measures false alarms per astronaut-year (ship and field separately) and missed changes, and fails if a target is not met.
+  - A smaller sample runs on every change in `tests/validation`.
+- **Measured result** (200 people over 90 days):
+  - Ship: 6 false alarms in 60 astronaut-years, one every 10 years. Four come from lab exams and two from daily signals.
+  - Field: 0.
+  - Scripted changes missed within 10 days: 5 of 1200 (0.42%). Three are white blood cell drops.
+  - With the 99% threshold there were 11 false alarms in the ship and 4 missed changes.
+  - With 200 people, small counts carry a wide margin of error.
+- **Limit:** the numbers come from synthetic people with normal noise. Real data has outliers and trends this test does not cover, so the model must be validated on real data before it is used with people.
+
+## D-012 · The radiation career limit is an emergency, with no invented threshold
+
+- **Problem:** crossing the 600 mSv career limit raised no alert, and the radiation section still said "Within limit".
+- **Chosen:** reaching the limit raises an emergency that cites the standard. The action asks to tell the flight surgeon and to keep any further dose as low as reasonably achievable.
+  - The limit is NASA-STD-3001 [V1 4030]: a crew member's career effective dose "shall be less than 600 mSv".
+  - The guiding principle is ALARA ("as low as reasonably achievable", [V1 4029]).
+- **Set aside:** an "approaching the limit" alert at, for example, 90%. The standard gives no such threshold, and the panel already projects the days left at the current rate.
+- **Why:** a broken requirement deserves the emergency path, and every number in an alert should come from a source.
