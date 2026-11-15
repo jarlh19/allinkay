@@ -28,7 +28,7 @@
           <p class="app-status" id="app-status" aria-live="polite">The live app runs a simulated Mars mission: one second is one hour.</p>
         </div>
         <figure class="hero-shot">
-          <img src="images/panel.png" alt="The ALLINKAY panel: the crew strip, the body with a ring for each system, the overall status and the model analysis." width="1440" height="900" />
+          <img src="images/screen.jpg" alt="The ALLINKAY screen: the crew tabs, a 3D hologram of the body with a bubble for each system, the overall status, the trends, the model analysis and the actions." width="1600" height="860" />
         </figure>
       </div>
     </header>
@@ -84,8 +84,8 @@
             <li><strong>Works without Earth.</strong> Everything runs on board.</li>
           </ul>
           <figure class="shot">
-            <img src="images/storm.png" alt="A solar storm emergency: the panel turns red and opens the step-by-step action guide." width="1440" height="900" loading="lazy" />
-            <figcaption>A solar storm on mission day 98 opens the emergency guide for the whole crew.</figcaption>
+            <img src="images/storm.jpg" alt="A solar storm emergency: the alert shows at the top, the skin's outline and the radiation bubble turn red, and the action guide lists the steps." width="1600" height="1020" loading="lazy" />
+            <figcaption>A solar storm: the emergency shows at the top for the whole crew, the skin's outline turns red, and the action guide lists what to do now.</figcaption>
           </figure>
         </div>
       </section>
@@ -127,11 +127,11 @@
           </article>
           <article class="card">
             <h3>Live panel</h3>
-            <p>FastAPI streams each crew member over a WebSocket to a React panel, in English and Spanish, on desktop and phone.</p>
+            <p>FastAPI streams each crew member over a WebSocket to a React screen with a three.js hologram of the body, in English and Spanish, on desktop and phone.</p>
           </article>
           <article class="card">
             <h3>Checked on every change</h3>
-            <p>129 backend tests, 24 frontend tests, a secret scan and a sample of the model validation run in GitHub Actions on every pull request.</p>
+            <p>129 backend tests, 39 frontend tests, a secret scan and a sample of the model validation run in GitHub Actions on every pull request.</p>
           </article>
         </div>
       </section>
@@ -145,6 +145,7 @@
           <li><a href="https://doi.org/10.1126/science.1235989">Zeitlin et al., 2013</a> and <a href="https://ntrs.nasa.gov/citations/20220013418">McBrayer et al., 2022</a>: the dose rate in transit and the communication delay.</li>
           <li>Canadian Space Agency, <a href="https://www.asc-csa.gc.ca/eng/iss/bio-analyzer.asp">Bio-Analyzer</a> and <a href="https://www.asc-csa.gc.ca/eng/sciences/astroskin.asp">Bio-Monitor</a>: what can already be measured on board.</li>
           <li><a href="https://biologicalvariation.eu/">EFLM Biological Variation Database</a> and Fraser (2001): how much a lab result varies in the same healthy person.</li>
+          <li><a href="https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html">BodyParts3D</a>, © The Database Center for Life Science, licensed under CC Attribution 4.0 International: the 3D body, adapted for the hologram.</li>
         </ul>
         <p class="note">Every other reading in the demo is synthetic. No real person's data is used, apart from the open, anonymised OSD-569 dataset.</p>
       </section>
