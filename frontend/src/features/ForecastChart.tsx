@@ -49,7 +49,7 @@ export function ForecastChart({ forecast }: { forecast: Forecast | null }) {
         {ticks.map((tick) => (
           <g key={tick}>
             <line x1={PAD.left} x2={W - PAD.right} y1={y(tick)} y2={y(tick)} stroke="#233041" />
-            <text x={PAD.left - 6} y={y(tick) + 4} textAnchor="end" fontFamily="IBM Plex Mono, monospace" fontSize="11" fill="#7d8da0">
+            <text x={PAD.left - 6} y={y(tick) + 4} textAnchor="end" fontFamily="IBM Plex Mono, monospace" fontSize="12" fill="#7d8da0">
               {tick.toFixed(0)} h
             </text>
           </g>
@@ -67,10 +67,10 @@ export function ForecastChart({ forecast }: { forecast: Forecast | null }) {
             <title>{`${p.value.toFixed(1)} h (${p.low.toFixed(1)}–${p.high.toFixed(1)})`}</title>
           </circle>
         ))}
-        <text x={x(last)} y={H - 6} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="11" fill="#a3b2c2">
+        <text x={x(last)} y={H - 6} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="12" fill="#a3b2c2">
           {t("forecast.today")}
         </text>
-        <text x={x(count - 1)} y={H - 6} textAnchor="end" fontFamily="IBM Plex Mono, monospace" fontSize="11" fill="#e3a33b">
+        <text x={x(count - 1)} y={H - 6} textAnchor="end" fontFamily="IBM Plex Mono, monospace" fontSize="12" fill="#e3a33b">
           +{points.length}
         </text>
       </svg>

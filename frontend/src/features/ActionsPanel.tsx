@@ -40,7 +40,7 @@ export function ActionsPanel({ evaluation }: { evaluation: Evaluation | null }) 
             <strong>{storm ? t("guide.stormTitle") : t("guide.generalTitle")}</strong>
             <ol style={{ paddingLeft: 18, marginTop: 6 }}>
               {(storm ? STORM_STEPS : GENERAL_STEPS).map((step) => (
-                <li key={step} style={{ fontSize: 13, color: "var(--text-2)", marginBottom: 4 }}>
+                <li key={step} style={{ fontSize: 14, color: "var(--text-2)", marginBottom: 4 }}>
                   {t(step)}
                 </li>
               ))}
