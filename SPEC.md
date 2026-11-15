@@ -1,188 +1,187 @@
-# Spec: ALLINKAY — monitoreo de salud a bordo
+# Spec: ALLINKAY, onboard health monitoring
 
-> Borrador del 14 de noviembre de 2026. Antes de hacer público el repositorio, este documento y todo el repo pasan al inglés (regla de NASA Space Apps: todo lo enlazado va en inglés).
+> Living document. It records what ALLINKAY does, how it is built and checked, and what is left out. Decisions are in [docs/decisions.md](docs/decisions.md).
 
-## Objetivo
+## Goal
 
-Una aplicación que el astronauta usa a bordo, sin depender de la Tierra, para entender a tiempo cómo los cambios en su salud afectan su rendimiento y qué hacer al respecto. Responde a la problemática del equipo (`problematica.md`) y al reto «Create Health Monitoring Software for Astronauts on Space Missions».
+An application the astronaut uses on board, without depending on Earth, to understand in time how changes in their health affect their performance and what to do about it. It answers the challenge *Create Health Monitoring Software for Astronauts on Space Missions* (NASA Space Apps Challenge 2026).
 
-**Quién la usa:** un tripulante en una misión larga, en la nave o en campo (caminata o superficie). En la demo, una tripulación simulada de tres personas: comandante y especialista en ciencia en la nave, y especialista de vuelo en campo (D-010).
+**Who uses it:** a crew member on a long mission, in the ship or in the field (a spacewalk or the surface). The demo crew has three synthetic people: a commander and a mission scientist in the ship, and a flight engineer in the field (D-010).
 
-**Qué la hace distinta:**
-- Compara cada señal con **el normal de la persona**, no con un rango general.
-- Detecta **patrones combinados** entre sistemas.
-- **Pronostica** con horizonte.
-- Incluye la **radiación**: dosis, tormenta solar y órganos en riesgo.
-- **Funciona sin la Tierra.** La respuesta de la Tierra llega con demora y se integra cuando llega.
+**What makes it different:**
+- It compares each signal with **the person's own normal**, not with a general range.
+- It confirms a change before alerting, with measured rates of false alarms and missed changes (D-011).
+- It detects **combined patterns** across systems.
+- It **forecasts** the next nights of sleep and the days left before the radiation career limit.
+- It includes **radiation**: dose rate, accumulated dose, solar storms, the career limit and the organs at risk.
+- **It works without Earth.**
 
-**Criterios de aceptación (historias del astronauta):**
-1. Veo en un panel el estado de mis sistemas (cardiovascular, neurológico, inmunológico, ambiente y radiación), actualizado en vivo.
-2. Si una señal se aleja de mi normal, recibo una alerta temprana que dice qué señal, cuánto se alejó, por qué importa (con su fuente de la NASA) y qué rutina hacer.
-3. Si varias señales se alejan a la vez, la alerta lo dice como un patrón combinado.
-4. Veo un pronóstico de las próximas noches de sueño y en cuántos días llegaría al límite de radiación de carrera.
-5. Ante una emergencia o una tormenta solar, la app me da una guía de acción paso a paso, sin esperar a la Tierra.
-6. Puedo pasar del modo «en la nave» al modo «en campo». En campo, el modelo es más liviano.
-7. El feedback de la Tierra aparece cuando llega, con la demora visible, y el modelo lo integra.
-8. Si algo falla o no se entiende, lo reporto desde la misma app con «Reportar un problema».
-9. Con varios tripulantes, cada uno tiene su propio normal, sus alertas y su ubicación: uno puede estar en la nave y otro en campo a la vez, y veo de un vistazo quién está dónde y cómo está (cambio de alcance aprobado por Jorge el 14 de noviembre de 2026).
+**Acceptance criteria (the astronaut's stories):**
+1. I see on one panel the state of my systems (cardiovascular, neurological, immune, ship environment and radiation), updated live.
+2. When a signal moves away from my normal and the change is confirmed, I get an alert that says which signal, how far it moved, why it matters (with its NASA source) and what routine to follow.
+3. When several systems move away at once, the alert says so as a combined pattern.
+4. I see a forecast of the next nights of sleep and how many days are left before the radiation career limit.
+5. In an emergency, such as a solar storm or reaching the career dose limit, the app gives me a step-by-step action guide without waiting for Earth.
+6. I can switch between "in the ship" and "in the field". In the field the model is lighter and watches only portable sensors.
+7. Earth's feedback appears when it arrives, with its delay visible. *Not built in this version.*
+8. If something fails or is unclear, I report it from inside the app with "Report a problem".
+9. With several crew members, each one has their own normal, alerts and place; one can be in the ship and another in the field at the same time, and I see at a glance who is where and how they are.
 
-## Mapa de módulos (monolito modular, arquitectura hexagonal)
+## Module map (modular monolith, hexagonal architecture)
 
-| Id | Responsabilidad | Depende de |
+| Id | Responsibility | Depends on |
 |---|---|---|
-| `domain` | Núcleo puro, sin entrada ni salida: tipos de lectura, línea base personal, desviación, patrón combinado, pronóstico, reglas de alerta explicables y dosis de radiación | — |
-| `storage` | Guardar lecturas, línea base y alertas (SQLite, patrón Repository) | `domain` |
-| `ingestion` | Adaptadores de entrada: simulador con semilla, cargador del hemograma OSD-569 y, más adelante, el sensor real (USB o Bluetooth) | `domain` |
-| `earth-link` | Simulador de la Tierra: guarda y reenvía con una demora configurable | `domain` |
-| `feedback` | Reportes de las testers dentro de la app: formulario, contexto (pantalla, escenario y hora) y exportación para convertirlos en issues | `domain`, `storage` |
-| `api` | FastAPI: REST para consultar y WebSocket para lo en vivo; arma los casos de uso | `domain`, `storage`, `ingestion`, `earth-link`, `feedback` |
-| `web` | React: el panel de la maqueta, la figura humana, el modelo, la radiación y las acciones, con textos en inglés y español | `api` |
+| `domain` | Pure core with no input or output: readings, personal baselines and their prediction intervals, published lab variation, alert rules with their explanation, combined patterns, the sleep forecast, the radiation ledger, crew members and the ship and field models | — |
+| `storage` | Readings per crew member in SQLite (Repository pattern) | `domain` |
+| `ingestion` | Input adapters: the seeded simulator with the demo scripts and the OSD-569 blood count loader. Real sensors come next | `domain` |
+| `feedback` | Testers' reports from inside the app, with their context, sent as GitHub issues or kept locally | `domain` |
+| `api` | FastAPI: REST to query, and one WebSocket per crew member for live data; wires the use cases | all of the above |
+| `web` | React: the crew strip, the body with a ring per system, the model analysis, folding details per system, radiation and actions, in English and Spanish | `api` |
+| `earth-link` | Earth simulator that receives summaries and answers after a configurable delay. *Not built in this version.* | `domain` |
 
-Orden de construcción: `domain` → `storage` → `ingestion` (simulador) → `api` → `web` → `earth-link` → `feedback`.
-
-**Patrones:**
-- Adapter: un adaptador por fuente de datos.
-- Strategy: detectores y pronosticadores intercambiables (modelo liviano y modelo completo).
-- Observer, con un bus de eventos interno: lectura → evaluación → alerta → pantalla.
-- Repository: para guardar los datos.
-- Reglas tipo Specification: cada regla devuelve su explicación.
+**Patterns:**
+- Adapter: one adapter per data source.
+- Strategy: the ship model and the field model.
+- Observer, through an in-process event bus: reading, then evaluation, then alert, then screen.
+- Repository: to store readings.
+- Specification-style rules: every rule returns its own explanation.
 
 ## Stack
 
-- **Backend:** Python 3.12 o 3.13, FastAPI, Pydantic 2, NumPy, scikit-learn (Isolation Forest para el modelo completo), SQLite (módulo estándar `sqlite3`), Uvicorn. Versiones fijas en `backend/requirements.lock` (producción) y `backend/requirements-dev.lock` (desarrollo). Pruebas de API con httpx2, el cliente que recomienda Starlette.
-- **Frontend:** React 19, Vite, TypeScript estricto, ECharts 5.5.1 (copia local, ya verificada), fuentes IBM Plex locales. `package-lock.json` en el repo.
-- **Calidad:** Ruff (lint y formato), pytest, ESLint, Vitest y Testing Library, gitleaks. CI en GitHub Actions (`.github/workflows/ci.yml`) que corre `scripts/verify.py` y `npm audit`, con las acciones fijadas por hash.
+- **Backend:** Python 3.13, FastAPI, Pydantic 2, NumPy, SQLite (the standard `sqlite3` module) and Uvicorn. Versions are pinned in `backend/requirements.lock` (production) and `backend/requirements-dev.lock` (development). API tests use httpx2, the client Starlette recommends.
+- **Frontend:** React 19, Vite, strict TypeScript and local IBM Plex fonts. Charts are hand-made SVG. `package-lock.json` is in the repository.
+- **Quality:**
+  - Ruff (lint and format), pytest, ESLint, Vitest with Testing Library, and gitleaks.
+  - CI in GitHub Actions (`.github/workflows/ci.yml`) runs `scripts/verify.py`, `npm audit` and a Docker build with a smoke test, with actions pinned by hash.
 
-## Comandos
-
-```
-Backend, preparar:  python -m venv backend/.venv
-                    backend/.venv/Scripts/python -m pip install -r backend/requirements-dev.lock
-                    (requirements.lock = solo producción; requirements-dev.lock = producción + pruebas y lint)
-Backend, correr:    backend/.venv/Scripts/python -m uvicorn app.main:create_app --factory --app-dir backend --port 8000
-Backend, lint:      backend/.venv/Scripts/python -m ruff check backend
-Backend, pruebas:   backend/.venv/Scripts/python -m pytest backend/tests -q
-Frontend:           npm ci --prefix frontend
-                    npm run dev --prefix frontend
-                    npm run lint --prefix frontend
-                    npm test --prefix frontend -- --run
-                    npm run build --prefix frontend
-Todo junto:         python scripts/verify.py      (lint, pruebas, build y gitleaks)
-Demo sin internet:  python scripts/demo.py        (levanta backend y frontend con el simulador)
-```
-
-## Estructura del proyecto
+## Commands
 
 ```
-backend/app/domain/        → lógica pura: baseline.py, deviation.py, patterns.py, forecast.py, rules.py, radiation.py
-backend/app/application/   → casos de uso: ingerir lectura, evaluar, pronosticar, recibir feedback
-backend/app/ports/         → interfaces (Protocol): ReadingSource, ReadingRepository, EarthLink, Clock
-backend/app/adapters/      → simulator.py, osdr_csv.py, sqlite_repo.py, earth_link_sim.py (y luego serial o ble)
-backend/app/api/           → rutas FastAPI y WebSocket, esquemas Pydantic
-backend/tests/             → pruebas unitarias del dominio y de la API
-frontend/src/features/     → panel, figura, modelo, radiación, acciones
-frontend/src/i18n/         → textos en inglés y español
-frontend/src/api/          → cliente REST y WebSocket
-data/osdr/                 → CSV de OSD-569, con su fuente y su licencia en un README
-docs/decisiones.md         → decisiones de arquitectura (D-001 a D-008)
-scripts/                   → verify.py y demo.py
-.github/ISSUE_TEMPLATE/    → plantillas «error» y «mejora» para convertir los reportes de las testers en issues
-LICENSE, NOTICE            → Apache 2.0 y créditos, incluida la cita de los datos de la NASA
+Backend, set up:   python -m venv backend/.venv
+                   backend/.venv/bin/python -m pip install -r backend/requirements-dev.lock
+                   (requirements.lock = production only; requirements-dev.lock = production + tests and lint)
+Backend, run:      backend/.venv/bin/python -m uvicorn app.main:create_app --factory --app-dir backend --port 8000
+Backend, lint:     backend/.venv/bin/python -m ruff check backend
+Backend, tests:    backend/.venv/bin/python -m pytest backend/tests -q
+Model validation:  cd backend && .venv/bin/python validate_model.py --people 200 --days 90
+Frontend:          npm ci --prefix frontend
+                   npm run dev --prefix frontend
+                   npm run lint --prefix frontend
+                   npm test --prefix frontend -- --run
+                   npm run build --prefix frontend
+Everything:        python scripts/verify.py      (lint, tests, build and gitleaks)
+Offline demo:      python scripts/demo.py        (builds the panel and runs the simulated mission)
 ```
 
-## Estilo de código
+On Windows, use `.venv\Scripts\` instead of `.venv/bin/`.
 
-- **Dominio:** sin importar FastAPI, SQLite ni nada de entrada o salida. Tipos inmutables y funciones puras:
+## Project structure
+
+```
+backend/app/domain/        → pure logic: readings, baseline, variation, stats, rules, forecast, radiation, crew, modes, references, reports
+backend/app/application/   → use cases: ingest, evaluate, forecast, track radiation, mission, crew, reports, event bus
+backend/app/ports/         → interfaces (Protocol): ReadingSource, ExamScheduler, ReadingRepository
+backend/app/adapters/      → simulator, demo scenarios and clock, SQLite repository, OSD-569 loader, report sinks
+backend/app/api/           → FastAPI routes and WebSocket, Pydantic schemas
+backend/tests/             → domain, application and API tests, plus a small validation sample
+backend/validate_model.py  → measures false alarms and missed changes on synthetic people
+frontend/src/features/     → crew strip, body and rings, model, radiation, actions, folding details, report form
+frontend/src/i18n/         → English and Spanish texts
+frontend/src/api/          → live state, WebSocket client and types
+data/osdr/                 → the OSD-569 CSV, with its source and licence in a README
+docs/decisions.md          → architecture and model decisions (D-001 to D-012)
+scripts/                   → verify.py and demo.py
+LICENSE, NOTICE            → Apache 2.0 and credits, including the NASA data citation
+```
+
+## Code style
+
+- **Domain:** no FastAPI, SQLite or any input or output. Immutable types and pure functions:
 
 ```python
-@dataclass(frozen=True)
-class Deviation:
-    signal: Signal
-    value: float
-    baseline_mean: float
-    z_score: float
-
-    @property
-    def outside_normal(self) -> bool:
-        return abs(self.z_score) >= Z_THRESHOLD
+def beyond(self, z: float) -> str | None:
+    """The direction if this reading is at least as unusual as `z` (judged with the
+    prediction interval of its baseline) on a side that is a health concern."""
+    if abs(self.z_score) < self.baseline.alert_z(z):
+        return None
+    concern = CONCERN[self.reading.signal]
+    if concern is Concern.BOTH or concern.value == self.direction:
+        return self.direction
+    return None
 ```
 
-- **Alertas:** toda alerta lleva qué detectó, con qué dato, contra qué normal, por qué importa (con su fuente de la NASA) y qué hacer.
-- **Errores:** nada de `except` vacío ni valores por defecto que oculten una falla. Una lectura inválida se rechaza con un error claro y queda registrada.
-- **Nombres y textos:** el código, los commits y los identificadores van en inglés. Los textos de la pantalla se toman de `i18n`.
-- **Frontend:** TypeScript estricto, sin `any`, sin `innerHTML` con datos de afuera. Los colores de estado (verde, ámbar y rojo) van siempre con ícono y texto.
+- **Alerts:** every alert carries what it detected, with which value, against which normal, why it matters (with its NASA source) and what to do.
+- **Errors:** no empty `except` and no defaults that hide a failure. An invalid reading is rejected with a clear error and logged.
+- **Names and text:** code, commits and identifiers are in English. Screen text comes from `i18n`.
+- **Frontend:** strict TypeScript, no `any`, no `innerHTML` with outside data. Status colours (green, amber, red) always come with an icon and a word.
 
-## Estrategia de pruebas
+## Testing strategy
 
-- **Dominio con pytest**, que es lo más importante: línea base, puntaje z, umbral de ±1.5, patrón combinado, pronóstico con una serie conocida, proyección de dosis (256 mSv a 1.8 mSv por día dan 191 días) y el límite de 250 mSv por evento.
-- **API con el TestClient de FastAPI:** las rutas y el WebSocket con el simulador con semilla.
-- **Web con Vitest y Testing Library:** los estados del panel (bien, atención, emergencia) y el cambio de idioma.
-- **Escenario de demo reproducible:** la misión acelerada con semilla fija produce primero la alerta temprana y luego la emergencia. Lo verifica una prueba.
-- **Todo bug encontrado por las testers se reproduce primero con una prueba que falla.**
+- **Domain with pytest**, the most important part: baselines and their prediction intervals, published lab spreads, the confirmation rules, combined patterns, the forecast on a known series, the dose projection (256 mSv at 1.8 mSv per day gives 191 days), the 250 mSv event limit and the 600 mSv career limit.
+- **API with FastAPI's TestClient:** the routes and the WebSocket, with the seeded simulator.
+- **Web with Vitest and Testing Library:** the panel states (OK, attention, emergency), the folding details, the crew strip and the language switch.
+- **Reproducible demo:** the seeded, accelerated mission shows the early warning first and the emergency after. A test checks it, and each lap of the script repeats the first one.
+- **Model validation:** `validate_model.py` measures false alarms per astronaut-year and missed changes; a small sample runs with every change.
+- **Every bug is first reproduced with a failing test.**
 
-## Límites
+## Boundaries
 
-- **Siempre:**
-  - Correr `python scripts/verify.py` antes de cada commit, y gitleaks antes de cada push.
-  - Usar solo datos simulados o abiertos de la NASA.
-  - Que cada alerta se explique.
-  - Validar las entradas.
-- **Preguntar primero:**
-  - Agregar dependencias.
-  - Hacer público el repositorio.
-  - Agregar colaboradores.
-  - Desplegar en la nube.
-  - Cambiar el CI.
-- **Nunca:**
-  - Subir secretos (`.env`) ni datos de personas reales.
-  - Borrar una prueba que falla sin aprobación.
-  - Hacer push sin que Jorge lo pida.
-  - Mencionar IA en archivos, commits o PRs.
-  - Presentar una alerta como diagnóstico.
+- **Always:**
+  - Run `python scripts/verify.py` before each commit, and gitleaks before each push.
+  - Use only synthetic data or open NASA data.
+  - Explain every alert.
+  - Validate inputs.
+- **Ask first:**
+  - Adding dependencies.
+  - Making the repository public.
+  - Adding collaborators.
+  - Deploying to the cloud.
+  - Changing CI.
+- **Never:**
+  - Commit secrets (`.env`) or real people's data.
+  - Delete a failing test without approval.
+  - Present an alert as a diagnosis.
 
-## Criterios de éxito
+## Success criteria
 
-1. En un clon limpio, `python scripts/verify.py` pasa completo.
-2. Con la red apagada, `python scripts/demo.py` levanta la app y el panel se actualiza en vivo cada segundo con el simulador.
-3. Con una línea base y lecturas de prueba, el modelo marca las señales fuera de su normal (±1.5 desviaciones estándar) y solo alerta cuando el cambio se confirma: 10 lecturas continuas seguidas, 3 de los últimos 4 días o un examen y su repetición (D-011). Si dos o más sistemas tienen alertas confirmadas a la vez, aparece el patrón combinado. Cada alerta muestra la señal, el valor, su normal, la razón y la fuente.
-4. El pronóstico de sueño a 3 noches y la proyección de días hasta 600 mSv coinciden con los cálculos de las pruebas.
-5. Una tormenta solar simulada dispara el camino de emergencia con la guía de acción.
-6. El feedback de la Tierra llega con la demora configurada y la pantalla muestra cuánto falta.
-7. El escenario de demo (misión acelerada con semilla) es repetible: muestra primero la alerta temprana y luego la emergencia.
-8. La interfaz carga en inglés y cambia a español.
-9. La línea base de glóbulos blancos sale del CSV de OSD-569, con la cita visible en la pantalla.
-10. La app está publicada en una URL de Render y se actualiza sola con cada cambio en `main` (D-009).
-11. Geraldine y Aranza, usando la app como astronautas desde su navegador, pueden enviar un reporte con «Reportar un problema». El reporte queda guardado con su contexto y se puede exportar para crear el issue.
-12. `python validate_model.py` (en `backend/`), con 200 personas simuladas durante 90 días en la nave y en campo, da como máximo 1 falsa alarma cada 10 años-astronauta y como máximo el 1 % de los cambios del guion sin detectar en 10 días (D-011).
+1. On a clean clone, `python scripts/verify.py` passes.
+2. With the network off, `python scripts/demo.py` starts the app and the panel updates live every second with the simulator.
+3. Given a baseline and test readings, the model marks signals outside the person's normal (±1.5 standard deviations) and alerts only when the change is confirmed: 10 live readings in a row, 3 of the last 4 days, or an exam and its repeat (D-011). When two or more systems have confirmed alerts at once, the combined pattern appears. Every alert shows the signal, the value, its normal, the reason and the source.
+4. The 3-night sleep forecast and the days left before 600 mSv match the calculations in the tests.
+5. A simulated solar storm and reaching the career limit both trigger the emergency path with the action guide.
+6. Earth's feedback arrives with the configured delay and the screen shows how long is left. *Not met: not built in this version.*
+7. The demo scenario (seeded, accelerated mission) is repeatable: it shows the early warning first and the emergency after.
+8. The interface opens in the browser's language (English or Spanish) and can switch between them.
+9. The commander's white blood cell set point comes from the OSD-569 CSV, with the citation visible on screen.
+10. The app is published at a Render URL and updates itself on every change to `main` (D-009).
+11. Testers using the app as astronauts from their own browser can send a report with "Report a problem". It arrives as a GitHub issue with its context.
+12. `python validate_model.py` (in `backend/`), with 200 synthetic people over 90 days in the ship and in the field, gives at most one false alarm every 10 astronaut-years and at most 1% of the scripted changes missed within 10 days (D-011).
 
-## Fuera de alcance
+## Out of scope
 
-- **Diagnóstico médico real:** es apoyo a la decisión.
-- **Login y cuentas.**
-- **App móvil.** La web publicada funciona en el navegador del celular.
-- **Datos de personas reales.** Los datos de Aranza solo sirven para calibrar rangos, sin guardarse en el repo.
-- **Sensores reales.** Se trabaja con datos sintéticos (D-005). La interfaz del adaptador queda lista para cuando Aranza confirme.
-- **Acceso de las testers al repositorio.** Prueban como usuarias externas (D-006).
-- **Una app para el lado de la Tierra:** es un simulador.
-- **El protocolo DTN real:** se simula la demora.
-- **Mecánica orbital:** las demoras son configurables, no se calculan.
+- **Real medical diagnosis:** this is decision support.
+- **Login and accounts.**
+- **A mobile app.** The published web works in a phone browser.
+- **Real people's data.** Apart from the open, anonymised OSD-569 dataset, every reading is synthetic.
+- **Real sensors** in this version: the data is synthetic (D-005). The ingestion port is ready for them.
+- **An app for the Earth side,** the real DTN protocol and orbital mechanics.
 
-## Decisiones
+## Decisions
 
-En `docs/decisiones.md`:
-- D-001: monolito modular hexagonal.
-- D-002: Python con FastAPI y React con TypeScript.
-- D-003: repositorio privado hasta la entrega.
-- D-004: Marte.
-- D-005: datos sintéticos.
-- D-006: testers como usuarias externas con reporte dentro de la app.
-- D-007: licencia Apache 2.0.
-- D-008: idioma.
-- D-009: publicación en Render como un solo servicio.
-- D-010: varios tripulantes, una misión por persona.
-- D-011: alertas confirmadas, con metas de falsas alarmas y de cambios sin detectar (exámenes con repetición, intervalo de predicción, 3 de 4 días).
+In [docs/decisions.md](docs/decisions.md):
+- D-001: hexagonal modular monolith.
+- D-002: Python with FastAPI, and React with TypeScript.
+- D-003: private repository until submission.
+- D-004: Mars.
+- D-005: synthetic data.
+- D-006: testers act as outside users and report from inside the app.
+- D-007: Apache 2.0 licence.
+- D-008: language.
+- D-009: publishing on Render as a single service.
+- D-010: several crew members, one mission per person.
+- D-011: confirmed alerts, with targets for false alarms and missed changes.
+- D-012: the radiation career limit is an emergency, with no invented threshold.
 
-## Preguntas abiertas
+## Open questions
 
-1. **Los sensores de Aranza:** cuáles son y cómo se conectan. Cuando ella confirme, se agrega su adaptador sin tocar el dominio.
-2. **Cuenta de Render:** Jorge la crea entrando con GitHub y le da acceso solo al repositorio `allinkay` (D-009).
+1. **Real sensors:** a teammate has worked with an AD8232 ECG module on an ESP32 and has recordings. Using them needs written consent from the person recorded and no identifying data.
