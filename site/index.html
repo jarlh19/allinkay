@@ -213,7 +213,7 @@
               <tr><th scope="col">Measure</th><th scope="col">Result</th><th scope="col">Target</th></tr>
             </thead>
             <tbody>
-              <tr><th scope="row">False alarms in the ship</th><td class="num">1 every 10 astronaut-years</td><td>at most 1 every 10 years</td></tr>
+              <tr><th scope="row">False alarms in the ship</th><td class="num">1 every 12 astronaut-years</td><td>at most 1 every 10 years</td></tr>
               <tr><th scope="row">False alarms in the field</th><td class="num">none in 55 astronaut-years</td><td>at most 1 every 10 years</td></tr>
               <tr><th scope="row">Changes caught within 10 days</th><td class="num">1195 of 1200</td><td>at least 99%</td></tr>
             </tbody>
@@ -229,7 +229,7 @@
         <dl class="specs">
           <div><dt>On board, offline</dt><dd>A modular monolith with a hexagonal design. The model is plain Python with no input or output, so it can run on any onboard computer.</dd></div>
           <div><dt>Live screen</dt><dd>FastAPI streams each crew member over a WebSocket to a React screen. The body is a three.js hologram adapted from the BodyParts3D anatomy atlas. English and Spanish, desktop and phone.</dd></div>
-          <div><dt>Checked on every change</dt><dd>129 backend tests, 39 frontend tests, a secret scan and a sample of the model validation run in GitHub Actions on every pull request.</dd></div>
+          <div><dt>Checked on every change</dt><dd>137 backend tests, 44 frontend tests, a secret scan and a sample of the model validation run in GitHub Actions on every pull request.</dd></div>
         </dl>
       </section>
 
@@ -270,7 +270,8 @@
           <h2 id="sources-title">Data and sources</h2>
         </div>
         <ul class="source-list">
-          <li><a href="https://osdr.nasa.gov/bio/repo/data/studies/OSD-569">NASA OSDR, OSD-569</a>: the commander's white blood cell baseline (Inspiration4 crew member C001, pre-flight).</li>
+          <li><a href="https://osdr.nasa.gov/bio/repo/data/studies/OSD-569">NASA OSDR, OSD-569</a> and <a href="https://osdr.nasa.gov/bio/repo/data/studies/OSD-575">OSD-575</a>: the commander's white blood cell and glucose baselines (Inspiration4 crew member C001, pre-flight).</li>
+          <li><a href="https://ccmc.gsfc.nasa.gov/tools/DONKI/">NASA DONKI</a> (Community Coordinated Modeling Center): the real event the demo storm refers to, the X5.4 solar flare of 7 March 2012 and the protons that reached Earth orbit 3.7 hours later. <a href="https://arxiv.org/abs/1503.06631">Guo et al., 2015</a>: Curiosity's RAD recorded 19.5 mSv over that storm on its way to Mars.</li>
           <li><a href="https://www.nasa.gov/sites/default/files/atoms/files/radiation_protection_technical_brief_ochmo.pdf">NASA-STD-3001, OCHMO-TB-020</a>: the 600 mSv career limit, the 250 mSv solar event limit and the ALARA principle.</li>
           <li>NASA Human Research Program risk pages: the evidence cited in each alert.</li>
           <li><a href="https://doi.org/10.1126/science.1235989">Zeitlin et al., 2013</a> and <a href="https://ntrs.nasa.gov/citations/20220013418">McBrayer et al., 2022</a>: the dose rate in transit and the communication delay.</li>
@@ -278,7 +279,7 @@
           <li><a href="https://biologicalvariation.eu/">EFLM Biological Variation Database</a> and Fraser (2001): how much a lab result varies in the same healthy person.</li>
           <li><a href="https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html">BodyParts3D</a>, © The Database Center for Life Science, licensed under CC Attribution 4.0 International: the 3D body, adapted for the hologram.</li>
         </ul>
-        <p class="note">Every other reading is synthetic. No real person's data is used, apart from the open, anonymised OSD-569 dataset. All images on this page are screenshots of the app.</p>
+        <p class="note">Every other reading is synthetic. No real person's data is used, apart from the open, anonymised OSD-569 and OSD-575 datasets. The size and timing of the demo storm are synthetic; only the event it refers to is real. All images on this page are screenshots of the app.</p>
       </section>
 
       <section class="close" aria-labelledby="close-title" data-beat="end">
