@@ -295,7 +295,7 @@ td.num { font-family: var(--mono); color: var(--ok); font-variant-numeric: tabul
 .planned { list-style: none; display: grid; gap: 14px; }
 .planned li { display: grid; gap: 2px; padding-left: 18px; position: relative; }
 .planned li::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--holo); }
-.first-step { margin-top: 18px; padding-left: 14px; border-left: 2px solid var(--holo); color: var(--text-2); font-size: 0.95rem; max-width: 60ch; }
+.first-step { margin-top: 18px; padding: 12px 14px; border: 1px solid var(--holo-line); border-radius: 12px; color: var(--text-2); font-size: 0.95rem; max-width: 60ch; }
 .first-step strong { color: var(--text); }
 .part { font-weight: 600; }
 .role { color: var(--text-2); font-size: 0.95rem; }
