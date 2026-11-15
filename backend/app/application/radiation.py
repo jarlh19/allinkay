@@ -37,29 +37,57 @@ class TrackRadiation:
         self._bus.publish(self.view())
 
     def alerts(self) -> list[Alert]:
-        if not self._ledger.storm_active:
-            return []
-        return [
-            Alert(
-                kind=AlertKind.SOLAR_STORM,
-                level=Level.EMERGENCY,
-                systems=(System.RADIATION,),
-                evidence=(
-                    Evidence(
-                        signal=Signal.DOSE_TODAY,
-                        value=self._ledger.current_rate_msv,
-                        unit=SPECS[Signal.DOSE_TODAY].unit,
-                        normal_low=0.0,
-                        normal_high=round(self._ledger.usual_rate_msv, 2),
-                        z_score=0.0,
-                        direction="above",
-                    ),
+        alerts: list[Alert] = []
+        if self._ledger.storm_active:
+            alerts.append(self._storm_alert())
+        if self._ledger.accumulated_msv >= CAREER_LIMIT_MSV:
+            alerts.append(self._career_limit_alert())
+        return alerts
+
+    def _career_limit_alert(self) -> Alert:
+        """NASA-STD-3001 [V1 4030]: a crew member's career effective dose shall be less than
+        600 mSv. Reaching it is a broken requirement, so it is an emergency; what remains is to
+        keep any further dose as low as reasonably achievable (ALARA, [V1 4029])."""
+        return Alert(
+            kind=AlertKind.CAREER_LIMIT,
+            level=Level.EMERGENCY,
+            systems=(System.RADIATION,),
+            evidence=(
+                Evidence(
+                    signal=Signal.DOSE_TODAY,
+                    value=round(self._ledger.accumulated_msv, 1),
+                    unit=SPECS[Signal.DOSE_TODAY].unit,
+                    normal_low=0.0,
+                    normal_high=CAREER_LIMIT_MSV,
+                    z_score=0.0,
+                    direction="above",
                 ),
-                reference=Ref.RADIATION_STANDARD,
-                action="action.solar_storm_guide",
-                signals=(Signal.DOSE_TODAY,),
-            )
-        ]
+            ),
+            reference=Ref.RADIATION_STANDARD,
+            action="action.career_limit",
+            signals=(Signal.DOSE_TODAY,),
+        )
+
+    def _storm_alert(self) -> Alert:
+        return Alert(
+            kind=AlertKind.SOLAR_STORM,
+            level=Level.EMERGENCY,
+            systems=(System.RADIATION,),
+            evidence=(
+                Evidence(
+                    signal=Signal.DOSE_TODAY,
+                    value=self._ledger.current_rate_msv,
+                    unit=SPECS[Signal.DOSE_TODAY].unit,
+                    normal_low=0.0,
+                    normal_high=round(self._ledger.usual_rate_msv, 2),
+                    z_score=0.0,
+                    direction="above",
+                ),
+            ),
+            reference=Ref.RADIATION_STANDARD,
+            action="action.solar_storm_guide",
+            signals=(Signal.DOSE_TODAY,),
+        )
 
     def view(self) -> dict[str, Any]:
         ledger = self._ledger

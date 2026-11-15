@@ -55,7 +55,6 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
   const emergencies = (evaluation?.alerts ?? []).filter((a) => a.level === "emergency");
   const time = clock?.at ? new Date(clock.at).toISOString().slice(11, 16) : null;
 
-  const storm = radiation?.storm_active ?? false;
   const statusOf = (detail: Detail): SystemStatus | null =>
     detail === "actions" ? null : targetStatus(detail, evaluation, radiation);
   // A section with an alert opens by itself until the person opens or closes it by hand.
@@ -80,7 +79,7 @@ export function Dashboard({ state, crewId, onCrew }: DashboardProps) {
   const chipOf = (detail: Detail) => {
     const status = statusOf(detail);
     if (!status) return null;
-    if (detail === "radiation" && radiation && !storm) {
+    if (detail === "radiation" && radiation && status === "ok") {
       return <StatusChip status="ok" label={t("radiation.withinLimit")} />;
     }
     return <StatusChip status={status} />;

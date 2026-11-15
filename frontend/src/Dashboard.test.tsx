@@ -144,4 +144,51 @@ describe("Dashboard", () => {
     const analysis = screen.getByRole("region", { name: /^Model analysis/ });
     expect(within(analysis).getByText(/Sleep last night: outside your normal/i)).toBeInTheDocument();
   });
+
+  it("does not call a dose past the career limit within the limit", () => {
+    const pastLimit: LiveState = {
+      ...state,
+      radiation: {
+        type: "radiation",
+        dose_rate_msv_per_day: 1.8,
+        accumulated_msv: 601.2,
+        career_limit_msv: 600,
+        career_fraction: 1.002,
+        days_to_limit: 0,
+        event_limit_msv: 250,
+        storm_active: false,
+        storm_dose_msv: 0,
+        organs_at_risk: [],
+      },
+      evaluation: {
+        type: "evaluation",
+        mode: "ship",
+        mitigation: "mitigation.ship_routines",
+        deviations: [],
+        alerts: [
+          {
+            kind: "career_limit",
+            level: "emergency",
+            systems: ["radiation"],
+            signals: ["dose_today"],
+            action: "action.career_limit",
+            reference: { id: "nasa-std-3001-radiation", title: "NASA-STD-3001", url: "https://www.nasa.gov/" },
+            evidence: [
+              { signal: "dose_today", value: 601.2, unit: "mSv", normal_low: 0, normal_high: 600, z_score: 0, direction: "above" },
+            ],
+          },
+        ],
+      },
+    };
+    render(
+      <I18nProvider initial="en">
+        <Dashboard state={pastLimit} crewId="commander" onCrew={() => undefined} />
+      </I18nProvider>,
+    );
+
+    expect(screen.getAllByText("Career radiation limit reached (600 mSv)").length).toBeGreaterThan(0);
+    const header = screen.getByRole("button", { name: /^Radiation/, expanded: true });
+    expect(header).not.toHaveTextContent("Within limit");
+    expect(header).toHaveTextContent("Emergency");
+  });
 });
