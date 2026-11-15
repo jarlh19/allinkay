@@ -40,6 +40,33 @@ ORGANS_AT_RISK: tuple[OrganRisk, ...] = (
 )
 
 
+GCR_QUALITY_FACTOR = 3.82
+"""Mean quality factor of the galactic cosmic rays that Curiosity's RAD measured in transit to
+Mars (Zeitlin et al., 2013): 0.481 mGy per day in tissue gave 1.84 mSv per day."""
+
+
+@dataclass(frozen=True)
+class DoseEquivalent:
+    """Turns an absorbed dose rate in tissue (microgray per hour) into dose equivalent
+    (millisievert per day).
+
+    The cosmic-ray background and a solar storm's excess above it have different quality
+    factors: cosmic rays include heavy ions, while a storm is mostly protons."""
+
+    background_ugy_h: float
+    q_excess: float
+    q_background: float = GCR_QUALITY_FACTOR
+
+    def msv_per_day(self, absorbed_ugy_h: float) -> float:
+        background = min(absorbed_ugy_h, self.background_ugy_h)
+        excess = max(absorbed_ugy_h - self.background_ugy_h, 0.0)
+        return (background * self.q_background + excess * self.q_excess) * 24 / 1000
+
+    @property
+    def background_msv_per_day(self) -> float:
+        return self.msv_per_day(self.background_ugy_h)
+
+
 @dataclass(frozen=True)
 class StormReference:
     """A real solar particle event that the demo storm refers to, as NASA recorded it.

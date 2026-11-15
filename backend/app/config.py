@@ -13,6 +13,7 @@ OSDR_CBC_CSV = DATA_DIR / "osdr" / "OSD-569_LSDS-7_complete_blood_count.csv"
 OSDR_CMP_CSV = DATA_DIR / "osdr" / "OSD-575_LSDS-8_comprehensive_metabolic_panel.csv"
 DONKI_SEP_JSON = DATA_DIR / "donki" / "DONKI_SEP_2012-03-01_2012-04-29.json"
 DONKI_FLR_JSON = DATA_DIR / "donki" / "DONKI_FLR_2012-03-07.json"
+RAD_DOSE_CSV = DATA_DIR / "rad" / "MSL_RAD_cruise_dose_2012-02-28_2012-03-15.csv"
 
 
 @dataclass(frozen=True)
