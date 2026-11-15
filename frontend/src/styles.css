@@ -70,7 +70,7 @@ button { font: inherit; color: inherit; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; }
 .panel.focus { border-color: var(--accent); }
 .panel h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 14px; }
-.body-panel { display: flex; flex-direction: column; position: sticky; top: 16px; }
+.body-panel { display: flex; flex-direction: column; }
 
 .status { font-family: var(--mono); font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; white-space: nowrap; letter-spacing: 0; text-transform: none; }
 .status.ok { color: var(--ok); background: rgba(63, 182, 139, 0.12); }
@@ -99,7 +99,7 @@ button { font: inherit; color: inherit; }
 .alert p { font-size: 12px; color: var(--text-2); line-height: 1.5; }
 .alert a { color: var(--accent); }
 
-.status-column { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 16px; }
+.status-column { display: flex; flex-direction: column; gap: 16px; }
 .crew-card { display: flex; gap: 14px; align-items: center; }
 .crew-card h2 { margin: 0 0 2px; font-size: 16px; letter-spacing: 0; text-transform: none; color: var(--text); }
 .avatar { width: 52px; height: 52px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--panel-2); border: 1px solid var(--accent); color: var(--accent); font-family: var(--mono); font-weight: 600; }
@@ -144,7 +144,7 @@ button { font: inherit; color: inherit; }
 .ring-arc.warn { stroke: var(--warn); }
 .ring-arc.crit { stroke: var(--crit); }
 
-.details { display: flex; flex-direction: column; gap: 8px; }
+.details { display: flex; flex-direction: column; gap: 8px; container: details / inline-size; }
 .detail-section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
 .detail-section h2 { margin: 0; }
 .detail-section h2 button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: transparent; border: 0; border-radius: 8px; color: var(--text-2); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 14px 16px; cursor: pointer; text-align: left; }
@@ -153,8 +153,17 @@ button { font: inherit; color: inherit; }
 .chevron { width: 8px; height: 8px; border-right: 2px solid var(--text-3); border-bottom: 2px solid var(--text-3); transform: rotate(45deg); margin-top: -4px; transition: transform 0.15s ease-out; }
 .detail-section.open .chevron { transform: rotate(-135deg); margin-top: 4px; }
 .detail-body { padding: 0 16px 16px; }
+/* The details adapt to their own width: one column in the side column or on a phone, the
+   model and radiation side by side when the details span the page under the body. */
 .details .model-grid, .details .cols3 { grid-template-columns: 1fr; gap: 16px; }
 .details .cols3 > div { padding: 0; border-left: 0; }
+.details .model-grid svg { max-width: 560px; }
+@container details (min-width: 720px) {
+  .details .model-grid { grid-template-columns: 1.15fr 1fr; gap: 28px; }
+  .details .cols3 { grid-template-columns: 1.2fr 0.85fr 1.3fr; gap: 0; }
+  .details .cols3 > div { padding: 0 20px; border-left: 1px solid var(--line); }
+  .details .cols3 > div:first-child { padding-left: 0; border-left: 0; }
+}
 .figure { flex: 1; display: flex; justify-content: center; align-items: center; margin: 4px 0 16px; }
 .figure svg { width: 100%; max-width: 260px; height: auto; }
 .body-3d { position: relative; width: 100%; max-width: 280px; aspect-ratio: 4 / 5; margin: 0 auto; }
@@ -203,6 +212,12 @@ button { font: inherit; color: inherit; }
 .primary:disabled { opacity: 0.6; cursor: wait; }
 .offline { background: rgba(239, 91, 91, 0.12); color: var(--crit); border: 1px solid rgba(239, 91, 91, 0.4); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
 
+/* Only with three columns do the person and the status stay in view while the details scroll;
+   when the details sit below them, pinned columns would overlap what scrolls underneath. */
+@media (min-width: 1361px) {
+  .body-panel, .status-column { position: sticky; top: 16px; }
+}
+
 @media (max-width: 1360px) {
   .layout { grid-template-columns: 260px minmax(0, 1fr); }
   .details { grid-column: 1 / -1; }
@@ -216,16 +231,10 @@ button { font: inherit; color: inherit; }
 
 @media (max-width: 760px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
-  .body-panel, .status-column { position: static; }
 }
 
 @media (max-width: 560px) {
   .body-stage { grid-template-columns: minmax(0, 1fr); row-gap: 22px; }
-}
-
-@media (max-width: 1000px) {
-  .cols3, .model-grid { grid-template-columns: 1fr; gap: 16px; }
-  .cols3 > div { padding: 0; border-left: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
