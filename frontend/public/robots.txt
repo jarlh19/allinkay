@@ -1,0 +1,7 @@
+# The app and the project website may be crawled; the team photo is not to be indexed.
+User-agent: Googlebot-Image
+Disallow: /site/images/team.jpg
+
+User-agent: *
+Disallow: /site/images/team.jpg
+Allow: /
