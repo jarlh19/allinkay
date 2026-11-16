@@ -154,7 +154,7 @@ def beyond(self, z: float) -> str | None:
 5. A solar storm (the one RAD measured on 8 March 2012, replayed) and reaching the career limit both trigger the emergency path with the action guide (D-020).
 6. Earth's feedback arrives with the configured delay and the screen shows how long is left. *Not met: not built in this version.*
 7. The demo scenario (seeded, accelerated mission) is repeatable: it shows the early warning first and the emergency after.
-8. The interface opens in the browser's language (English or Spanish) and can switch between them.
+8. The interface always opens in English and can switch to Spanish for the visit (D-024).
 9. The commander's white blood cell and glucose set points come from OSD-569 and OSD-575, with the study visible on screen, and the demo storm names its real reference event from NASA DONKI (D-017).
 10. The app is published at a Render URL and updates itself on every change to `main` (D-009).
 11. Testers using the app as astronauts from their own browser can send a report with "Report a problem". It arrives as a GitHub issue with its context.

@@ -63,7 +63,7 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
 - **Problem:** NASA Space Apps requires English on the project page and in everything linked from it, but the testers test in Spanish.
 - **Chosen:**
   - Code, identifiers, commits and documentation are in English.
-  - The interface opens in the browser's language and can switch between English and Spanish.
+  - The interface opens in the browser's language and can switch between English and Spanish. *Replaced by D-024: it always opens in English.*
   - The page asks browsers not to machine-translate it, since it has its own translation.
 - **Set aside:** everything in Spanish, and translating the interface only at the end.
 - **Why:** it meets the rule without leaving the testers without an interface in their language. Machine translation garbled terms ("live" became "to live").
@@ -302,3 +302,9 @@ Each entry gives the problem, what was chosen, the alternatives that were set as
   - The two are then read together: "faster, but more errors" is never an improvement. A reading of slower, more errors or an accuracy drop asks for a repeat. The thresholds (20% in speed, 20 points in accuracy) are her exploratory software rules, not clinical cutoffs.
 - **Fixed in the port:** her browser report's trend chart filtered on an undefined variable (`value` instead of `x.value`) and failed once a baseline existed. The app draws that trend correctly.
 
+## D-024 · The app always opens in English
+
+- **Problem:** the app opened in the browser's language and remembered the last choice, so a judge or teammate with a Spanish browser, or anyone who had switched once, landed on the Spanish interface. English is the project's main language and the one the NASA Space Apps judges read.
+- **Chosen:** every opening starts in English. The language button switches to Spanish for that visit only; the choice is not stored.
+- **Set aside:** following the browser's language (D-008), and remembering the choice per tab.
+- **Trade-off:** Spanish-speaking testers press the language button once per visit.
