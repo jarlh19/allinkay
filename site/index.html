@@ -43,18 +43,15 @@
     </header>
 
     <main id="main">
-      <div class="trace" aria-hidden="true">
-        <svg class="trace-svg" preserveAspectRatio="none">
-          <path class="trace-ghost" />
-          <path class="trace-line" />
-          <g class="trace-alerts"></g>
-          <circle class="trace-head" r="4" />
-        </svg>
-      </div>
-
-      <section class="hero" id="top" aria-labelledby="hero-title">
-        <div class="hero-copy">
-          <h1 id="hero-title">Your normal, <span class="nowrap">on board.</span></h1>
+      <section class="cover" id="top" aria-labelledby="hero-title">
+        <!-- A slow loop of a spacecraft nearing Mars. SI-generated (Wan 2.2), labelled on the page; still for reduced motion. -->
+        <video class="cover-video" data-cover muted loop playsinline preload="auto" poster="images/cover.jpg" aria-hidden="true" tabindex="-1">
+          <source src="media/cover.webm" type="video/webm" />
+          <source src="media/cover.mp4" type="video/mp4" />
+        </video>
+        <div class="cover-copy">
+          <h1 id="hero-title" class="cover-name">ALLINKAY</h1>
+          <p class="cover-line">Your normal, <span class="nowrap">on board.</span></p>
           <p class="lead">
             ALLINKAY watches each astronaut against <strong>their own baseline</strong>, confirms a change before it alerts
             and tells the crew what to do, all on the spacecraft, without waiting 22 minutes for Earth.
@@ -64,16 +61,35 @@
               Open the live app
               <svg class="icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5 10h10M11 6l4 4-4 4" /></svg>
             </a>
-            <a class="button" href="#story">Watch the 30-second story</a>
+            <a class="button" href="https://youtu.be/vO6UpNIGL8s" target="_blank" rel="noopener">
+              <svg class="icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="7.5" /><path d="M8.5 7.2v5.6l4.4-2.8z" /></svg>
+              Watch the demo video<span class="sr-only"> (YouTube, opens in a new tab)</span>
+            </a>
           </div>
           <p class="app-status" id="app-status" aria-live="polite">The live app runs a simulated Mars mission: one second is one hour.</p>
+          <p class="cover-event">NASA Space Apps Challenge 2026 · Create Health Monitoring Software for Astronauts</p>
         </div>
+        <div class="cover-si">
+          <span>Background video: SI-generated (Wan 2.2)</span>
+          <button class="cover-toggle" type="button" data-cover-toggle>Pause background</button>
+        </div>
+      </section>
+
+      <div class="page">
+      <div class="trace" aria-hidden="true">
+        <svg class="trace-svg" preserveAspectRatio="none">
+          <path class="trace-ghost" />
+          <path class="trace-line" />
+          <g class="trace-alerts"></g>
+          <circle class="trace-head" r="4" />
+        </svg>
+      </div>
+
         <figure class="hero-shot" data-beat="start">
           <img src="images/hero.jpg" width="1600" height="900" fetchpriority="high"
                alt="The ALLINKAY screen: a cyan 3D hologram of the body on a lit pedestal, with six system bubbles around it, each joined to its part of the body." />
           <figcaption>The live screen during the simulated mission. Synthetic data.</figcaption>
         </figure>
-      </section>
 
       <section class="story" id="story" aria-labelledby="story-title" data-beat="storm">
         <div class="section-head">
@@ -282,7 +298,7 @@
           <li><a href="https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html">BodyParts3D</a>, © The Database Center for Life Science, licensed under CC Attribution 4.0 International: the 3D body, adapted for the hologram.</li>
           <li><a href="https://science.nasa.gov/3d-resources/z2-spacesuit/">NASA 3D Resources, Z2 Spacesuit</a>, credit NASA/LaRC/Advanced Concepts Lab, used under the <a href="https://www.nasa.gov/nasa-brand-center/images-and-media/">NASA media usage guidelines</a>: NASA's prototype suit for planetary surfaces, which the hologram wears in the field, fitted to the body. Its use does not imply NASA endorsement.</li>
         </ul>
-        <p class="note">The radiation dose is RAD's measurement, and the commander's lab normals come from the open, anonymised OSD-569 and OSD-575 datasets. Every other reading is synthetic, and no real person's data is used apart from those; the cabin readings are centred on the real ISS cabin. All images on this page are screenshots of the app.</p>
+        <p class="note">The radiation dose is RAD's measurement, and the commander's lab normals come from the open, anonymised OSD-569 and OSD-575 datasets. Every other reading is synthetic, and no real person's data is used apart from those; the cabin readings are centred on the real ISS cabin. All images on this page are screenshots of the app; the only exception is the cover's background video, which is SI-generated (Wan 2.2) and labelled as such.</p>
       </section>
 
       <section class="close" aria-labelledby="close-title" data-beat="end">
@@ -296,6 +312,7 @@
           <a class="button" href="https://github.com/jarlh19/allinkay">View the code</a>
         </div>
       </section>
+      </div>
     </main>
 
     <footer class="footer">
