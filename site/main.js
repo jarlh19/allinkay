@@ -321,6 +321,43 @@ function initTrace() {
   build();
 }
 
+/* ---- The cover's background loop: still for reduced motion, stoppable, and paused off screen. ---- */
+function initCover() {
+  const video = document.querySelector("[data-cover]");
+  const toggle = document.querySelector("[data-cover-toggle]");
+  if (!video || !toggle) return;
+  video.muted = true;
+  let stopped = REDUCE;
+  let visible = true;
+
+  function sync() {
+    toggle.textContent = stopped ? "Play background" : "Pause background";
+    if (stopped || !visible) {
+      video.pause();
+      return;
+    }
+    video.play().catch((error) => {
+      // A browser that refuses autoplay keeps the still poster; the button can start the loop.
+      if (error.name === "NotAllowedError") {
+        stopped = true;
+        toggle.textContent = "Play background";
+      }
+    });
+  }
+
+  toggle.addEventListener("click", () => {
+    stopped = !stopped;
+    sync();
+  });
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      sync();
+    }).observe(video);
+  }
+  sync();
+}
+
 /* ---- The section in view is marked in the top bar. ---- */
 function initNav() {
   const links = new Map([...document.querySelectorAll(".nav a")].map((a) => [a.getAttribute("href").slice(1), a]));
@@ -344,6 +381,7 @@ function initNav() {
 }
 
 document.querySelectorAll("[data-player]").forEach(initPlayer);
+initCover();
 initTrace();
 initNav();
 wakeApp();
