@@ -2,8 +2,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { format, MESSAGES, type Language, type MessageKey } from "./messages";
 
-const STORAGE_KEY = "allinkay.language";
-
 interface I18n {
   language: Language;
   setLanguage: (language: Language) => void;
@@ -12,19 +10,12 @@ interface I18n {
 
 const I18nContext = createContext<I18n | null>(null);
 
-function browserLanguage(): Language {
-  return window.navigator.language.toLowerCase().startsWith("es") ? "es" : "en";
-}
-
-/** The language chosen before; the first time, the browser's language. */
+/**
+ * The app always opens in English, its main language and the one NASA Space Apps judges read (D-024).
+ * Spanish is one click away and lasts for the visit; it is not remembered for the next opening.
+ */
 export function startingLanguage(): Language {
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved === "es" || saved === "en") return saved;
-  } catch {
-    // Storage can be blocked (private mode); fall back to the browser's language.
-  }
-  return browserLanguage();
+  return "en";
 }
 
 export function I18nProvider({ children, initial }: { children: ReactNode; initial?: Language }) {
@@ -35,14 +26,7 @@ export function I18nProvider({ children, initial }: { children: ReactNode; initi
     document.documentElement.lang = language;
   }, [language]);
 
-  const setLanguage = useCallback((next: Language) => {
-    setState(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // Storage can be blocked (private mode); the choice still applies to this visit.
-    }
-  }, []);
+  const setLanguage = useCallback((next: Language) => setState(next), []);
 
   const value = useMemo<I18n>(
     () => ({
