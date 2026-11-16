@@ -29,6 +29,10 @@ def add_security_headers(app: FastAPI) -> None:
         response = await call_next(request)
         for name, value in SECURITY_HEADERS.items():
             response.headers.setdefault(name, value)
+        # Pages are revalidated on every visit (a cheap 304 when unchanged), so a published update
+        # shows at once instead of the copy a browser kept; their assets stay cacheable.
+        if request.url.path.endswith(("/", ".html")):
+            response.headers.setdefault("Cache-Control", "no-cache")
         return response
 
 
